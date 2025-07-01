@@ -14,8 +14,27 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async findById(id: string) {
-    return this.prisma.user.findUnique({ where: { id } });
+  async findById(userId: string) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        orgId: true,
+        createdAt: true,
+        updatedAt: true,
+        lastLoginAt: true,
+        status: true,
+        mfaSecret: true,
+        mfaPendingSecret: true,
+        mfaEnabled: true,
+        mfaBackupCodes: true,
+      },
+    });
   }
 
   async create(data: {

@@ -23,12 +23,12 @@ model Organization {
   settings      Json?
   status        OrgStatus        @default(ACTIVE)
   subscription  Subscription?
-  subscriptionTier String?   // 'STARTER', 'BUSINESS', 'CORPORATE'
-  subscriptionStatus String? // 'ACTIVE', 'CANCELLED', etc.
-  subscriptionUpdatedAt DateTime?
+  planId        String?
+  plan          Plan?            @relation(fields: [planId], references: [id])
   analyticsSchedules AnalyticsSchedule[]
   payments      Payment[]
   paymentReconciliations PaymentReconciliation[]
+  auditLogs     AuditLog[]        // Back relation for AuditLog.organization
 }
 
 model User {
@@ -46,6 +46,16 @@ model User {
   status        UserStatus   @default(ACTIVE)
   auditLogs     AuditLog[]
   payments      Payment[]
+  mfaEnabled    Boolean      @default(false)
+  mfaSecret     String?
+  mfaPendingSecret String?
+  mfaBackupCodes String?
+
+  // Add these fields to the User model for enterprise-grade auth and password reset
+  failedLoginAttempts   Int       @default(0)
+  refreshTokenHash      String?   // Hashed refresh token for secure refresh
+  resetTokenHash        String?   // Hashed password reset token
+  resetTokenExpiresAt   DateTime?
 }
 
 // API Management
@@ -95,8 +105,10 @@ model DataStream {
 // Audit Logging
 model AuditLog {
   id            String      @id @default(uuid())
-  user          User        @relation(fields: [userId], references: [id])
-  userId        String
+  userId        String?     // Nullable userId for system/super admin logs
+  user          User?       @relation(fields: [userId], references: [id])
+  orgId         String?
+  organization  Organization? @relation(fields: [orgId], references: [id])
   action        String
   resource      String
   details       Json?
@@ -165,7 +177,7 @@ model AnalyticsReport {
   type          String      // daily, weekly, monthly, custom
   config        Json        // Report configuration
   schedule      String?     // Cron expression for scheduled reports
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime     @default(now())
   updatedAt     DateTime    @updatedAt
   lastRun       DateTime?
   results       Json?       // Latest report results
@@ -178,7 +190,7 @@ model AnalyticsSchedule {
   frequency     String       // e.g., 'hourly', 'daily', 'custom'
   interval      Int?         // Interval in minutes for custom schedules
   createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  updatedAt     DateTime    @updatedAt
 }
 
 // Payment Models
@@ -252,6 +264,16 @@ model PaymentReconciliation {
 
   @@index([date])
   @@index([orgId])
+}
+
+model Plan {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String
+  price       Float
+  currency    String   @default("USD")
+  features    Json     // Store features/limits as JSON
+  organizations Organization[]
 }
 
 // Enums

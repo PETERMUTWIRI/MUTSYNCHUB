@@ -33,4 +33,20 @@ export class AuthController {
   async getProfile(@Request() req) {
     return req.user;
   }
+
+  @Get('usage')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user usage and plan info' })
+  @ApiResponse({ status: 200, description: 'Usage and plan info' })
+  async getUsage(@Request() req) {
+    return this.authService.getUsageAndPlan(req.user.id);
+  }
+
+  @Get('plans')
+  @ApiOperation({ summary: 'Get all available plans and features' })
+  @ApiResponse({ status: 200, description: 'List of plans' })
+  async getPlans() {
+    return this.authService.getPlans();
+  }
 }

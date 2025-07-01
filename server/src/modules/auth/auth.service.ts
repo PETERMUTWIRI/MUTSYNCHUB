@@ -1,81 +1,59 @@
-
-import { Injectable, UnauthorizedException, Logger, ForbiddenException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
+import { EnterpriseAuthService } from './services/enterprise-auth.service';
+import { RegisterDto } from './dto/auth.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PLANS } from '../../config/plans.config';
 import { UserService } from '../user/user.service';
-import * as argon2 from 'argon2';
+import { OrganizationService } from '../organization/organization.service';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  // For demo: in-memory failed login tracker (use Redis in prod)
-  private failedAttempts: Record<string, number> = {};
-  private readonly MAX_FAILED_ATTEMPTS = 5;
-  private readonly LOCKOUT_TIME_MS = 15 * 60 * 1000; // 15 minutes
-  private lockoutUntil: Record<string, number> = {};
 
   constructor(
+    private readonly enterpriseAuthService: EnterpriseAuthService,
     private readonly userService: UserService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly organizationService: OrganizationService,
   ) {}
 
   async validateUser(email: string, password: string) {
-    const user = await this.userService.findByEmail(email);
-    if (!user) {
-      this.logger.warn(`Login failed: user not found for email=${email}`);
-      return null;
-    }
-    // Account lockout check
-    if (this.lockoutUntil[email] && Date.now() < this.lockoutUntil[email]) {
-      this.logger.warn(`Account locked: email=${email}`);
-      throw new ForbiddenException('Account temporarily locked due to repeated failed login attempts.');
-    }
-    const passwordValid = await argon2.verify(user.password, password);
-    if (passwordValid) {
-      this.failedAttempts[email] = 0;
-      const { password, ...result } = user;
-      this.logger.log(`Login success: email=${email}`);
-      return result;
-    } else {
-      this.failedAttempts[email] = (this.failedAttempts[email] || 0) + 1;
-      this.logger.warn(`Login failed: email=${email}, failedAttempts=${this.failedAttempts[email]}`);
-      if (this.failedAttempts[email] >= this.MAX_FAILED_ATTEMPTS) {
-        this.lockoutUntil[email] = Date.now() + this.LOCKOUT_TIME_MS;
-        this.logger.warn(`Account locked: email=${email}`);
-      }
-      return null;
-    }
+    // Delegate to enterprise-grade service
+    return this.enterpriseAuthService.validateUser(email, password);
   }
 
-  async login(user: any) {
-    // MFA placeholder: check if user requires MFA, verify code, etc.
-    // if (user.mfaEnabled) { ... }
-    const payload = { email: user.email, sub: user.id };
-    // Short-lived access token
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    // (Optional) Issue refresh token, store in DB/Redis, handle rotation/blacklist
-    // const refreshToken = ...
-    this.logger.log(`JWT issued: user=${user.id}, email=${user.email}`);
+  async login(loginDto: { email: string; password: string; mfaToken?: string }) {
+    // Validate user and handle MFA
+    const user = await this.enterpriseAuthService.validateUser(loginDto.email, loginDto.password);
+    return this.enterpriseAuthService.login(user, loginDto.mfaToken);
+  }
+
+  async register(registerDto: RegisterDto) {
+    // Delegate registration to enterprise service
+    return this.enterpriseAuthService.registerUserAndOrg(registerDto);
+  }
+
+  async getUsageAndPlan(userId: string) {
+    // Get user and org
+    const user = await this.userService.findById(userId);
+    if (!user) throw new Error('User not found');
+    const org = await this.organizationService.findById(user.orgId);
+    if (!org) throw new Error('Organization not found');
+    // Find plan config
+    const plan = PLANS.find(p => p.id === org.planId || p.name === org.planId);
+    // Example usage: count agent queries, scheduled reports, etc. (stubbed here)
+    // You can replace with real usage queries as needed
+    const usage = {
+      agentQueries: 0, // TODO: query actual usage
+      scheduledReports: 0, // TODO: query actual usage
+    };
     return {
-      access_token: accessToken,
-      // refresh_token: refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
+      plan: plan || null,
+      usage,
+      org: { id: org.id, name: org.name, subdomain: org.subdomain },
     };
   }
 
-  async register(registerDto: any) {
-    // Hash password before creating user (argon2)
-    const hashedPassword = await argon2.hash(registerDto.password);
-    const user = await this.userService.create({
-      ...registerDto,
-      password: hashedPassword,
-    });
-    this.logger.log(`User registered: email=${user.email}, id=${user.id}`);
-    return this.login(user);
+  async getPlans() {
+    return PLANS;
   }
 }

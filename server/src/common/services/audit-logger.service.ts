@@ -1,6 +1,7 @@
 // filepath: /server/src/common/services/audit-logger.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { TenantContextService } from './tenant-context.service';
 
 interface AuditLogDetails {
   [key: string]: any;
@@ -10,7 +11,10 @@ interface AuditLogDetails {
 export class AuditLoggerService {
   private readonly logger = new Logger(AuditLoggerService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenantContext: TenantContextService,
+  ) {}
 
   async log({
     userId,
@@ -21,7 +25,7 @@ export class AuditLoggerService {
     ipAddress,
     userAgent,
   }: {
-    userId: string;
+    userId?: string;
     action: string;
     resource: string;
     details?: AuditLogDetails;
@@ -29,10 +33,13 @@ export class AuditLoggerService {
     ipAddress?: string;
     userAgent?: string;
   }): Promise<void> {
+    // Use context if not provided
+    const resolvedUserId = userId ?? this.tenantContext.getUserId();
+    const resolvedOrgId = orgId ?? this.tenantContext.getTenantId();
     try {
       await this.prisma.auditLog.create({
         data: {
-          userId,
+          userId: resolvedUserId,
           action,
           resource,
           details,
@@ -40,8 +47,9 @@ export class AuditLoggerService {
           userAgent,
         },
       });
-    } catch (error) {
-      this.logger.error('Failed to write audit log', error);
+      this.logger.log(`Audit log: ${action} on ${resource} by user=${resolvedUserId} org=${resolvedOrgId}`);
+    } catch (err) {
+      this.logger.error('Failed to log audit event', err);
     }
   }
 

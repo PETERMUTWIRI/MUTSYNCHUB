@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../infrastructure/persistence/prisma/prisma.service';
 import { AuditLoggerService } from '../../../common/services/audit-logger.service';
-import axios,  from 'axios';
+import { TenantContextService } from '../../../common/services/tenant-context.service';
+import axios from 'axios';
 import moment from 'moment';
 import {
   MpesaConfig,
@@ -13,6 +14,7 @@ import {
 } from '../interfaces/mpesa.interface';
 import { MpesaValidationRequest } from '../dto/mpesa-register-url.dto';
 import { MpesaC2BConfirmation, MpesaC2BError } from '../interfaces/mpesa-c2b.interface';
+import { PLANS } from '../../../config/plans.config';
 
 @Injectable()
 export class MpesaService {
@@ -25,6 +27,7 @@ export class MpesaService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly auditLogger: AuditLoggerService,
+    private readonly tenantContext: TenantContextService, // Inject tenant context
   ) {
     this.config = {
       consumerKey: this.configService.get<string>('MPESA_CONSUMER_KEY'),
@@ -77,23 +80,17 @@ export class MpesaService {
     return password;
   }
 
-  // Tier pricing constants
-  private static readonly TIER_PRICING = {
-    STARTER: 2000,
-    BUSINESS: 5000,
-    CORPORATE: 15000,
-  };
-
-  private getTierByAmount(amount: number): 'STARTER' | 'BUSINESS' | 'CORPORATE' | null {
-    if (amount === MpesaService.TIER_PRICING.STARTER) return 'STARTER';
-    if (amount === MpesaService.TIER_PRICING.BUSINESS) return 'BUSINESS';
-    if (amount === MpesaService.TIER_PRICING.CORPORATE) return 'CORPORATE';
-    return null;
+  /**
+   * Find the plan by payment amount using global PLANS config.
+   */
+  private getPlanByAmount(amount: number) {
+    return PLANS.find(plan => plan.price === amount) || null;
   }
 
   private async validateRequestAmount(amount: number): Promise<void> {
-    if (!Object.values(MpesaService.TIER_PRICING).includes(amount)) {
-      throw new Error('Invalid payment amount. Please select a valid subscription tier.');
+    // Only allow payment amounts that match a plan price
+    if (!PLANS.some(plan => plan.price === amount)) {
+      throw new Error('Invalid payment amount. Please select a valid subscription plan.');
     }
   }
 
@@ -118,11 +115,77 @@ export class MpesaService {
     throw new Error('Failed to initiate M-Pesa payment');
   }
 
+  /**
+   * Check if the current tenant is within their payment feature limits for their plan.
+   * Throws if over limit.
+   */
+  private async enforcePaymentLimits(orgId: string): Promise<void> {
+    // Get org and plan
+    const org = await this.prisma.organization.findUnique({
+      where: { id: orgId },
+      include: { plan: true },
+    });
+    const planId = org?.planId || 'free';
+    const plan = PLANS.find(p => p.id === planId) || PLANS[0];
+    // Find payment feature limit (example: number of payments per month)
+    const paymentFeature = plan.features.find(f => f.name === 'Payments');
+    if (paymentFeature?.limit) {
+      // Count payments this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
+      const count = await this.prisma.payment.count({
+        where: {
+          orgId,
+          createdAt: { gte: startOfMonth },
+          status: 'COMPLETED',
+        },
+      });
+      if (count >= paymentFeature.limit) {
+        throw new Error('Payment limit reached for your plan. Please upgrade to continue.');
+      }
+    }
+  }
+
+  /**
+   * Get payment usage/progress for the current tenant/plan (for progress bar/notification).
+   */
+  async getPaymentUsage(orgId: string): Promise<{ progress: number; limit: number; count: number }> {
+    // Get org and plan
+    const org = await this.prisma.organization.findUnique({
+      where: { id: orgId },
+      include: { plan: true },
+    });
+    const planId = org?.planId || 'free';
+    const plan = PLANS.find(p => p.id === planId) || PLANS[0];
+    // Find payment feature limit (example: number of payments per month)
+    const paymentFeature = plan.features.find(f => f.name === 'Payments');
+    let limit = paymentFeature?.limit || 0;
+    if (!limit) return { progress: 0, limit: 0, count: 0 }; // Unlimited or not monetized
+    // Count payments this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
+    const count = await this.prisma.payment.count({
+      where: {
+        orgId,
+        createdAt: { gte: startOfMonth },
+        status: 'COMPLETED',
+      },
+    });
+    const progress = Math.min(count / limit, 1);
+    return { progress, limit, count };
+  }
+
   async initiateSTKPush(
     userId: string,
     request: STKPushRequest,
-  ): Promise<STKPushResponse> {
+  ): Promise<STKPushResponse & { usage?: { progress: number; limit: number; count: number } }> {
     try {
+      // Use tenant context if available
+      const orgId = this.tenantContext.getTenantId() || (await this.prisma.user.findUnique({ where: { id: userId } }))?.orgId;
+      if (!orgId) throw new Error('Organization not found');
+      await this.enforcePaymentLimits(orgId); // Enforce plan limits
+      const usage = await this.getPaymentUsage(orgId); // Get usage for progress bar
+
       await this.validateRequestAmount(request.amount);
       const validatedPhone = await this.validatePhoneNumber(request.phoneNumber);
       
@@ -152,10 +215,10 @@ export class MpesaService {
         },
       );
 
-      // Determine tier
-      const tier = this.getTierByAmount(request.amount);
-      if (!tier) {
-        throw new Error('Invalid payment amount. Please select a valid subscription tier.');
+      // Determine plan by amount
+      const plan = this.getPlanByAmount(request.amount);
+      if (!plan) {
+        throw new Error('Invalid payment amount. Please select a valid subscription plan.');
       }
 
       // Find the user's organization
@@ -179,7 +242,7 @@ export class MpesaService {
           metadata: {
             accountReference: request.accountReference,
             transactionDesc: request.transactionDesc,
-            tier,
+            planId: plan.id,
           },
         },
       });
@@ -193,13 +256,13 @@ export class MpesaService {
         details: {
           provider: 'MPESA',
           amount: request.amount,
-          tier,
+          planId: plan.id,
           phoneNumber: request.phoneNumber,
           checkoutRequestId: response.data.CheckoutRequestID,
         },
       });
 
-      return response.data;
+      return { ...response.data, usage };
     } catch (error) {
       this.logger.error('Failed to initiate STK push', error);
       throw new Error('Failed to initiate M-Pesa payment');
@@ -208,7 +271,6 @@ export class MpesaService {
 
   async handleCallback(payload: MpesaCallbackPayload) {
     const { stkCallback } = payload.Body;
-    
     try {
       // Create callback record
       await this.prisma.mpesaCallback.create({
@@ -236,7 +298,7 @@ export class MpesaService {
         },
       });
 
-      // Update payment record and organization tier if payment is successful
+      // Update payment record and organization plan if payment is successful
       if (stkCallback.ResultCode === 0) {
         // Find the payment record
         const payment = await this.prisma.payment.findFirst({
@@ -245,9 +307,9 @@ export class MpesaService {
             status: 'PENDING',
           },
         });
-        let tier: 'STARTER' | 'BUSINESS' | 'CORPORATE' | null = null;
+        let plan = null;
         if (payment) {
-          tier = this.getTierByAmount(Number(payment.amount));
+          plan = this.getPlanByAmount(Number(payment.amount));
         }
 
         await this.prisma.payment.updateMany({
@@ -272,21 +334,19 @@ export class MpesaService {
             checkoutRequestId: stkCallback.CheckoutRequestID,
             mpesaReceiptNumber: this.extractMpesaReceiptNumber(stkCallback),
             amount: payment?.amount,
-            tier,
+            planId: plan?.id,
           },
         });
 
-        // Upgrade organization tier if payment is valid
-        if (payment && tier) {
+        // Upgrade organization plan if payment is valid
+        if (payment && plan) {
           // Find the user's organization
           const user = await this.prisma.user.findUnique({ where: { id: payment.userId } });
           if (user && user.orgId) {
             await this.prisma.organization.update({
               where: { id: user.orgId },
               data: {
-                subscriptionTier: tier,
-                subscriptionStatus: 'ACTIVE',
-                subscriptionUpdatedAt: new Date(),
+                planId: plan.id,
               },
             });
           }

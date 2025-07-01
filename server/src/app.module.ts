@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './infrastructure/persistence/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -12,6 +12,7 @@ import { WebsocketModule } from './interfaces/websocket/websocket.module';
 import { ApiKeyModule } from './modules/api-key/api-key.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { TenantContextGuard } from './common/guards/tenant-context.guard';
 
 @Module({
   imports: [
@@ -36,6 +37,10 @@ import { PaymentsModule } from './modules/payments/payments.module';
   ],
   providers: [
     DataGateway,
+    {
+      provide: APP_GUARD,
+      useClass: TenantContextGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: RateLimitInterceptor,

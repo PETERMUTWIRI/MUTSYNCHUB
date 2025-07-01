@@ -1,178 +1,86 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { UserService } from '../../user/user.service';
 import { PrismaService } from '../../../infrastructure/persistence/prisma/prisma.service';
-import { authenticator } from 'otplib';
-import { ConfigService } from '@nestjs/config';
-import * as QRCode from 'qrcode';
+import * as speakeasy from 'speakeasy';
+import * as qrcode from 'qrcode';
 
 @Injectable()
-export class MFAService {
+export class MfaService {
   constructor(
+    private readonly userService: UserService,
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
-  ) {
-    // Configure OTP library
-    authenticator.options = {
-      window: 1, // Allow 30 seconds of time drift
-      step: 30,  // 30-second time step
-    };
-  }
+  ) {}
 
-  async generateSecret(userId: string): Promise<{ secret: string; qrCode: string }> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { organization: true },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    const secret = authenticator.generateSecret();
-    const appName = this.configService.get('APP_NAME', 'MutsynHub');
-    const otpauth = authenticator.keyuri(user.email, appName, secret);
-
-    // Generate QR code
-    const qrCode = await QRCode.toDataURL(otpauth);
-
-    // Store secret temporarily (user needs to verify it before it's activated)
+  async generateMfaSecret(userId: string) {
+    const secret = speakeasy.generateSecret({ length: 20 });
     await this.prisma.user.update({
       where: { id: userId },
-      data: {
-        mfaPendingSecret: secret,
-      },
+      data: { mfaPendingSecret: secret.base32 },
     });
-
-    return {
-      secret,
-      qrCode,
-    };
+    const otpauthUrl = secret.otpauth_url;
+    const qrCode = await qrcode.toDataURL(otpauthUrl);
+    return { secret: secret.base32, otpauthUrl, qrCode };
   }
 
-  async verifyAndEnableMFA(userId: string, token: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user || !user.mfaPendingSecret) {
-      throw new UnauthorizedException('Invalid setup state');
-    }
-
-    const isValid = authenticator.verify({
-      token,
+  async enableMfa(userId: string, token: string) {
+    const user = await this.userService.findById(userId);
+    if (!user?.mfaPendingSecret) throw new BadRequestException('No pending MFA setup.');
+    const verified = speakeasy.totp.verify({
       secret: user.mfaPendingSecret,
+      encoding: 'base32',
+      token,
     });
-
-    if (!isValid) {
-      throw new UnauthorizedException('Invalid MFA token');
-    }
-
-    // Enable MFA and store the verified secret
+    if (!verified) throw new UnauthorizedException('Invalid MFA token.');
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        mfaEnabled: true,
         mfaSecret: user.mfaPendingSecret,
         mfaPendingSecret: null,
-        mfaBackupCodes: this.generateBackupCodes(),
+        mfaEnabled: true,
+        mfaBackupCodes: JSON.stringify(this.generateBackupCodes()),
       },
     });
-
-    // Log MFA enablement
-    await this.prisma.auditLog.create({
-      data: {
-        userId,
-        action: 'MFA_ENABLED',
-        resource: 'USER',
-        details: {
-          method: 'TOTP',
-        },
-      },
-    });
-
-    return true;
+    return { enabled: true };
   }
 
-  async validateToken(userId: string, token: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user || !user.mfaSecret) {
-      throw new UnauthorizedException('MFA not configured');
-    }
-
-    // Check if it's a backup code
-    if (user.mfaBackupCodes?.includes(token)) {
-      // Remove used backup code
-      const updatedBackupCodes = user.mfaBackupCodes.filter(code => code !== token);
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          mfaBackupCodes: updatedBackupCodes,
-        },
-      });
-
-      await this.prisma.auditLog.create({
-        data: {
-          userId,
-          action: 'MFA_BACKUP_CODE_USED',
-          resource: 'AUTH',
-          details: {
-            remainingCodes: updatedBackupCodes.length,
-          },
-        },
-      });
-
-      return true;
-    }
-
-    // Validate TOTP token
-    return authenticator.verify({
-      token,
-      secret: user.mfaSecret,
-    });
-  }
-
-  async disableMFA(userId: string, token: string): Promise<boolean> {
-    const isValid = await this.validateToken(userId, token);
-    if (!isValid) {
-      throw new UnauthorizedException('Invalid MFA token');
-    }
-
+  async disableMfa(userId: string) {
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        mfaEnabled: false,
         mfaSecret: null,
+        mfaEnabled: false,
         mfaBackupCodes: null,
       },
     });
+    return { disabled: true };
+  }
 
-    await this.prisma.auditLog.create({
-      data: {
-        userId,
-        action: 'MFA_DISABLED',
-        resource: 'USER',
-        details: {},
-      },
+  async verifyMfa(userId: string, token: string) {
+    const user = await this.userService.findById(userId);
+    if (!user?.mfaSecret) throw new UnauthorizedException('MFA not enabled.');
+    const verified = speakeasy.totp.verify({
+      secret: user.mfaSecret,
+      encoding: 'base32',
+      token,
     });
-
-    return true;
+    return { verified };
   }
 
-  private generateBackupCodes(count = 10): string[] {
-    const codes = [];
-    for (let i = 0; i < count; i++) {
-      codes.push(this.generateBackupCode());
-    }
-    return codes;
+  async useBackupCode(userId: string, code: string) {
+    const user = await this.userService.findById(userId);
+    if (!user?.mfaBackupCodes) throw new UnauthorizedException('No backup codes.');
+    const codes: string[] = JSON.parse(user.mfaBackupCodes);
+    if (!codes.includes(code)) throw new UnauthorizedException('Invalid backup code.');
+    // Remove used code
+    const newCodes = codes.filter(c => c !== code);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { mfaBackupCodes: JSON.stringify(newCodes) },
+    });
+    return { used: true, remaining: newCodes.length };
   }
 
-  private generateBackupCode(): string {
-    return Array.from({ length: 4 }, () =>
-      Math.floor(Math.random() * 10000)
-        .toString()
-        .padStart(4, '0')
-    ).join('-');
+  private generateBackupCodes(): string[] {
+    return Array.from({ length: 5 }, () => Math.random().toString(36).slice(-8));
   }
 }
