@@ -2,6 +2,7 @@
 import { Outlet } from 'react-router-dom'; // Add this import
 import Navbar from './components/ui/Navbar';
 import Footer from './components/ui/Footer';
+import AIFloatingWidget from './components/ui/AIFloatingWidget';
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Outlet /> {/* This will now work */}
       </main>
       <Footer />
+      <AIFloatingWidget />
     </div>
   );
 }
