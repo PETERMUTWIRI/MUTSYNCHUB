@@ -16,7 +16,7 @@ export class PythonService {
     try {
       await fs.mkdir(this.scriptsPath, { recursive: true });
     } catch (error) {
-      this.logger.error(`Error creating scripts directory: ${error.message}`);
+      this.logger.error(`Error creating scripts directory: ${(error as any).message}`);
     }
   }
 
@@ -51,12 +51,12 @@ export class PythonService {
           try {
             resolve(JSON.parse(result));
           } catch (e) {
-            reject(new Error(`Failed to parse Prophet output: ${e.message}`));
+            reject(new Error(`Failed to parse Prophet output: ${(e as any).message}`));
           }
         });
       });
     } catch (error) {
-      this.logger.error(`Error running Prophet forecast: ${error.message}`);
+      this.logger.error(`Error running Prophet forecast: ${(error as any).message}`);
       throw error;
     }
   }
@@ -180,12 +180,53 @@ if __name__ == '__main__':
           try {
             resolve(JSON.parse(result));
           } catch (e) {
-            reject(new Error(`Failed to parse EDA output: ${e.message}`));
+            reject(new Error(`Failed to parse EDA output: ${(e as any).message}`));
           }
         });
       });
     } catch (error) {
-      this.logger.error(`Error running automated EDA: ${error.message}`);
+      this.logger.error(`Error running automated EDA: ${(error as any).message}`);
+      throw error;
+    }
+  }
+
+  // List supported industries and analysis types
+  async listSupportedIndustriesAndTypes(): Promise<any> {
+    try {
+      const scriptPath = path.join(this.scriptsPath, 'automated_eda.py');
+      await this.createEDAScript();
+
+      const pythonProcess = spawn('python3', [
+        scriptPath,
+        '--list-supported'
+      ]);
+
+      let result = '';
+      let error = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        result += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      return new Promise((resolve, reject) => {
+        pythonProcess.on('close', (code) => {
+          if (code !== 0) {
+            reject(new Error(`List supported script failed: ${error}`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(result));
+          } catch (e) {
+            reject(new Error(`Failed to parse supported industries/types output: ${(e as any).message}`));
+          }
+        });
+      });
+    } catch (error) {
+      this.logger.error(`Error listing supported industries/types: ${(error as any).message}`);
       throw error;
     }
   }
@@ -199,6 +240,19 @@ import numpy as np
 from scipy import stats
 import warnings
 warnings.filterwarnings('ignore')
+
+SUPPORTED_INDUSTRIES = [
+    'finance', 'retail', 'healthcare', 'manufacturing', 'technology', 'energy', 'education', 'transportation', 'hospitality', 'real_estate'
+]
+SUPPORTED_ANALYSIS_TYPES = [
+    'eda', 'forecasting', 'anomaly_detection', 'correlation', 'distribution', 'time_patterns'
+]
+
+def list_supported():
+    return {
+        'industries': SUPPORTED_INDUSTRIES,
+        'analysis_types': SUPPORTED_ANALYSIS_TYPES
+    }
 
 def run_automated_eda(data, params):
     # Convert input data to DataFrame
@@ -264,12 +318,12 @@ def get_distributions(df):
     return distributions
 
 def get_time_patterns(df, params):
-    time_patterns = {}
-    date_columns = params.get('date_columns', [])
+    time_patterns = {};
+    date_columns = params.get('date_columns', []);
     
     for date_col in date_columns:
         if date_col in df.columns:
-            df[date_col] = pd.to_datetime(df[date_col])
+            df[date_col] = pd.to_datetime(df[date_col]);
             patterns = {
                 'daily_patterns': df.groupby(df[date_col].dt.hour).size().to_dict(),
                 'weekly_patterns': df.groupby(df[date_col].dt.dayofweek).size().to_dict(),
@@ -301,6 +355,9 @@ def detect_anomalies(df):
     return anomalies
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == '--list-supported':
+        print(json.dumps(list_supported()))
+        sys.exit(0)
     # Read input data and parameters
     data = json.loads(sys.argv[1])
     params = json.loads(sys.argv[2])
@@ -314,5 +371,62 @@ if __name__ == '__main__':
 
     const scriptPath = path.join(this.scriptsPath, 'automated_eda.py');
     await fs.writeFile(scriptPath, scriptContent);
+  }
+
+  // Unified analytics engine runner
+  async runUnifiedAnalytics({ data, type, industry, parameters, metrics }: {
+    data: any;
+    type: string;
+    industry?: string;
+    parameters: Record<string, any>;
+    metrics: string[];
+  }): Promise<any> {
+    try {
+      // Path to the unified analytics_service.py
+      const scriptPath = path.join(this.scriptsPath, 'analytics_service.py');
+      // Optionally ensure the script exists or is up to date here
+      // await this.createAnalyticsServiceScript(); // If you generate it dynamically
+
+      const args = [
+        scriptPath,
+        '--data', JSON.stringify(data),
+        '--type', type,
+        '--parameters', JSON.stringify(parameters),
+        '--metrics', JSON.stringify(metrics)
+      ];
+      if (industry) {
+        args.push('--industry', industry);
+      }
+
+      const pythonProcess = spawn('python3', args);
+
+      let result = '';
+      let error = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        result += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      return new Promise((resolve, reject) => {
+        pythonProcess.on('close', (code) => {
+          if (code !== 0) {
+            reject(new Error(`Unified analytics engine failed: ${error}`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(result));
+          } catch (e) {
+            reject(new Error(`Failed to parse analytics engine output: ${(e as any).message}`));
+          }
+        });
+      });
+    } catch (error) {
+      this.logger.error(`Error running unified analytics engine: ${(error as any).message}`);
+      throw error;
+    }
   }
 }

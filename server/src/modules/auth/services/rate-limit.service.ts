@@ -53,6 +53,9 @@ export class RateLimitService {
       data: {
         identifier,
         ipAddress,
+        action: 'AUTH',
+        count: 1,
+        expiresAt: new Date(now.getTime() + this.windowMs),
       },
     });
 
@@ -63,6 +66,9 @@ export class RateLimitService {
         data: {
           identifier,
           ipAddress,
+          action: 'AUTH',
+          count: this.maxAttempts,
+          expiresAt: new Date(now.getTime() + this.windowMs),
           blockedUntil,
         },
       });

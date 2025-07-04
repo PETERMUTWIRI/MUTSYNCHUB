@@ -226,4 +226,63 @@ export class DataSourceService {
 
     return dataSources;
   }
+
+  // --- STUBS FOR CONTROLLER METHODS ---
+  async update(id: string, updateDto: any) {
+    this.logger.log(`Updating data source: ${id}`);
+    const dataSource = await this.prisma.dataSource.findUnique({ where: { id } });
+    if (!dataSource) {
+      throw new NotFoundException('Data source not found');
+    }
+    // Optionally validate updateDto fields here
+    const updated = await this.prisma.dataSource.update({
+      where: { id },
+      data: updateDto,
+    });
+    // Invalidate cache
+    await this.cacheManager.del(`org:${updated.orgId}:dataSources`);
+    // Emit event
+    this.eventEmitter.emit('dataSource.updated', { id, updateDto });
+    this.logger.log(`Data source updated: ${id}`);
+    return updated;
+  }
+
+  async delete(id: string) {
+    this.logger.log(`Deleting data source: ${id}`);
+    const dataSource = await this.prisma.dataSource.findUnique({ where: { id } });
+    if (!dataSource) {
+      throw new NotFoundException('Data source not found');
+    }
+    // Delete related dataStreams first (if any)
+    await this.prisma.dataStream.deleteMany({ where: { dataSourceId: id } });
+    // Delete the data source
+    await this.prisma.dataSource.delete({ where: { id } });
+    // Invalidate cache
+    await this.cacheManager.del(`org:${dataSource.orgId}:dataSources`);
+    // Emit event
+    this.eventEmitter.emit('dataSource.deleted', { id, orgId: dataSource.orgId });
+    this.logger.log(`Data source deleted: ${id}`);
+    return { message: 'Deleted', id };
+  }
+
+  async createStream(id: string, createDto: any) {
+    this.logger.log(`Creating data stream for data source: ${id}`);
+    const dataSource = await this.prisma.dataSource.findUnique({ where: { id } });
+    if (!dataSource) {
+      throw new NotFoundException('Data source not found');
+    }
+    // Optionally validate createDto fields here
+    const dataStream = await this.prisma.dataStream.create({
+      data: {
+        ...createDto,
+        dataSourceId: id,
+      },
+    });
+    // Invalidate cache
+    await this.cacheManager.del(`org:${dataSource.orgId}:dataSources`);
+    // Emit event
+    this.eventEmitter.emit('dataStream.created', { dataStream, dataSourceId: id, orgId: dataSource.orgId });
+    this.logger.log(`Data stream created for data source: ${id}`);
+    return dataStream;
+  }
 }

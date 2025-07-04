@@ -1,23 +1,22 @@
 import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { SubscriptionTierGuard, RequiredSubscriptionTier } from '../../common/guards/subscription-tier.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AnalyticsScheduleService } from './analytics-schedule.service';
-import { AnalyticsService } from './analytics.service';
-import { QueryInterpreterService } from './services/query-interpreter.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { CreateScheduleDto, UpdateScheduleDto } from './dto/analytics-schedule.dto';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { TenantContextService } from '../../common/services/tenant-context.service';
+import { AnalyticsAgentService } from '../../agents/analytics-agent.service';
 
 @ApiTags('analytics')
 @Controller('analytics')
-@UseGuards(JwtAuthGuard, SubscriptionTierGuard)
+@UseGuards(JwtAuthGuard)
 export class AnalyticsController {
   constructor(
     private readonly analyticsScheduleService: AnalyticsScheduleService,
-    private readonly analyticsService: AnalyticsService,
-    private readonly queryInterpreterService: QueryInterpreterService,
     private readonly prisma: PrismaService,
+    private readonly tenantContext: TenantContextService, // Inject tenant context
+    private readonly analyticsAgent: AnalyticsAgentService, // Inject analytics agent
   ) {}
 
   @Post('schedule')
@@ -25,7 +24,7 @@ export class AnalyticsController {
   @ApiResponse({ status: 201, description: 'Schedule created successfully' })
   async createSchedule(@Body() data: CreateScheduleDto) {
     // Frequency limits are enforced in the service
-    return this.analyticsScheduleService.createSchedule(data.orgId, {
+    return this.analyticsScheduleService.createSchedule({
       frequency: data.frequency,
       interval: data.interval,
     });
@@ -55,55 +54,18 @@ export class AnalyticsController {
   @Post('query')
   @ApiOperation({ summary: 'Process natural language analytics query' })
   @ApiResponse({ status: 200, description: 'Query processed successfully' })
-  @RequiredSubscriptionTier('BUSINESS')
   async processQuery(@Body() queryDto: AnalyticsQueryDto) {
-    // First, interpret the query using LLM
-    const interpretation = await this.queryInterpreterService.interpretQuery(queryDto.query);
-
-    // If the query is a forecasting request, restrict to BUSINESS and CORPORATE
-    if (interpretation.analysisType === 'forecasting') {
-      // The guard will enforce BUSINESS+ access
-    }
-
-    // Get the dataset or use all available datasets
-    const datasets = queryDto.datasetId
-      ? [await this.prisma.dataset.findUnique({ where: { id: queryDto.datasetId } })]
-      : await this.prisma.dataset.findMany({ where: { orgId: queryDto.orgId } });
-
-    // Process each dataset with the interpreted query
-    const results = await Promise.all(datasets.map(async (dataset) => {
-      const analysisResult = await this.analyticsService.performAnalysis({
-        dataset,
-        type: interpretation.analysisType,
-        parameters: interpretation.parameters,
-        metrics: interpretation.metrics,
-      });
-
-      // Store the result
-      await this.prisma.analyticsReport.create({
-        data: {
-          name: `Query Analysis - ${interpretation.analysisType}`,
-          description: queryDto.query,
-          orgId: queryDto.orgId,
-          type: 'query',
-          config: {
-            query: queryDto.query,
-            interpretation,
-          },
-          results: analysisResult as any,  // TODO: Define proper type for analysis results
-        },
-      });
-
-      return {
-        datasetName: dataset.name,
-        result: analysisResult,
-      };
-    }));
-
-    return {
-      interpretation,
-      results,
-    };
+    // Only fetch from stored reports, do not invoke agent or run new analytics
+    const orgId = this.tenantContext.getTenantId() || queryDto.orgId;
+    // Optionally filter by datasetId or query string
+    const where: any = { orgId, type: 'query' };
+    if (queryDto.datasetId) where['config'] = { path: ['datasetId'], equals: queryDto.datasetId };
+    if (queryDto.query) where['description'] = { contains: queryDto.query };
+    const reports = await this.prisma.analyticsReport.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+    return { reports };
   }
 
   @Get('query/history/:orgId')
@@ -118,5 +80,15 @@ export class AnalyticsController {
         createdAt: 'desc',
       },
     });
+  }
+
+  @Get('supported-options')
+  async getSupportedOptions() {
+    // If you want to keep this endpoint, fetch options directly from the database or config
+    // Example: return supported industries/types from config or a static list
+    return {
+      industries: ['retail', 'finance', 'healthcare', 'manufacturing'],
+      types: ['automated_eda', 'forecasting', 'full_analysis', 'comprehensive']
+    };
   }
 }

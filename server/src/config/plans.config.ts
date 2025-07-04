@@ -2,6 +2,7 @@ export type PlanFeature = {
   name: string;
   description: string;
   limit?: number;
+  allowedFrequencies?: string[]; // Add this line
 };
 
 export type Plan = {
@@ -22,7 +23,7 @@ export const PLANS: Plan[] = [
     currency: 'USD',
     features: [
       { name: 'Agent Queries', description: 'Monthly queries to the agent', limit: 15 },
-      { name: 'Scheduling', description: 'Number of scheduled reports', limit: 2 },
+      { name: 'Scheduling', description: 'Number of scheduled reports', limit: 2, allowedFrequencies: ['weekly'] },
       { name: 'Analytics', description: 'Basic analytics dashboard' },
     ],
   },
@@ -34,7 +35,7 @@ export const PLANS: Plan[] = [
     currency: 'USD',
     features: [
       { name: 'Agent Queries', description: 'Monthly queries to the agent', limit: 500 },
-      { name: 'Scheduling', description: 'Number of scheduled reports', limit: 20 },
+      { name: 'Scheduling', description: 'Number of scheduled reports', limit: 20, allowedFrequencies: ['daily', 'weekly'] },
       { name: 'Analytics', description: 'Advanced analytics dashboard' },
       { name: 'Priority Support', description: 'Faster support response' },
     ],
@@ -47,7 +48,7 @@ export const PLANS: Plan[] = [
     currency: 'USD',
     features: [
       { name: 'Agent Queries', description: 'Monthly queries to the agent', limit: 5000 },
-      { name: 'Scheduling', description: 'Number of scheduled reports', limit: 100 },
+      { name: 'Scheduling', description: 'Number of scheduled reports', limit: 100, allowedFrequencies: ['hourly', 'daily', 'weekly', 'monthly', 'custom'] },
       { name: 'Analytics', description: 'Full analytics suite' },
       { name: 'Priority Support', description: '24/7 support' },
       { name: 'Custom Integrations', description: 'Integrate with your stack' },

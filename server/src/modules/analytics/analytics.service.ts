@@ -3,8 +3,9 @@ import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.se
 import { DataGateway } from '../../interfaces/websocket/data.gateway';
 import { Dataset } from '@prisma/client';
 import { AuditLoggerService } from '../../common/services/audit-logger.service';
-import { spawn } from 'child_process';
 import * as path from 'path';
+import { PythonService } from '../../infrastructure/ml/python.service';
+import { AnalyticsAgentService } from '../../agents/analytics-agent.service';
 
 @Injectable()
 export class AnalyticsService {
@@ -14,9 +15,15 @@ export class AnalyticsService {
     private readonly prisma: PrismaService,
     private readonly dataGateway: DataGateway,
     private readonly auditLogger: AuditLoggerService,
+    private readonly pythonService: PythonService, // Inject PythonService
+    private readonly analyticsAgent: AnalyticsAgentService, // Inject analytics agent
   ) {
     // Path to the Python virtual environment
     this.pythonPath = path.join(process.cwd(), 'venv', 'bin', 'python');
+  }
+
+  async getSupportedIndustriesAndTypes() {
+    return this.pythonService.listSupportedIndustriesAndTypes();
   }
 
   async processDataStream(orgId: string, streamId: string, data: any) {
@@ -50,17 +57,58 @@ export class AnalyticsService {
     }
   }
 
+  // Use the agent for all analytics queries (no separate query interpreter)
+  async agentDrivenAnalysis(query: string, orgId: string, userId?: string, dataset?: any, planId?: string, ipAddress?: string, userAgent?: string) {
+    // Use the production-ready analytics agent to interpret the query
+    const agentInput = {
+      question: query,
+      tenantId: orgId,
+      userId,
+      // Add more context as needed (userName, userRole, jwt, etc.)
+    };
+    const agentResult = await this.analyticsAgent.answer(agentInput);
+    // Parse agentResult.message for structured fields (fallbacks if not present)
+    let analysisType = 'automated_eda';
+    let industry = (dataset?.industry) || 'general';
+    let parameters = {};
+    let metrics: string[] = [];
+    try {
+      const parsed = JSON.parse(agentResult.message);
+      analysisType = parsed.analysisType || analysisType;
+      industry = parsed.industry || industry;
+      parameters = parsed.parameters || parameters;
+      metrics = parsed.metrics || metrics;
+    } catch {
+      // If not JSON, fallback to defaults
+    }
+    // Call performAnalysis with extracted fields
+    return this.performAnalysis({
+      dataset,
+      type: analysisType,
+      industry,
+      parameters,
+      metrics,
+      orgId,
+      userId,
+      planId,
+      ipAddress,
+      userAgent,
+    });
+  }
+
   async performAnalysis(params: {
-    dataset: Dataset;
+    dataset: any;
     type: string;
+    industry?: string;
     parameters: Record<string, any>;
     metrics: string[];
-    userId?: string;
     orgId?: string;
+    userId?: string;
+    planId?: string;
     ipAddress?: string;
     userAgent?: string;
   }) {
-    const { dataset, type, parameters, metrics, userId, orgId, ipAddress, userAgent } = params;
+    const { dataset, type, parameters, metrics, userId, orgId, ipAddress, userAgent, industry } = params;
 
     // Basic validation
     if (!dataset) {
@@ -86,52 +134,15 @@ export class AnalyticsService {
     }
 
     return new Promise((resolve, reject) => {
-      // Call Python analytics service
-      const pythonProcess = spawn(this.pythonPath, [
-        '-m', 'src.infrastructure.ml.industry_analytics_service',
-        '--data', JSON.stringify(dataset.data),
-        '--type', type,
-        '--parameters', JSON.stringify(parameters),
-        '--metrics', JSON.stringify(metrics)
-      ]);
-
-      let result = '';
-      let error = '';
-
-      pythonProcess.stdout.on('data', (data) => {
-        result += data.toString();
-      });
-
-      pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
-      });
-
-      pythonProcess.on('close', async (code) => {
-        if (code !== 0) {
-          // Audit log: analysis failed
-          if (userId) {
-            await this.auditLogger.log({
-              userId,
-              orgId,
-              action: 'analytics_run_failure',
-              resource: 'analytics',
-              details: {
-                datasetId: dataset.id,
-                type,
-                parameters,
-                metrics,
-                error,
-              },
-              ipAddress,
-              userAgent,
-            });
-          }
-          reject(new Error(`Analytics process failed: ${error}`));
-          return;
-        }
-
-        try {
-          const analysisResult = JSON.parse(result);
+      // Call unified Python analytics engine via PythonService
+      this.pythonService.runUnifiedAnalytics({
+        data: dataset.data,
+        type,
+        industry,
+        parameters,
+        metrics
+      })
+        .then(async (analysisResult) => {
           // Audit log: analysis success
           if (userId) {
             await this.auditLogger.log({
@@ -151,8 +162,9 @@ export class AnalyticsService {
             });
           }
           resolve(analysisResult);
-        } catch (e) {
-          // Audit log: parse failure
+        })
+        .catch(async (error) => {
+          // Audit log: analysis failed
           if (userId) {
             await this.auditLogger.log({
               userId,
@@ -164,51 +176,24 @@ export class AnalyticsService {
                 type,
                 parameters,
                 metrics,
-                error: 'Failed to parse analytics result',
+                error: error.message,
               },
               ipAddress,
               userAgent,
             });
           }
-          reject(new Error('Failed to parse analytics result'));
-        }
-      });
+          reject(new Error(`Analytics process failed: ${error.message}`));
+        });
     });
   }
 
   private async applyTransformations(data: any, transformations: Record<string, any>) {
     // Call Python service for transformations
-    return new Promise((resolve, reject) => {
-      const pythonProcess = spawn(this.pythonPath, [
-        '-m', 'src.infrastructure.ml.data_transformation',
-        '--data', JSON.stringify(data),
-        '--transformations', JSON.stringify(transformations)
-      ]);
-
-      let result = '';
-      let error = '';
-
-      pythonProcess.stdout.on('data', (data) => {
-        result += data.toString();
-      });
-
-      pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
-      });
-
-      pythonProcess.on('close', (code) => {
-        if (code !== 0) {
-          reject(new Error(`Transformation failed: ${error}`));
-          return;
-        }
-
-        try {
-          const transformedData = JSON.parse(result);
-          resolve(transformedData);
-        } catch (e) {
-          reject(new Error('Failed to parse transformed data'));
-        }
-      });
+    return this.pythonService.runUnifiedAnalytics({
+      data,
+      type: 'transformation',
+      parameters: { transformations },
+      metrics: [],
     });
   }
 }

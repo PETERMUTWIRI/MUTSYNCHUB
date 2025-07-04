@@ -164,7 +164,7 @@ model IndustrySchema {
   name          String
   description   String?
   schema        Json        // Field definitions and transformations
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime     @default(now())
   updatedAt     DateTime    @updatedAt
 }
 
@@ -274,6 +274,22 @@ model Plan {
   currency    String   @default("USD")
   features    Json     // Store features/limits as JSON
   organizations Organization[]
+}
+
+// Rate Limiting
+model RateLimit {
+  id           String   @id @default(uuid())
+  identifier   String
+  action       String
+  count        Int
+  expiresAt    DateTime
+  blockedUntil DateTime?
+  ipAddress    String?  // Added for IP-based rate limiting
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([identifier])
+  @@index([action])
 }
 
 // Enums

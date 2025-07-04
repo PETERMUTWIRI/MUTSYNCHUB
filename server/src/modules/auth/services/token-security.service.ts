@@ -124,10 +124,7 @@ export class TokenSecurityService {
 
       return true;
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      this.logger.error(`Token validation error: ${error.message}`, error.stack);
+      this.logger.error(`Token validation error: ${(error as any).message}`, (error as any).stack);
       throw new UnauthorizedException('Token validation failed');
     }
   }
@@ -187,7 +184,7 @@ export class TokenSecurityService {
         },
       });
     } catch (error) {
-      this.logger.error(`Token revocation error: ${error.message}`, error.stack);
+      this.logger.error(`Token revocation error: ${(error as any).message}`, (error as any).stack);
       throw new UnauthorizedException('Token revocation failed');
     }
   }

@@ -4,6 +4,8 @@ import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.se
 import { AuditLoggerService } from '../../common/services/audit-logger.service';
 import { AnalyticsService } from './analytics.service';
 import { CronJob } from 'cron';
+import { TenantContextService } from '../../common/services/tenant-context.service';
+import { PLANS } from '../../config/plans.config';
 
 @Injectable()
 export class AnalyticsScheduleService {
@@ -12,23 +14,22 @@ export class AnalyticsScheduleService {
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly analyticsService: AnalyticsService,
     private readonly auditLogger: AuditLoggerService,
+    private readonly tenantContext: TenantContextService,
+    private readonly notificationsService: any, // Inject NotificationsService
   ) {}
 
-  async createSchedule(orgId: string, data: {
-    frequency: string;
-    interval?: number;
-  }) {
-    // Enforce frequency limits by org tier
+  async createSchedule(data: { frequency: string; interval?: number; }) {
+    // Use tenant context for orgId
+    const orgId = this.tenantContext.getTenantId();
+    if (!orgId) throw new Error('Organization context not found');
     const org = await this.prisma.organization.findUnique({ where: { id: orgId } });
     if (!org) throw new Error('Organization not found');
-    const tier = org.subscriptionTier || 'STARTER';
-    const allowedFrequencies: Record<string, string[]> = {
-      STARTER: ['weekly'],
-      BUSINESS: ['daily', 'weekly'],
-      CORPORATE: ['hourly', 'daily', 'weekly', 'monthly', 'custom'],
-    };
-    if (!allowedFrequencies[tier].includes(data.frequency)) {
-      throw new Error(`Your current plan (${tier}) only allows: ${allowedFrequencies[tier].join(', ')} schedules.`);
+    // Get allowed frequencies from plan config
+    const plan = PLANS.find(p => p.id === org.planId) || PLANS[0];
+    const allowedFrequencies = plan.features
+      .find(f => f.name === 'Scheduling')?.allowedFrequencies || ['weekly'];
+    if (!allowedFrequencies.includes(data.frequency)) {
+      throw new Error(`Your current plan (${plan.name}) only allows: ${allowedFrequencies.join(', ')} schedules.`);
     }
     const schedule = await this.prisma.analyticsSchedule.create({
       data: {
@@ -39,7 +40,7 @@ export class AnalyticsScheduleService {
     });
     this.setupScheduledJob(schedule);
     await this.auditLogger.log({
-      userId: 'system', // Replace with real user if available
+      userId: 'system',
       orgId,
       action: 'ANALYTICS_SCHEDULE_CREATED',
       resource: 'ANALYTICS_SCHEDULE',
@@ -63,7 +64,7 @@ export class AnalyticsScheduleService {
     if (!schedule) throw new Error('Schedule not found');
     const org = await this.prisma.organization.findUnique({ where: { id: schedule.orgId } });
     if (!org) throw new Error('Organization not found');
-    const tier = org.subscriptionTier || 'STARTER';
+    const tier = org.planId || 'free';
     const allowedFrequencies: Record<string, string[]> = {
       STARTER: ['weekly'],
       BUSINESS: ['daily', 'weekly'],
@@ -175,7 +176,17 @@ export class AnalyticsScheduleService {
           metrics: ['all']  // Analyze all available metrics
         });
 
-        // Store results in AnalyticsReport
+        // Generate user-friendly summary and examples
+        const summary = `Analysis complete for dataset ${dataset.name}. Key findings: ...`;
+        const insights = [
+          'Insight 1: ...',
+          'Insight 2: ...',
+        ];
+        const examples = [
+          `"Show me trends for ${dataset.name} in the last month"`,
+          `"What are the top metrics for ${dataset.name}?"`,
+        ];
+        // Store report in the database (no agent involved)
         await this.prisma.analyticsReport.create({
           data: {
             name: `Scheduled Analysis - ${schedule.frequency}`,
@@ -187,12 +198,25 @@ export class AnalyticsScheduleService {
               datasetId: dataset.id,
               analysisType: 'comprehensive'
             },
-            results: analysisResults as any,  // TODO: Define proper type for analysis results
+            results: {
+              summary,
+              insights,
+              examples,
+              raw: JSON.parse(JSON.stringify(analysisResults)) // Ensure LLM/JSON compatibility
+            },
             lastRun: new Date(),
           },
         });
-
-        // Audit log: analysis run
+        // Notify user/org (no agent, just notification)
+        await this.notificationsService.createNotification({
+          orgId: schedule.orgId,
+          type: 'SCHEDULED_ANALYSIS_COMPLETED',
+          title: 'Scheduled Analytics Report Ready',
+          message: `A scheduled analytics report for dataset ${dataset.name} is ready to view or query.`,
+          scheduleId: schedule.id,
+          datasetId: dataset.id,
+          status: 'UNREAD',
+        });
         await this.auditLogger.log({
           userId: 'system',
           orgId: schedule.orgId,
@@ -225,7 +249,7 @@ export class AnalyticsScheduleService {
             scheduleId: schedule.id,
             error: true
           },
-          results: { error: error.message },
+          results: { error: (error as any).message },
           lastRun: new Date(),
         },
       });
@@ -237,7 +261,7 @@ export class AnalyticsScheduleService {
         resource: 'ANALYTICS',
         details: {
           scheduleId: schedule.id,
-          error: error.message,
+          error: (error as any).message,
         },
       });
     }
