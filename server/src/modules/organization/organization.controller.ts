@@ -3,19 +3,24 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { OrganizationService } from './organization.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OrgStatus } from '@prisma/client';
+import { TenantContextService } from '../../common/services/tenant-context.service';
 
 @ApiTags('Organizations')
 @Controller('organizations')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class OrganizationController {
-  constructor(private readonly organizationService: OrganizationService) {}
+  constructor(
+    private readonly organizationService: OrganizationService,
+    private readonly tenantContext: TenantContextService,
+  ) {}
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get organization by ID' })
+  @Get(':id?')
+  @ApiOperation({ summary: 'Get organization by ID or current tenant' })
   @ApiResponse({ status: 200, description: 'Organization found' })
-  async findById(@Param('id') id: string) {
-    return this.organizationService.findById(id);
+  async findById(@Param('id') id?: string) {
+    // If no id provided, use tenant context
+    return this.organizationService.findById(id || this.tenantContext.getTenantId());
   }
 
   @Get('subdomain/:subdomain')
@@ -25,7 +30,7 @@ export class OrganizationController {
     return this.organizationService.findBySubdomain(subdomain);
   }
 
-  @Put(':id')
+  @Put(':id?')
   @ApiOperation({ summary: 'Update organization' })
   @ApiResponse({ status: 200, description: 'Organization updated' })
   async update(
@@ -36,13 +41,15 @@ export class OrganizationController {
       status?: OrgStatus;
     },
   ) {
-    return this.organizationService.update(id, updateDto);
+    // Use tenant context if id is not provided
+    return this.organizationService.update(id || this.tenantContext.getTenantId(), updateDto);
   }
 
-  @Delete(':id')
+  @Delete(':id?')
   @ApiOperation({ summary: 'Delete organization' })
   @ApiResponse({ status: 200, description: 'Organization deleted' })
-  async delete(@Param('id') id: string) {
-    return this.organizationService.delete(id);
+  async delete(@Param('id') id?: string) {
+    // Use tenant context if id is not provided
+    return this.organizationService.delete(id || this.tenantContext.getTenantId());
   }
 }

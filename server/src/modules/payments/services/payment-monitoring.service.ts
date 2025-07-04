@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/persistence/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import * as moment from 'moment';
+import  moment from 'moment';
+import { TenantContextService } from '../../../common/services/tenant-context.service';
 
 @Injectable()
 export class PaymentMonitoringService {
@@ -10,6 +11,7 @@ export class PaymentMonitoringService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly tenantContext: TenantContextService,
   ) {}
 
   async monitorPendingPayments(): Promise<void> {
@@ -58,12 +60,20 @@ export class PaymentMonitoringService {
       const yesterday = moment().subtract(1, 'day').startOf('day');
       const today = moment().startOf('day');
 
+      // Get tenant/organization context
+      const organizationId = this.tenantContext.getTenantId();
+      if (!organizationId) {
+        this.logger.error('No tenant/organization context found for reconciliation report');
+        return;
+      }
+
       const payments = await this.prisma.payment.findMany({
         where: {
           createdAt: {
             gte: yesterday.toDate(),
             lt: today.toDate(),
           },
+          orgId: organizationId,
         },
       });
 
@@ -88,6 +98,7 @@ export class PaymentMonitoringService {
           failedTransactions: summary.failedTransactions,
           totalAmount: summary.totalAmount,
           metadata: summary,
+          organization: { connect: { id: organizationId } },
         },
       });
     } catch (error) {

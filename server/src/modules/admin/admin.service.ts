@@ -46,7 +46,7 @@ export class AdminService {
     if (!org) throw new NotFoundException('Organization not found');
     const updated = await this.prisma.organization.update({
       where: { id: orgId },
-      data: { status },
+      data: { status: status as any }, // Cast to any to allow string, or use $Enums.OrgStatus
     });
     // Audit log org status change
     await this.auditLogger.log({

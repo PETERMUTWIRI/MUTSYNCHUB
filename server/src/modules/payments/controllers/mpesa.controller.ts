@@ -1,18 +1,10 @@
 import { Controller, Post, Body, Param, UseGuards, HttpStatus, UseInterceptors, UsePipes } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { MpesaService } from '../services/mpesa.service';
 import { PaymentSecurityService } from '../services/payment-security.service';
 import { SecurePaymentGuard } from '../guards/secure-payment.guard';
 import { SecurePaymentInterceptor } from '../interceptors/secure-payment.interceptor';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { STKPushRequest, MpesaCallbackPayload } from '../interfaces/mpesa.interface';
-import { MpesaValidationRequest } from '../dto/mpesa-register-url.dto';
-import { MpesaConfigValidationPipe } from '../pipes/mpesa-config-validation.pipe';{ Controller, Post, Body, Param, UseGuards, HttpStatus, UseInterceptors, UsePipes } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { MpesaService } from '../services/mpesa.service';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { STKPushRequest, MpesaCallbackPayload } from '../interfaces/mpesa.interface';
 import { MpesaValidationRequest } from '../dto/mpesa-register-url.dto';
 import { MpesaConfigValidationPipe } from '../pipes/mpesa-config-validation.pipe';
@@ -34,10 +26,11 @@ export class MpesaController {
   @ApiOperation({ summary: 'Initiate M-Pesa STK Push payment' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Payment initiated successfully' })
   async initiateSTKPush(
-    @CurrentUser('id') userId: string,
     @Body() request: STKPushRequest,
   ) {
-    return this.mpesaService.initiateSTKPush(userId, request);
+    // Use tenant context for org scoping; userId is optional for audit/user-specific actions
+    // If you need userId for audit, extract from JWT or request.user if available
+    return this.mpesaService.initiateSTKPush(undefined, request);
   }
 
   @Post('callback')

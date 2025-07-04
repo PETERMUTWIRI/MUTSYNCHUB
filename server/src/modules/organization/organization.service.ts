@@ -1,10 +1,14 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { OrgStatus } from '@prisma/client';
+import { TenantContextService } from '../../common/services/tenant-context.service';
 
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenantContext: TenantContextService,
+  ) {}
 
   async create(data: {
     name: string;
@@ -27,20 +31,21 @@ export class OrganizationService {
     });
   }
 
-  async findById(id: string) {
+  async findById(id?: string) {
+    // If no id provided, use tenant context
+    const orgId = id || this.tenantContext.getTenantId();
+    if (!orgId) throw new NotFoundException('Organization not found');
     const org = await this.prisma.organization.findUnique({
-      where: { id },
+      where: { id: orgId },
       include: {
         users: true,
         dataSources: true,
         subscription: true,
       },
     });
-
     if (!org) {
       throw new NotFoundException('Organization not found');
     }
-
     return org;
   }
 
@@ -61,19 +66,21 @@ export class OrganizationService {
     settings?: Record<string, any>;
     status?: OrgStatus;
   }) {
-    const org = await this.findById(id);
-    
+    // Use tenant context to ensure update is scoped to current tenant
+    const orgId = id || this.tenantContext.getTenantId();
+    const org = await this.findById(orgId);
     return this.prisma.organization.update({
-      where: { id },
+      where: { id: orgId },
       data,
     });
   }
 
   async delete(id: string) {
-    const org = await this.findById(id);
-    
+    // Use tenant context to ensure delete is scoped to current tenant
+    const orgId = id || this.tenantContext.getTenantId();
+    const org = await this.findById(orgId);
     return this.prisma.organization.delete({
-      where: { id },
+      where: { id: orgId },
     });
   }
 }

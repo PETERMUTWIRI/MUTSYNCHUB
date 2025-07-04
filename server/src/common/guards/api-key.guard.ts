@@ -102,8 +102,8 @@ export class ApiKeyGuard implements CanActivate {
       // Log detailed error information
       this.logger.error(
         `API key validation failed: requestId=${requestId}, ` +
-        `ip=${request.ip}, error=${error.message}`,
-        error.stack
+        `ip=${request.ip}, error=${error instanceof Error ? error.message : JSON.stringify(error)}`,
+        error instanceof Error ? error.stack : undefined
       );
 
       // Rethrow authentication errors, wrap others
