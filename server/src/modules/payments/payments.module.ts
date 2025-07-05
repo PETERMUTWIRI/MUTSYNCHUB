@@ -6,13 +6,14 @@ import { MpesaService } from './services/mpesa.service';
 import { PaymentSecurityService } from './services/payment-security.service';
 import { PaymentMonitoringService } from './services/payment-monitoring.service';
 import { PaymentMonitoringTasks } from './tasks/payment-monitoring.tasks';
-import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { CommonModule } from '../../common/common.module';
 import mpesaConfig from './config/mpesa.config';
 
 @Module({
   imports: [
     ConfigModule.forFeature(mpesaConfig),
     ScheduleModule.forRoot(),
+    CommonModule,
   ],
   controllers: [MpesaController],
   providers: [
@@ -20,7 +21,7 @@ import mpesaConfig from './config/mpesa.config';
     PaymentSecurityService,
     PaymentMonitoringService,
     PaymentMonitoringTasks,
-    PrismaService,
+    // PrismaService is provided by CommonModule/PrismaModule
   ],
   exports: [MpesaService, PaymentSecurityService, PaymentMonitoringService],
 })

@@ -5,6 +5,7 @@ import axios from 'axios';
 import { TenantContextService } from '../common/services/tenant-context.service';
 import { PrismaService } from '../infrastructure/persistence/prisma/prisma.service';
 import { PLANS } from '../config/plans.config';
+import { getPlanUuid } from '../config/plan-ids';
 
 // Utility to pick chart type and config
 function getVisualizationConfig(question: string, analyticsData: any) {
@@ -74,8 +75,8 @@ export class AnalyticsAgentService {
       where: { id: orgId },
       include: { plan: true },
     });
-    const planId = org?.planId || 'free';
-    const plan = PLANS.find(p => p.id === planId) || PLANS[0];
+    const planId = org?.planId || getPlanUuid('free');
+    const plan = PLANS.find(p => getPlanUuid(p.id) === planId) || PLANS[0];
     // Find agent query feature limit
     const agentFeature = plan.features.find(f => f.name === 'Agent Queries');
     let limit = agentFeature?.limit || 0;

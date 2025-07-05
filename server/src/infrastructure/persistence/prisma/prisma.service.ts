@@ -1,9 +1,9 @@
 
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PerformanceMiddleware } from './middleware/performance.middleware';
 import { ErrorHandlingMiddleware } from './middleware/error-handling.middleware';
-import { AuditLoggerService } from '../../../common/services/audit-logger.service';
+
 
 @Injectable()
 
@@ -12,22 +12,19 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private isQueryLoggingEnabled = false;
   private performanceMiddleware: PerformanceMiddleware;
   private errorHandlingMiddleware: ErrorHandlingMiddleware;
-  private auditLogger: AuditLoggerService;
+  // Removed auditLogger to break circular dependency
 
-  constructor(
-    @Inject(forwardRef(() => AuditLoggerService)) auditLogger: AuditLoggerService
-  ) {
+  constructor() {
     super({
       log: ['error', 'warn'],
       errorFormat: 'minimal',
     });
-    this.auditLogger = auditLogger;
     this.performanceMiddleware = new PerformanceMiddleware(this.logger, {
       slowQueryThreshold: process.env.SLOW_QUERY_THRESHOLD ?
         parseInt(process.env.SLOW_QUERY_THRESHOLD, 10) : 1000,
       enableMetrics: process.env.NODE_ENV !== 'production',
     });
-    this.errorHandlingMiddleware = new ErrorHandlingMiddleware(this.logger, this.auditLogger);
+    this.errorHandlingMiddleware = new ErrorHandlingMiddleware(this.logger /*, undefined */);
     this.setupMiddleware();
   }
 

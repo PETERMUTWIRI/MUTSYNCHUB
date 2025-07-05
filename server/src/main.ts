@@ -2,8 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import * as compression from 'compression';
-import * as cookieParser from 'cookie-parser';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 
 async function bootstrap() {
@@ -39,6 +39,9 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
+
+  // Set global API prefix
+  app.setGlobalPrefix('api');
 
   // Start server
   const port = process.env.PORT || 5000;

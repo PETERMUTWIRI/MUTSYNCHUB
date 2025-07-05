@@ -6,6 +6,8 @@ import { AnalyticsService } from './analytics.service';
 import { CronJob } from 'cron';
 import { TenantContextService } from '../../common/services/tenant-context.service';
 import { PLANS } from '../../config/plans.config';
+import { getPlanUuid } from '../../config/plan-ids';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AnalyticsScheduleService {
@@ -15,7 +17,7 @@ export class AnalyticsScheduleService {
     private readonly analyticsService: AnalyticsService,
     private readonly auditLogger: AuditLoggerService,
     private readonly tenantContext: TenantContextService,
-    private readonly notificationsService: any, // Inject NotificationsService
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async createSchedule(data: { frequency: string; interval?: number; }) {
@@ -64,7 +66,7 @@ export class AnalyticsScheduleService {
     if (!schedule) throw new Error('Schedule not found');
     const org = await this.prisma.organization.findUnique({ where: { id: schedule.orgId } });
     if (!org) throw new Error('Organization not found');
-    const tier = org.planId || 'free';
+    const tier = org.planId || getPlanUuid('free');
     const allowedFrequencies: Record<string, string[]> = {
       STARTER: ['weekly'],
       BUSINESS: ['daily', 'weekly'],

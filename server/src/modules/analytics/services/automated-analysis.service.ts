@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AnalysisRequestDto, AnalysisType } from '../interfaces/analysis-request.dto';
-import { AnalyticsCacheService } from './analytics-cache.service';
 import { PrismaService } from '../../../infrastructure/persistence/prisma/prisma.service';
 import { ConnectionStateService } from '../../../interfaces/websocket/connection-state.service';
 import { TenantContextService } from '../../../common/services/tenant-context.service';
 import { PLANS } from '../../../config/plans.config';
+import { getPlanUuid } from '../../../config/plan-ids';
+import { PythonService } from '../../../infrastructure/ml/python.service';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 @Injectable()
 export class AutomatedAnalysisService {
@@ -13,11 +15,10 @@ export class AutomatedAnalysisService {
   constructor(
     private readonly prisma: PrismaService,
   
-    private readonly cacheService: AnalyticsCacheService,
     private readonly connectionState: ConnectionStateService,
     private readonly tenantContext: TenantContextService, // Inject tenant context
-    private readonly pythonService: any, // Inject PythonService (replace 'any' with actual type)
-    private readonly notificationsService: any, // Inject NotificationsService
+    private readonly pythonService: PythonService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -27,8 +28,8 @@ export class AutomatedAnalysisService {
   private async enforceAnalyticsLimits(orgId: string): Promise<{ progress: number; limit: number; count: number }> {
     // Get org and plan
     const org = await this.prisma.organization.findUnique({ where: { id: orgId }, include: { plan: true } });
-    const planId = org?.planId || 'free';
-    const plan = PLANS.find(p => p.id === planId) || PLANS[0];
+    const planId = org?.planId || getPlanUuid('free');
+    const plan = PLANS.find(p => getPlanUuid(p.id) === planId) || PLANS[0];
     // Find analytics feature limit
     const analyticsFeature = plan.features.find(f => f.name === 'Analytics');
     let limit = analyticsFeature?.limit || 0;
@@ -84,6 +85,7 @@ export class AutomatedAnalysisService {
           type: request.analysisType,
           industry: request.industryType,
           parameters: request.parameters,
+          metrics: [],
         });
         // Update analysis record with results
         await this.prisma.analysis.update({

@@ -15,7 +15,7 @@ export class OrganizationController {
     private readonly tenantContext: TenantContextService,
   ) {}
 
-  @Get(':id?')
+  @Get(':id')
   @ApiOperation({ summary: 'Get organization by ID or current tenant' })
   @ApiResponse({ status: 200, description: 'Organization found' })
   async findById(@Param('id') id?: string) {
@@ -30,22 +30,22 @@ export class OrganizationController {
     return this.organizationService.findBySubdomain(subdomain);
   }
 
-  @Put(':id?')
+  @Put(':id')
   @ApiOperation({ summary: 'Update organization' })
   @ApiResponse({ status: 200, description: 'Organization updated' })
   async update(
-    @Param('id') id: string,
     @Body() updateDto: {
       name?: string;
       settings?: Record<string, any>;
       status?: OrgStatus;
     },
+    @Param('id') id?: string,
   ) {
     // Use tenant context if id is not provided
     return this.organizationService.update(id || this.tenantContext.getTenantId(), updateDto);
   }
 
-  @Delete(':id?')
+  @Delete(':id')
   @ApiOperation({ summary: 'Delete organization' })
   @ApiResponse({ status: 200, description: 'Organization deleted' })
   async delete(@Param('id') id?: string) {

@@ -34,6 +34,8 @@ import { TenantContextGuard } from './common/guards/tenant-context.guard';
     WebsocketModule,
     // Admin module (RBAC, audit logs, revenue, etc.)
     AdminModule,
+    // Ensure CommonModule is available for TenantContextService
+    require('./common/common.module').CommonModule,
   ],
   providers: [
     DataGateway,

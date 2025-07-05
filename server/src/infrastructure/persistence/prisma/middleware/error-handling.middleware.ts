@@ -1,11 +1,11 @@
 import { Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { AuditLoggerService } from '../../../../common/services/audit-logger.service';
+
 
 export class ErrorHandlingMiddleware {
   constructor(
     private readonly logger: Logger,
-    private readonly auditLogger: AuditLoggerService
+    private readonly auditLogger?: any // Make optional to break circular dependency
   ) {}
 
   handle = async (

@@ -10,6 +10,7 @@ import { TenantContextService } from '../../../common/services/tenant-context.se
 import { RateLimitService } from './rate-limit.service';
 import { TokenSecurityService } from './token-security.service';
 import { PLANS } from '../../../config/plans.config';
+import { getPlanUuid } from '../../../config/plan-ids';
 
 @Injectable()
 export class EnterpriseAuthService {
@@ -71,14 +72,11 @@ export class EnterpriseAuthService {
     // Get plan name from organization relation (planId -> PLANS)
     let planName = 'Free';
     if (user.organization && user.organization.planId) {
-      const planObj = PLANS.find(p => p.id === user.organization.planId || p.name === user.organization.planId);
+      // Map UUID to config string id for feature logic
+      const planObj = PLANS.find(p => getPlanUuid(p.id) === user.organization.planId || p.name === user.organization.planId);
       planName = planObj?.name || planName;
     }
-    // Example: block login for Free plan (customize as needed)
-    if (planName === 'Free') {
-      // You can add more granular feature checks here if needed
-      throw new UnauthorizedException('Login not allowed for your plan');
-    }
+    // Allow login for Free plan users (remove restriction)
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
@@ -437,7 +435,7 @@ export class EnterpriseAuthService {
       data: {
         name: registerDto.organizationName,
         subdomain: registerDto.subdomain,
-        planId: registerDto.planId || PLANS[0].id,
+        planId: getPlanUuid(registerDto.planId || 'free'),
         status: 'ACTIVE',
       },
     });

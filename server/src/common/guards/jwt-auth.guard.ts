@@ -1,13 +1,11 @@
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Logger } from '@nestjs/common';
 import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
+
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly logger: Logger) {
-    super();
-  }
+  private readonly logger = new Logger(JwtAuthGuard.name);
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     try {
@@ -53,7 +51,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         this.logger.error(`JWT Auth error: ${(error as any).message}`, (error as any).stack);
         throw new UnauthorizedException('Invalid token format');
       }
-      this.logger.error(`JWT Auth error: ${(error as any).message}`, (error as any).stack);
+      // Fix: check error is defined and has message/stack
+      if (error && typeof error === 'object') {
+        this.logger.error(`JWT Auth error: ${(error as any).message}`, (error as any).stack);
+      } else {
+        this.logger.error(`JWT Auth error: Unknown error`, '');
+      }
       throw new UnauthorizedException('Authentication failed');
     }
   }

@@ -15,6 +15,7 @@ import {
 import { MpesaValidationRequest } from '../dto/mpesa-register-url.dto';
 import { MpesaC2BConfirmation, MpesaC2BError } from '../interfaces/mpesa-c2b.interface';
 import { PLANS } from '../../../config/plans.config';
+import { getPlanUuid } from '../../../config/plan-ids';
 
 @Injectable()
 export class MpesaService {
@@ -125,8 +126,8 @@ export class MpesaService {
       where: { id: orgId },
       include: { plan: true },
     });
-    const planId = org?.planId || 'free';
-    const plan = PLANS.find(p => p.id === planId) || PLANS[0];
+    const planId = org?.planId || getPlanUuid('free');
+    const plan = PLANS.find(p => getPlanUuid(p.id) === planId) || PLANS[0];
     // Find payment feature limit (example: number of payments per month)
     const paymentFeature = plan.features.find(f => f.name === 'Payments');
     if (paymentFeature?.limit) {
@@ -155,8 +156,8 @@ export class MpesaService {
       where: { id: orgId },
       include: { plan: true },
     });
-    const planId = org?.planId || 'free';
-    const plan = PLANS.find(p => p.id === planId) || PLANS[0];
+    const planId = org?.planId || getPlanUuid('free');
+    const plan = PLANS.find(p => getPlanUuid(p.id) === planId) || PLANS[0];
     // Find payment feature limit (example: number of payments per month)
     const paymentFeature = plan.features.find(f => f.name === 'Payments');
     let limit = paymentFeature?.limit || 0;

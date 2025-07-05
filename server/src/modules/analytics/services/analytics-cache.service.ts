@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
+import { AuditLoggerService } from '../../../common/services/audit-logger.service';
 
 @Injectable()
 export class AnalyticsCacheService {
@@ -11,7 +10,7 @@ export class AnalyticsCacheService {
 
   constructor(
     @InjectRedis() private readonly redis: Redis,
-    private readonly auditLogger: any, // Inject AuditLoggerService
+    private readonly auditLogger: AuditLoggerService,
   ) {}
 
   async cacheAnalysisResult(key: string, result: any, userId?: string, orgId?: string): Promise<void> {
