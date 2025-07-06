@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 
 export interface User {
   id: string;
@@ -11,7 +11,7 @@ export interface User {
   plan: string;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   token: string | null;
@@ -36,28 +36,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Try to load token from localStorage (or cookie, etc.)
-    const storedToken = localStorage.getItem('jwt_token');
+    const storedToken = token || localStorage.getItem('jwt_token');
     if (storedToken) {
       setToken(storedToken);
       // Fetch user profile from backend
-      axios.get('/api/auth/profile', {
-        headers: { Authorization: `Bearer ${storedToken}` },
-      })
+      api.get('/auth/profile')
         .then(res => {
           setUser({
             ...res.data,
             token: storedToken,
             orgId: res.data.orgId || res.data.organizationId || '',
             plan: res.data.plan || res.data.subscriptionTier || 'basic',
-            role: res.data.role || 'user',
+            role: (res.data.role || 'user').toUpperCase(),
           });
+          // Persist tenant_id for multi-tenancy
+          localStorage.setItem('tenant_id', res.data.orgId || res.data.organizationId || '');
         })
         .catch(() => setUser(null))
         .finally(() => setLoading(false));
+  // Sync token to localStorage when it changes
+  useEffect(() => {
+    if (token) localStorage.setItem('jwt_token', token);
+    else localStorage.removeItem('jwt_token');
+  }, [token]);
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   return (
     <AuthContext.Provider value={{ user, setUser, token, setToken, loading }}>

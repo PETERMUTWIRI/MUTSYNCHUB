@@ -1,63 +1,120 @@
-import { Injectable, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
+import { 
+  Injectable, 
+  ExecutionContext, 
+  UnauthorizedException, 
+  Logger,
+  ForbiddenException 
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
-
+import { Request } from 'express';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   private readonly logger = new Logger(JwtAuthGuard.name);
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    try {
-      // Get request first for access to headers
-      const request = context.switchToHttp().getRequest();
-      const headerTenantId = request.headers['x-tenant-id'];
+  // Cache for rate limiting (simple in-memory example)
+  private failedAttempts = new Map<string, { count: number, lastAttempt: number }>();
+  private readonly MAX_ATTEMPTS = 5;
+  private readonly ATTEMPT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
-      // Validate JWT first
-      const isJwtValid = await super.canActivate(context);
-      if (!isJwtValid) {
-        this.logger.warn(`JWT validation failed: ip=${request.ip}`);
-        return false;
-      }
+  canActivate(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest<Request>();
+    const clientIp = request.ip || request.connection?.remoteAddress;
 
-      // After JWT validation, user will be attached to request
-      const user = request.user;
-
-      // Check tenant isolation
-      if (headerTenantId && user?.tenantId !== headerTenantId) {
-        this.logger.warn(
-          `Tenant isolation violation: user=${user?.id}, ` +
-          `userTenant=${user?.tenantId}, headerTenant=${headerTenantId}, ` +
-          `ip=${request.ip}`
-        );
-        throw new UnauthorizedException('Tenant mismatch');
-      }
-
-      this.logger.log(
-        `JWT Auth success: user=${user?.id}, ` +
-        `tenant=${user?.tenantId}, ip=${request.ip}`
-      );
+    // 1. Handle preflight requests
+    if (request.method === 'OPTIONS') {
+      this.setCorsHeaders(context);
       return true;
-    } catch (error) {
-      if (error instanceof UnauthorizedException && error.message === 'Tenant mismatch') {
-        // Re-throw tenant mismatch errors as-is
-        throw error;
-      }
-      if (error instanceof TokenExpiredError) {
-        this.logger.error(`JWT Auth error: ${(error as any).message}`, (error as any).stack);
+    }
+
+    // 2. Rate limiting check
+    if (this.isRateLimited(clientIp)) {
+      this.logger.warn(`Rate limited: IP ${clientIp}`);
+      throw new ForbiddenException('Too many failed attempts. Please try again later.');
+    }
+
+    // 3. Proceed with authentication
+    return super.canActivate(context);
+  }
+
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse();
+    const clientIp = request.ip || request.connection?.remoteAddress;
+
+    // Always set CORS headers
+    this.setCorsHeaders(context);
+
+    // Handle different error scenarios
+    if (err || !user) {
+      this.recordFailedAttempt(clientIp);
+
+      if (info instanceof TokenExpiredError) {
+        this.logger.error(`Expired token from IP ${clientIp}`);
         throw new UnauthorizedException('Token has expired');
       }
-      if (error instanceof JsonWebTokenError) {
-        this.logger.error(`JWT Auth error: ${(error as any).message}`, (error as any).stack);
-        throw new UnauthorizedException('Invalid token format');
+
+      if (info instanceof JsonWebTokenError) {
+        this.logger.error(`Invalid token from IP ${clientIp}: ${info.message}`);
+        throw new UnauthorizedException('Invalid token');
       }
-      // Fix: check error is defined and has message/stack
-      if (error && typeof error === 'object') {
-        this.logger.error(`JWT Auth error: ${(error as any).message}`, (error as any).stack);
-      } else {
-        this.logger.error(`JWT Auth error: Unknown error`, '');
+
+      if (err?.message === 'Tenant mismatch') {
+        this.logger.warn(`Tenant violation from IP ${clientIp}`);
+        throw new ForbiddenException(err.message);
       }
+
+      this.logger.error(`Authentication failed for IP ${clientIp}: ${err?.message || info?.message}`);
       throw new UnauthorizedException('Authentication failed');
     }
+
+    // Success - reset rate limiting
+    this.resetFailedAttempts(clientIp);
+
+    // Additional checks (example)
+    if (request.headers['x-tenant-id'] && user.tenantId !== request.headers['x-tenant-id']) {
+      this.logger.warn(`Tenant mismatch for user ${user.id}`);
+      throw new ForbiddenException('Tenant access denied');
+    }
+
+    return user;
+  }
+
+  private setCorsHeaders(context: ExecutionContext) {
+    const response = context.switchToHttp().getResponse();
+    const request = context.switchToHttp().getRequest();
+
+    response.header('Access-Control-Allow-Origin', request.headers.origin);
+    response.header('Access-Control-Allow-Credentials', 'true');
+    response.header(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, X-Tenant-ID'
+    );
+  }
+
+  private isRateLimited(ip: string): boolean {
+    const attempt = this.failedAttempts.get(ip);
+    if (!attempt) return false;
+
+    const now = Date.now();
+    if (now - attempt.lastAttempt > this.ATTEMPT_WINDOW_MS) {
+      this.failedAttempts.delete(ip);
+      return false;
+    }
+
+    return attempt.count >= this.MAX_ATTEMPTS;
+  }
+
+  private recordFailedAttempt(ip: string) {
+    const current = this.failedAttempts.get(ip) || { count: 0, lastAttempt: 0 };
+    this.failedAttempts.set(ip, {
+      count: current.count + 1,
+      lastAttempt: Date.now()
+    });
+  }
+
+  private resetFailedAttempts(ip: string) {
+    this.failedAttempts.delete(ip);
   }
 }

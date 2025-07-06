@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { UserService } from '../../user/user.service';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     private readonly configService: ConfigService,
     private readonly userService: UserService,
@@ -16,7 +16,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
     // Debug: confirm strategy is loaded
     // eslint-disable-next-line no-console
-    console.log('JwtStrategy loaded');
+    console.log('JwtStrategy loaded', {
+      secret: configService.get<string>('JWT_SECRET'),
+    });
   }
 
   async validate(payload: any) {

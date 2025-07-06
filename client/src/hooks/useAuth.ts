@@ -1,5 +1,5 @@
-import { useAuth as useAuthContext } from '../context/AuthContext';
+import { useAuth as useAuthContext, AuthContextType } from '../context/AuthContext';
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   return useAuthContext();
 }

@@ -16,7 +16,7 @@ import { CommonModule } from '../../common/common.module';
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+    PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -40,6 +40,11 @@ import { CommonModule } from '../../common/common.module';
     RateLimitService,
     TokenSecurityService,
   ],
-  exports: [AuthService],
+  exports: [
+    AuthService,
+    JwtStrategy,
+    PassportModule,
+    JwtModule,
+  ],
 })
 export class AuthModule {}

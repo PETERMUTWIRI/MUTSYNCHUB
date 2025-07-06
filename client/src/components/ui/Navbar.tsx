@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Sun, Moon, Menu, X, ChevronDown, Book, LifeBuoy } from "lucide-react";
 import {
   NavigationMenu,
@@ -31,6 +31,7 @@ import logo from "@/assets/images/mutsynchub-logo.png";
 import { cn } from "@/lib/utils";
 import SSOLogin from "@/components/ui/SSOLogin";
 import HomeSidebar from "@/components/ui/HomeSidebar";
+import { useAuth } from '@/hooks/useAuth';
 
 // Google "or" divider component
 const OrDivider = () => (
@@ -42,6 +43,9 @@ const OrDivider = () => (
 );
 
 const Navbar: React.FC = () => {
+  // Dialog open state
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [signupOpen, setSignupOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // ✅ Load theme from localStorage on mount
@@ -72,12 +76,56 @@ const Navbar: React.FC = () => {
   };
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { setUser, setToken } = useAuth();
+  const { user, setUser, setToken } = useAuth();
+  const navigate = useNavigate();
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+
+  // Login handler with role-based redirection
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError(null);
+    try {
+      // Import login API dynamically to avoid circular deps
+      const { login } = await import('@/api/auth');
+      const res = await login(loginEmail, loginPassword);
+      const { token } = res.data;
+      setToken(token);
+      localStorage.setItem('jwt_token', token);
+
+      // Fetch user profile with token
+      const profileRes = await fetch('/api/auth/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!profileRes.ok) throw new Error('Failed to fetch profile');
+      const profile = await profileRes.json();
+      const normalizedRole = (profile.role || 'USER').toUpperCase();
+      setUser({
+        ...profile,
+        token,
+        orgId: profile.orgId || profile.organizationId || '',
+        plan: profile.plan || profile.subscriptionTier || 'basic',
+        role: normalizedRole,
+      });
+
+      // Redirect based on role
+      if (normalizedRole === 'ADMIN') {
+        navigate('/admin');
+      } else if (normalizedRole === 'OWNER') {
+        navigate('/admin'); // or a special owner dashboard
+      } else {
+        navigate('/analytics');
+      }
+    } catch (err) {
+      setLoginError('Invalid credentials');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
   // Signup state
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
@@ -86,6 +134,39 @@ const Navbar: React.FC = () => {
   const [signupSubdomain, setSignupSubdomain] = useState('');
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
+  const [signupSuccess, setSignupSuccess] = useState<string | null>(null);
+
+  // Signup handler
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupLoading(true);
+    setSignupError(null);
+    setSignupSuccess(null);
+    try {
+      // Import register API dynamically
+      const { register } = await import('@/api/auth');
+      // Split name into first and last
+      const [firstName, ...rest] = signupName.trim().split(' ');
+      const lastName = rest.join(' ');
+      await register({
+        email: signupEmail,
+        password: signupPassword,
+        firstName: firstName || '',
+        lastName: lastName || '',
+        organizationName: signupOrg,
+        subdomain: signupSubdomain,
+      });
+      setSignupSuccess('Account created! Please log in.');
+      setTimeout(() => {
+        setSignupOpen(false);
+        setLoginOpen(true);
+      }, 1200);
+    } catch (err: any) {
+      setSignupError(err?.response?.data?.message || 'Signup failed');
+    } finally {
+      setSignupLoading(false);
+    }
+  };
   const location = useLocation();
 
   return (
@@ -127,8 +208,14 @@ const Navbar: React.FC = () => {
           >
             Solutions
           </Link>
-          <Link
-            to="/analytics"
+          <button
+            onClick={() => {
+              if (user) {
+                navigate('/analytics');
+              } else {
+                setLoginOpen(true);
+              }
+            }}
             className={`px-6 py-2 rounded-full text-lg font-bold transition-all duration-150 border border-transparent shadow-sm
               ${location.pathname.startsWith("/analytics") 
                 ? "bg-[var(--accent-teal,#1de9b6)] text-white hover:bg-[var(--accent-teal,#1de9b6)] hover:shadow-md"
@@ -137,7 +224,7 @@ const Navbar: React.FC = () => {
             style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)', letterSpacing: '0.01em' }}
           >
             Analytics Engine
-          </Link>
+          </button>
         </nav>
 
         {/* Right Side Actions */}
@@ -157,11 +244,12 @@ const Navbar: React.FC = () => {
           {/* Auth buttons (desktop) */}
           <div className="hidden md:flex items-center gap-2">
             {/* Login Dialog */}
-            <Dialog>
+            <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
               <DialogTrigger asChild>
                 <Button
                   className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
                   style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
+                  onClick={() => setLoginOpen(true)}
                 >
                   Login
                 </Button>
@@ -171,17 +259,34 @@ const Navbar: React.FC = () => {
                   <DialogTitle>Login</DialogTitle>
                   <DialogDescription>Enter your credentials to sign in.</DialogDescription>
                 </DialogHeader>
-                <form className="space-y-4 mt-4">
+                <form className="space-y-4 mt-4" onSubmit={handleLogin}>
                   <div>
                     <Label htmlFor="email" className="text-gray-700 dark:text-gray-200">Email</Label>
-                    <Input type="email" id="email" placeholder="you@example.com" />
+                    <Input
+                      type="email"
+                      id="email"
+                      placeholder="you@example.com"
+                      value={loginEmail}
+                      onChange={e => setLoginEmail(e.target.value)}
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="password" className="text-gray-700 dark:text-gray-200">Password</Label>
-                    <Input type="password" id="password" placeholder="••••••••" />
+                    <Input
+                      type="password"
+                      id="password"
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={e => setLoginPassword(e.target.value)}
+                      required
+                    />
                   </div>
+                  {loginError && <div className="text-red-500 text-sm">{loginError}</div>}
                   <div className="flex justify-between items-center">
-                    <Button type="submit" className="w-full">Login</Button>
+                    <Button type="submit" className="w-full" disabled={loginLoading}>
+                      {loginLoading ? 'Logging in...' : 'Login'}
+                    </Button>
                   </div>
                   <div className="flex justify-end mt-1">
                     <button type="button" className="text-xs text-[var(--accent-teal,#1de9b6)] hover:underline font-semibold">Forgot password?</button>
@@ -193,11 +298,12 @@ const Navbar: React.FC = () => {
             </Dialog>
 
             {/* Signup Dialog */}
-            <Dialog>
+            <Dialog open={signupOpen} onOpenChange={setSignupOpen}>
               <DialogTrigger asChild>
                 <Button
                   className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
                   style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
+                  onClick={() => setSignupOpen(true)}
                 >
                   Sign Up
                 </Button>
@@ -207,28 +313,67 @@ const Navbar: React.FC = () => {
                   <DialogTitle>Create Account</DialogTitle>
                   <DialogDescription>Fill in your details to get started.</DialogDescription>
                 </DialogHeader>
-                <form className="space-y-4 mt-4">
+                <form className="space-y-4 mt-4" onSubmit={handleSignup}>
                   <div>
                     <Label htmlFor="name" className="text-gray-700 dark:text-gray-200">Full Name</Label>
-                    <Input type="text" id="name" placeholder="John Doe" />
+                    <Input
+                      type="text"
+                      id="name"
+                      placeholder="John Doe"
+                      value={signupName}
+                      onChange={e => setSignupName(e.target.value)}
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="email" className="text-gray-700 dark:text-gray-200">Email</Label>
-                    <Input type="email" id="email" placeholder="you@example.com" />
+                    <Input
+                      type="email"
+                      id="email"
+                      placeholder="you@example.com"
+                      value={signupEmail}
+                      onChange={e => setSignupEmail(e.target.value)}
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="org" className="text-gray-700 dark:text-gray-200">Organization</Label>
-                    <Input type="text" id="org" placeholder="Your Company" />
+                    <Input
+                      type="text"
+                      id="org"
+                      placeholder="Your Company"
+                      value={signupOrg}
+                      onChange={e => setSignupOrg(e.target.value)}
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="subdomain" className="text-gray-700 dark:text-gray-200">Subdomain</Label>
-                    <Input type="text" id="subdomain" placeholder="xx.com" />
+                    <Input
+                      type="text"
+                      id="subdomain"
+                      placeholder="xx.com"
+                      value={signupSubdomain}
+                      onChange={e => setSignupSubdomain(e.target.value)}
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="password" className="text-gray-700 dark:text-gray-200">Password</Label>
-                    <Input type="password" id="password" placeholder="••••••••" />
+                    <Input
+                      type="password"
+                      id="password"
+                      placeholder="••••••••"
+                      value={signupPassword}
+                      onChange={e => setSignupPassword(e.target.value)}
+                      required
+                    />
                   </div>
-                  <Button type="submit" className="w-full">Sign Up</Button>
+                  {signupError && <div className="text-red-500 text-sm">{signupError}</div>}
+                  {signupSuccess && <div className="text-green-500 text-sm">{signupSuccess}</div>}
+                  <Button type="submit" className="w-full" disabled={signupLoading}>
+                    {signupLoading ? 'Signing up...' : 'Sign Up'}
+                  </Button>
                 </form>
                 <OrDivider />
                 <SSOLogin />
@@ -244,14 +389,3 @@ const Navbar: React.FC = () => {
 };
 
 export default Navbar;
-// Simple mock implementation for demonstration.
-// In a real app, this would come from context or a global state manager.
-function useAuth(): { setUser: (user: any) => void; setToken: (token: string) => void } {
-  const setUser = (user: any) => {
-    localStorage.setItem("user", JSON.stringify(user));
-  };
-  const setToken = (token: string) => {
-    localStorage.setItem("token", token);
-  };
-  return { setUser, setToken };
-}

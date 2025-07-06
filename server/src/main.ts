@@ -1,53 +1,57 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
-import compression from 'compression';
-import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+  const logger = new Logger('Bootstrap');
 
-  // Security middleware
+  // Security Middleware
   app.use(helmet());
-  app.use(compression());
-  app.use(cookieParser());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
-  // Enable CORS
+  // Dynamic CORS Configuration
+  const codespaceName = configService.get('CODESPACE_NAME', 'bug-free-lamp-jjgwv979796x357v4');
+  const frontendOrigin = `https://${codespaceName}-5173.app.github.dev`;
+  const allowedOrigins = [
+    frontendOrigin,
+    `https://${codespaceName}-5000.app.github.dev`,
+    'http://localhost:5173'
+  ];
+
+  // Enhanced CORS Setup
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(`Blocked CORS request from: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
+    exposedHeaders: ['Authorization'],
     credentials: true,
+    maxAge: 86400 // 24 hours
   });
 
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  // Critical: Ensure CORS headers on all responses
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin || frontendOrigin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
+  });
 
-  // Swagger Documentation
-  const config = new DocumentBuilder()
-    .setTitle('MutSyncHub API')
-    .setDescription('Enterprise Analytics SaaS Platform API Documentation')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document);
-
-  // Set global API prefix
-  app.setGlobalPrefix('api');
-
-  // Start server
-  const port = process.env.PORT || 5000;
-  await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
-  console.log(`API Documentation available at: http://localhost:${port}/api-docs`);
+  await app.listen(configService.get('PORT', 5000));
+  logger.log(`🚀 Server running on ${await app.getUrl()}`);
+  logger.log(`🔒 Allowed Origins: ${allowedOrigins.join(', ')}`);
 }
 
-bootstrap();
+bootstrap().catch(err => {
+  new Logger('Bootstrap').error('Startup failed', err);
+  process.exit(1);
+});
