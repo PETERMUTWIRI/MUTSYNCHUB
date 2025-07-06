@@ -19,7 +19,8 @@ async function bootstrap() {
   const allowedOrigins = [
     frontendOrigin,
     `https://${codespaceName}-5000.app.github.dev`,
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'https://localhost:5173'
   ];
 
   // Enhanced CORS Setup
