@@ -34,12 +34,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Load user data when token changes
   useEffect(() => {
-    // Try to load token from localStorage (or cookie, etc.)
     const storedToken = token || localStorage.getItem('jwt_token');
     if (storedToken) {
       setToken(storedToken);
-      // Fetch user profile from backend
       api.get('/auth/profile')
         .then(res => {
           setUser({
@@ -49,18 +48,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             plan: res.data.plan || res.data.subscriptionTier || 'basic',
             role: (res.data.role || 'user').toUpperCase(),
           });
-          // Persist tenant_id for multi-tenancy
           localStorage.setItem('tenant_id', res.data.orgId || res.data.organizationId || '');
         })
-        .catch(() => setUser(null))
+        .catch(() => {
+          setUser(null);
+          setToken(null);
+        })
         .finally(() => setLoading(false));
-  // Sync token to localStorage when it changes
-  useEffect(() => {
-    if (token) localStorage.setItem('jwt_token', token);
-    else localStorage.removeItem('jwt_token');
-  }, [token]);
     } else {
       setLoading(false);
+    }
+  }, [token]);
+
+  // Sync token to localStorage
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('jwt_token', token);
+    } else {
+      localStorage.removeItem('jwt_token');
     }
   }, [token]);
 
