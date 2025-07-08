@@ -24,7 +24,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     // 1. Handle preflight requests
     if (request.method === 'OPTIONS') {
-      this.setCorsHeaders(context);
       return true;
     }
 
@@ -43,8 +42,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const response = context.switchToHttp().getResponse();
     const clientIp = request.ip || request.connection?.remoteAddress;
 
-    // Always set CORS headers
-    this.setCorsHeaders(context);
+    // No need to set CORS headers here; handled globally
 
     // Handle different error scenarios
     if (err || !user) {
@@ -81,17 +79,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return user;
   }
 
-  private setCorsHeaders(context: ExecutionContext) {
-    const response = context.switchToHttp().getResponse();
-    const request = context.switchToHttp().getRequest();
 
-    response.header('Access-Control-Allow-Origin', request.headers.origin);
-    response.header('Access-Control-Allow-Credentials', 'true');
-    response.header(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Tenant-ID'
-    );
-  }
 
   private isRateLimited(ip: string): boolean {
     const attempt = this.failedAttempts.get(ip);

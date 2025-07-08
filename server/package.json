@@ -30,6 +30,7 @@
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/websockets": "^11.1.1",
     "@prisma/client": "^6.10.1",
+    "@supabase/supabase-js": "^2.50.3",
     "@types/axios": "^0.9.36",
     "@types/moment": "^2.11.29",
     "@types/saml2-js": "^3.0.4",

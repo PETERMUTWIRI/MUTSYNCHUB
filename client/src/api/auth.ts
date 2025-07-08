@@ -1,7 +1,8 @@
-import axios from 'axios';
+import api from '../lib/api';
+
 
 export const login = async (email: string, password: string) => {
-  return axios.post('/api/auth/login', { email, password });
+  return api.post('/api/auth/login', { email, password });
 };
 
 export const register = async (data: {
@@ -12,5 +13,5 @@ export const register = async (data: {
   organizationName: string;
   subdomain: string;
 }) => {
-  return axios.post('/api/auth/register', data);
+  return api.post('/api/auth/register', data);
 };

@@ -1,23 +1,35 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { ConfigService } from '@nestjs/config';
+import { Inject } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
+import jwtConfig from '../../../config/jwt.config';
 import { UserService } from '../../user/user.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    private readonly configService: ConfigService,
+    @Inject(jwtConfig.KEY)
+    private readonly jwtSettings: ConfigType<typeof jwtConfig>,
     private readonly userService: UserService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      jwtFromRequest: (req) => {
+        // Try cookie first
+        if (req && req.cookies && req.cookies['jwt_token']) {
+          return req.cookies['jwt_token'];
+        }
+        // Fallback to Authorization header
+        return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+      },
+      secretOrKey: jwtSettings.secret,
+      ignoreExpiration: false,
+      algorithms: ['HS256'], // Supabase uses HS256 by default
     });
     // Debug: confirm strategy is loaded
     // eslint-disable-next-line no-console
     console.log('JwtStrategy loaded', {
-      secret: configService.get<string>('JWT_SECRET'),
+      secret: jwtSettings.secret,
     });
   }
 

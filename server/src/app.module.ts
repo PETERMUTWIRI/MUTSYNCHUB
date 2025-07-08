@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { JwtStrategy } from './modules/auth/strategies/jwt.strategy';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { ConfigModule } from '@nestjs/config';
+import jwtConfig from './config/jwt.config';
 import { PrismaModule } from './infrastructure/persistence/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
@@ -13,6 +16,10 @@ import { ApiKeyModule } from './modules/api-key/api-key.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { TenantContextGuard } from './common/guards/tenant-context.guard';
+import { PrismaClient } from '@prisma/client';
+import { NeonService } from './database/neon.service';
+import { HealthController } from './modules/health/health.controller';
+import { RedisService } from './database/redis.service';
 
 @Module({
   imports: [
@@ -20,6 +27,7 @@ import { TenantContextGuard } from './common/guards/tenant-context.guard';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
+      load: [jwtConfig],
     }),
     // Database
     PrismaModule,
@@ -37,12 +45,20 @@ import { TenantContextGuard } from './common/guards/tenant-context.guard';
     // Ensure CommonModule is available for TenantContextService
     require('./common/common.module').CommonModule,
   ],
+  controllers: [HealthController],
   providers: [
     DataGateway,
+    RedisService,
+    JwtStrategy,
+    {
+      provide: PrismaClient,
+      useClass: NeonService, // Replace default PrismaClient
+    },
     {
       provide: APP_GUARD,
       useClass: TenantContextGuard,
     },
+    // JwtAuthGuard is no longer global; use @UseGuards(JwtAuthGuard) on protected routes only
     {
       provide: APP_INTERCEPTOR,
       useClass: RateLimitInterceptor,

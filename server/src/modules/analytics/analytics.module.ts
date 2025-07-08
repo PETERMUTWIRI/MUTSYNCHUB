@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsController } from './analytics.controller';
@@ -27,6 +28,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     MLModule,
     CommonModule,
     NotificationsModule,
+    PassportModule,
     // CacheModule.register(),
     // RedisModule.forRootAsync({
     //   imports: [ConfigModule],

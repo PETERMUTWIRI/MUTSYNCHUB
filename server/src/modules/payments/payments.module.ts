@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MpesaController } from './controllers/mpesa.controller';
@@ -14,6 +15,7 @@ import mpesaConfig from './config/mpesa.config';
     ConfigModule.forFeature(mpesaConfig),
     ScheduleModule.forRoot(),
     CommonModule,
+    PassportModule,
   ],
   controllers: [MpesaController],
   providers: [

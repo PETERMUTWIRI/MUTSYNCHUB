@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 
-          'https://bug-free-lamp-jjgwv979796x357v4-5000.app.github.dev/api',
+          'https://humble-goggles-v65jg96wwqjwfwrg-5000.app.github.dev', // No /api at end
   withCredentials: true,
   timeout: 10000,
   headers: {
@@ -14,7 +14,8 @@ const api = axios.create({
 
 // Request Interceptor
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('jwt_token');
+  // Read token from cookie
+  const token = document.cookie.split('; ').find(row => row.startsWith('jwt_token='))?.split('=')[1];
   const tenantId = localStorage.getItem('tenant_id');
 
   if (token) {

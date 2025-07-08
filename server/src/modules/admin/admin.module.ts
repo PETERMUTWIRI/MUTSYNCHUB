@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { AuditLogController } from './audit-log.controller';
@@ -8,7 +9,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { APP_GUARD, Reflector } from '@nestjs/core';
 
 @Module({
-  imports: [CommonModule],
+  imports: [CommonModule, PassportModule],
   controllers: [AdminController, AuditLogController, RevenueController],
   providers: [
     AdminService,

@@ -16,21 +16,7 @@ export class AuthService {
     private readonly organizationService: OrganizationService,
   ) {}
 
-  async validateUser(email: string, password: string) {
-    // Delegate to enterprise-grade service
-    return this.enterpriseAuthService.validateUser(email, password);
-  }
-
-  async login(loginDto: { email: string; password: string; mfaToken?: string }) {
-    // Validate user and handle MFA
-    const user = await this.enterpriseAuthService.validateUser(loginDto.email, loginDto.password);
-    return this.enterpriseAuthService.login(user, loginDto.mfaToken);
-  }
-
-  async register(registerDto: RegisterDto) {
-    // Delegate registration to enterprise service
-    return this.enterpriseAuthService.registerUserAndOrg(registerDto);
-  }
+  // All legacy authentication methods removed. Use Supabase Auth only.
 
   async getUsageAndPlan(userId: string) {
     // Get user and org

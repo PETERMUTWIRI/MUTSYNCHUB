@@ -32,6 +32,8 @@ import { cn } from "@/lib/utils";
 import SSOLogin from "@/components/ui/SSOLogin";
 import HomeSidebar from "@/components/ui/HomeSidebar";
 import { useAuth } from '@/hooks/useAuth';
+import api from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 
 // Google "or" divider component
 const OrDivider = () => (
@@ -90,38 +92,35 @@ const Navbar: React.FC = () => {
     setLoginLoading(true);
     setLoginError(null);
     try {
-      // Import login API dynamically to avoid circular deps
-      const { login } = await import('@/api/auth');
-      const res = await login(loginEmail, loginPassword);
-      const { token } = res.data;
-      setToken(token);
-      localStorage.setItem('jwt_token', token);
-
-      // Fetch user profile with token
-      const profileRes = await fetch('/api/auth/profile', {
-        headers: { Authorization: `Bearer ${token}` },
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
       });
-      if (!profileRes.ok) throw new Error('Failed to fetch profile');
-      const profile = await profileRes.json();
-      const normalizedRole = (profile.role || 'USER').toUpperCase();
-      setUser({
-        ...profile,
-        token,
-        orgId: profile.orgId || profile.organizationId || '',
-        plan: profile.plan || profile.subscriptionTier || 'basic',
-        role: normalizedRole,
-      });
-
-      // Redirect based on role
-      if (normalizedRole === 'ADMIN') {
-        navigate('/admin');
-      } else if (normalizedRole === 'OWNER') {
-        navigate('/admin'); // or a special owner dashboard
-      } else {
-        navigate('/analytics');
+      if (error) {
+        setLoginError(error.message);
+        return;
       }
-    } catch (err) {
-      setLoginError('Invalid credentials');
+      const token = data.session?.access_token;
+      if (token) {
+        document.cookie = `jwt_token=${token}; path=/; max-age=86400; secure; samesite=lax`;
+        setToken(token);
+        // Optionally fetch user profile from backend or supabase
+        // For now, just set user as logged in
+        setUser({
+          id: data.user?.id || '',
+          orgId: '',
+          token,
+          name: data.user?.user_metadata?.full_name || '',
+          email: data.user?.email || '',
+          role: 'USER',
+          plan: 'basic',
+        });
+        navigate('/analytics');
+      } else {
+        setLoginError('No session token received.');
+      }
+    } catch (err: any) {
+      setLoginError(err?.message || 'Login failed');
     } finally {
       setLoginLoading(false);
     }
@@ -143,26 +142,32 @@ const Navbar: React.FC = () => {
     setSignupError(null);
     setSignupSuccess(null);
     try {
-      // Import register API dynamically
-      const { register } = await import('@/api/auth');
       // Split name into first and last
       const [firstName, ...rest] = signupName.trim().split(' ');
       const lastName = rest.join(' ');
-      await register({
+      const { data, error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
-        firstName: firstName || '',
-        lastName: lastName || '',
-        organizationName: signupOrg,
-        subdomain: signupSubdomain,
+        options: {
+          data: {
+            firstName: firstName || '',
+            lastName: lastName || '',
+            organizationName: signupOrg,
+            subdomain: signupSubdomain,
+          }
+        }
       });
-      setSignupSuccess('Account created! Please log in.');
-      setTimeout(() => {
-        setSignupOpen(false);
-        setLoginOpen(true);
-      }, 1200);
+      if (error) {
+        setSignupError(error.message);
+      } else {
+        setSignupSuccess('Account created! Please check your email to verify.');
+        setTimeout(() => {
+          setSignupOpen(false);
+          setLoginOpen(true);
+        }, 1200);
+      }
     } catch (err: any) {
-      setSignupError(err?.response?.data?.message || 'Signup failed');
+      setSignupError(err?.message || 'Signup failed');
     } finally {
       setSignupLoading(false);
     }
