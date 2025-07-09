@@ -102,7 +102,7 @@ const Navbar: React.FC = () => {
       }
       const token = data.session?.access_token;
       if (token) {
-        document.cookie = `jwt_token=${token}; path=/; max-age=86400; secure; samesite=lax`;
+        // No need to set jwt_token cookie manually; handled by Supabase session and Authorization header
         setToken(token);
         // Optionally fetch user profile from backend or supabase
         // For now, just set user as logged in

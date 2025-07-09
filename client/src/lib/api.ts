@@ -1,8 +1,10 @@
+
 import axios from 'axios';
+import { supabase } from './supabase';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 
-          'https://humble-goggles-v65jg96wwqjwfwrg-5000.app.github.dev', // No /api at end
+  baseURL: import.meta.env.VITE_API_BASE_URL ||
+    'https://humble-goggles-v65jg96wwqjwfwrg-5000.app.github.dev/api', // <-- add /api
   withCredentials: true,
   timeout: 10000,
   headers: {
@@ -12,74 +14,43 @@ const api = axios.create({
   }
 });
 
-// Request Interceptor
-api.interceptors.request.use(config => {
-  // Read token from cookie
-  const token = document.cookie.split('; ').find(row => row.startsWith('jwt_token='))?.split('=')[1];
-  const tenantId = localStorage.getItem('tenant_id');
+// Request Interceptor using Supabase session
+api.interceptors.request.use(async (config) => {
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers['Authorization'] = `Bearer ${token}`;
+
+  if (session?.access_token) {
+    config.headers['Authorization'] = `Bearer ${session.access_token}`;
   }
+
+  const tenantId = localStorage.getItem('tenant_id');
   if (tenantId) {
-    config.headers = config.headers || {};
     config.headers['X-Tenant-ID'] = tenantId;
   }
 
+  // Debug
+  console.log('🚀 Axios Request Headers:', config.headers);
+
   return config;
-}, error => {
-  console.error('Request Error:', error);
-  return Promise.reject(error);
-});
+}, error => Promise.reject(error));
+
 
 // Response Interceptor
 api.interceptors.response.use(
   response => response,
   error => {
-    // Enhanced CORS Error Handling
     if (!error.response) {
-      const isCorsError = error.message === 'Network Error';
-      const isTimeout = error.code === 'ECONNABORTED';
-      
-      if (isCorsError) {
-        console.error(
-          '🛑 CORS Error Detected\n' +
-          `Frontend: ${window.location.origin}\n` +
-          `Backend: ${import.meta.env.VITE_API_BASE_URL}\n` +
-          'Verify:\n' +
-          '1. Backend is running\n' +
-          '2. Origins match exactly\n' +
-          '3. No HTTPS mixed content'
-        );
-      }
-      
-      error.isCorsError = isCorsError;
-      error.isTimeout = isTimeout;
+      console.error('❌ Network or CORS error', error.message);
     }
 
-    // Handle specific error codes
-    switch (error.response?.status) {
-      case 401:
-        handleUnauthorized();
-        break;
-      case 403:
-        error.message = 'Access forbidden. Check your permissions.';
-        break;
-      case 429:
-        error.message = 'Too many requests. Please wait.';
-        break;
+    if (error.response?.status === 401) {
+      supabase.auth.signOut();
+      const redirectUrl = encodeURIComponent(window.location.href);
+      window.location.href = `/login?redirect=${redirectUrl}`;
     }
 
     return Promise.reject(error);
   }
 );
-
-// Helper Functions
-function handleUnauthorized() {
-  localStorage.removeItem('jwt_token');
-  const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
-  window.location.assign(`/login?redirect=${redirectUrl}`);
-}
 
 export default api;

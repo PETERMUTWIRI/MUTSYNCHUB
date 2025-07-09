@@ -2,18 +2,40 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // Always allow OPTIONS requests before any guards/interceptors
-  app.use((req, res, next) => {
-    if (req.method === 'OPTIONS') {
-      res.sendStatus(204);
-    } else {
-      next();
-    }
+
+  // ✅ CORS setup FIRST with dynamic origin check and debug logging
+  const allowedOrigins = [
+    'https://humble-goggles-v65jg96wwqjwfwrg-5173.app.github.dev',
+    'http://localhost:5173',
+    'https://localhost:5173',
+    'https://ufcjnhamtlmpcjzhizsn.supabase.co'
+  ];
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`❌ Blocked CORS request from ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Tenant-ID',
+      'X-Requested-With',
+    ],
+    exposedHeaders: ['Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   });
+
+  app.use(cookieParser());
   // Set global API prefix so all routes are under /api
   app.setGlobalPrefix('api');
   const configService = app.get(ConfigService);
@@ -22,20 +44,6 @@ async function bootstrap() {
   // Security Middleware
   app.use(helmet());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-
-  const allowedOrigins = [
-  'https://humble-goggles-v65jg96wwqjwfwrg-5173.app.github.dev',
-  'http://localhost:5173',
-  'https://localhost:5173'
-];
-
-// ✅ CORS setup
-app.enableCors({
-  origin: allowedOrigins, // 🔁 Simplify this for dev — no dynamic check
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
-});
 
 
  

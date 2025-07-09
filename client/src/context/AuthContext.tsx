@@ -34,40 +34,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user data when token changes
-  useEffect(() => {
-    const storedToken = token || localStorage.getItem('jwt_token');
-    if (storedToken) {
-      setToken(storedToken);
-      api.get('/auth/profile')
-        .then(res => {
-          setUser({
-            ...res.data,
-            token: storedToken,
-            orgId: res.data.orgId || res.data.organizationId || '',
-            plan: res.data.plan || res.data.subscriptionTier || 'basic',
-            role: (res.data.role || 'user').toUpperCase(),
-          });
-          localStorage.setItem('tenant_id', res.data.orgId || res.data.organizationId || '');
-        })
-        .catch(() => {
-          setUser(null);
-          setToken(null);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
 
-  // Sync token to localStorage
+  // Load user data from Supabase session
   useEffect(() => {
-    if (token) {
-      localStorage.setItem('jwt_token', token);
-    } else {
-      localStorage.removeItem('jwt_token');
-    }
-  }, [token]);
+    let isMounted = true;
+    (async () => {
+      setLoading(true);
+      const { data: { session } } = await import('@/lib/supabase').then(m => m.supabase.auth.getSession());
+      const token = session?.access_token || null;
+      setToken(token);
+      if (token) {
+        api.get('/auth/profile')
+          .then(res => {
+            if (!isMounted) return;
+            setUser({
+              ...res.data,
+              token,
+              orgId: res.data.orgId || res.data.organizationId || '',
+              plan: res.data.plan || res.data.subscriptionTier || 'basic',
+              role: (res.data.role || 'user').toUpperCase(),
+            });
+            localStorage.setItem('tenant_id', res.data.orgId || res.data.organizationId || '');
+          })
+          .catch(() => {
+            if (!isMounted) return;
+            setUser(null);
+            setToken(null);
+          })
+          .finally(() => { if (isMounted) setLoading(false); });
+      } else {
+        setUser(null);
+        setToken(null);
+        setLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, setUser, token, setToken, loading }}>
