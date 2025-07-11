@@ -10,6 +10,7 @@ import { MfaService } from './services/mfa.service';
 import { RateLimitService } from './services/rate-limit.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { SupabaseJwtStrategy } from '../../auth/strategies/supabase.strategy';
 import { UserModule } from '../user/user.module';
 import { OrganizationModule } from '../organization/organization.module';
 import { CommonModule } from '../../common/common.module';
@@ -26,7 +27,7 @@ import { CommonModule } from '../../common/common.module';
         },
       }),
     }),
-    UserModule,
+    UserModule, // <-- ensure UserModule is imported
     OrganizationModule,
     CommonModule,
   ],
@@ -34,6 +35,7 @@ import { CommonModule } from '../../common/common.module';
   providers: [
     AuthService,
     JwtStrategy,
+    SupabaseJwtStrategy,
     EnterpriseAuthService,
     MfaService,
     RateLimitService,

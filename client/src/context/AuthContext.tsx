@@ -40,33 +40,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let isMounted = true;
     (async () => {
       setLoading(true);
-      const { data: { session } } = await import('@/lib/supabase').then(m => m.supabase.auth.getSession());
-      const token = session?.access_token || null;
-      setToken(token);
-      if (token) {
-        api.get('/auth/profile')
-          .then(res => {
-            if (!isMounted) return;
-            setUser({
-              ...res.data,
-              token,
-              orgId: res.data.orgId || res.data.organizationId || '',
-              plan: res.data.plan || res.data.subscriptionTier || 'basic',
-              role: (res.data.role || 'user').toUpperCase(),
-            });
-            localStorage.setItem('tenant_id', res.data.orgId || res.data.organizationId || '');
-          })
-          .catch(() => {
-            if (!isMounted) return;
-            setUser(null);
-            setToken(null);
-          })
-          .finally(() => { if (isMounted) setLoading(false); });
-      } else {
+      // Exchange Supabase JWT for backend JWT and user context
+      const { exchangeSupabaseJwt } = await import('@/lib/exchange');
+      const result = await exchangeSupabaseJwt();
+      if (result && isMounted) {
+        setToken(result.token);
+        setUser({
+          ...result.user,
+          token: result.token,
+          orgId: result.user.orgId || result.user.organizationId || '',
+          plan: result.user.plan || result.user.subscriptionTier || 'basic',
+          role: (result.user.role || 'user').toUpperCase(),
+        });
+        localStorage.setItem('tenant_id', result.user.orgId || result.user.organizationId || '');
+      } else if (isMounted) {
         setUser(null);
         setToken(null);
-        setLoading(false);
       }
+      if (isMounted) setLoading(false);
     })();
     return () => { isMounted = false; };
   }, []);

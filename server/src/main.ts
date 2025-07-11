@@ -9,21 +9,17 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // ✅ CORS setup FIRST with dynamic origin check and debug logging
+  // Update allowedOrigins to match frontend and Codespaces proxy
   const allowedOrigins = [
-    'https://humble-goggles-v65jg96wwqjwfwrg-5173.app.github.dev',
+    'https://fantastic-palm-tree-6vgj79vg7qq25wr5.app.github.dev',
+    'https://fantastic-palm-tree-6vgj79vg7qq25wr5-5000.app.github.dev',
+    'https://fantastic-palm-tree-6vgj79vg7qq25wr5-5173.app.github.dev',
     'http://localhost:5173',
     'https://localhost:5173',
     'https://ufcjnhamtlmpcjzhizsn.supabase.co'
   ];
   app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`❌ Blocked CORS request from ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: allowedOrigins,
     credentials: true,
     allowedHeaders: [
       'Content-Type',

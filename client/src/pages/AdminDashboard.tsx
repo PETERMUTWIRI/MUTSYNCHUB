@@ -2,6 +2,9 @@ import React from "react";
 // Import your logo and icons here
 // import Logo from "../assets/images/mutsynchub-logo.png";
 // import { ... } from "lucide-react";
+import DataSources from '../components/admin/DataSources';
+import NLQueries from '../components/admin/NLQueries';
+import Schedules from '../components/admin/Schedules';
 
 const amber = "#FFA500";
 const sidebarBg = "#232347";
@@ -93,6 +96,18 @@ const AdminDashboard: React.FC = () => {
         </header>
         {/* Main Grid */}
         <main className="pt-[100px] pb-12 px-12 w-full min-h-screen flex flex-col gap-8">
+          {/* Row 0: Feature Components */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="col-span-1 md:col-span-1">
+              <DataSources />
+            </div>
+            <div className="col-span-1 md:col-span-1">
+              <NLQueries />
+            </div>
+            <div className="col-span-1 md:col-span-1">
+              <Schedules />
+            </div>
+          </div>
           {/* Row 1: 3 summary cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Card 1: Total Users */}

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Inject } from '@nestjs/common';
@@ -6,8 +6,11 @@ import { ConfigType } from '@nestjs/config';
 import jwtConfig from '../../../config/jwt.config';
 import { UserService } from '../../user/user.service';
 
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  private readonly logger = new Logger(JwtStrategy.name);
+
   constructor(
     @Inject(jwtConfig.KEY)
     private readonly jwtSettings: ConfigType<typeof jwtConfig>,
@@ -15,29 +18,39 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   ) {
     super({
       jwtFromRequest: (req) => {
-        // Try cookie first
-        if (req && req.cookies && req.cookies['jwt_token']) {
+        // Check for token in cookie first
+        if (req?.cookies?.['jwt_token']) {
           return req.cookies['jwt_token'];
         }
-        // Fallback to Authorization header
+        // Fallback: Authorization: Bearer <token>
         return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
       },
-      secretOrKey: jwtSettings.secret,
+      secretOrKey: jwtSettings.secret, // uses SUPABASE_JWT_SECRET from env
+      algorithms: ['HS256'],
       ignoreExpiration: false,
-      algorithms: ['HS256'], // Supabase uses HS256 by default
     });
-    // Debug: confirm strategy is loaded
-    // eslint-disable-next-line no-console
-    console.log('JwtStrategy loaded', {
-      secret: jwtSettings.secret,
-    });
+
+    this.logger.debug('✅ JwtStrategy initialized with HS256');
   }
 
+  /**
+   * Validate decoded payload
+   * @param payload Decoded JWT payload
+   */
   async validate(payload: any) {
+    this.logger.verbose(`🔑 Validating user with sub: ${payload.sub}, email: ${payload.email}`);
+
+    // Find user in Neon DB using Prisma
     const user = await this.userService.findById(payload.sub);
+
     if (!user) {
-      throw new UnauthorizedException();
+      this.logger.warn(`⚠️ User not found in Neon for sub: ${payload.sub}`);
+      throw new UnauthorizedException('User not found. Possibly out of sync.');
     }
+
+    // Additional checks could go here (e.g., status, tenant)
+    this.logger.debug(`✅ User validated: ${user.email}`);
+
     return user;
   }
 }

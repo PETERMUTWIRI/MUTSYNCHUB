@@ -1,12 +1,21 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
+
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, Request } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SupabaseAuthGuard } from '../../auth/guards/supabase.guard';
 import { UserRole, UserStatus } from '@prisma/client';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
+  // Supabase sync endpoint
+  @UseGuards(SupabaseAuthGuard)
+  @Get('sync')
+  async syncUser(@Request() req) {
+    const user = await this.userService.findOrCreateFromSupabase(req.user);
+    return { user };
+  }
 
   @Get(':id')
   async getUser(@Param('id') id: string) {

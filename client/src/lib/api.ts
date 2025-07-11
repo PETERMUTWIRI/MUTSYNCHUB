@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ||
-    'https://humble-goggles-v65jg96wwqjwfwrg-5000.app.github.dev/api', // <-- add /api
+    'https://fantastic-palm-tree-6vgj79vg7qq25wr5-5173-5000.app.github.dev/api', // <-- add /api
   withCredentials: true,
   timeout: 10000,
   headers: {
@@ -16,11 +16,18 @@ const api = axios.create({
 
 // Request Interceptor using Supabase session
 api.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession();
-
-
-  if (session?.access_token) {
-    config.headers['Authorization'] = `Bearer ${session.access_token}`;
+  // Only send Supabase JWT for /auth/exchange
+  if (config.url?.includes('/auth/exchange')) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      config.headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+  } else {
+    // For all other requests, use backend JWT from localStorage
+    const backendJwt = localStorage.getItem('backend_jwt');
+    if (backendJwt) {
+      config.headers['Authorization'] = `Bearer ${backendJwt}`;
+    }
   }
 
   const tenantId = localStorage.getItem('tenant_id');

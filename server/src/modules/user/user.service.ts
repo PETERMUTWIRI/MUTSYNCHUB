@@ -1,3 +1,4 @@
+
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { UserRole, UserStatus } from '@prisma/client';
@@ -140,5 +141,65 @@ export class UserService {
     });
 
     return deleted;
+  }
+
+  // Find or create user from Supabase JWT payload
+  async findOrCreateFromSupabase(payload: { id: string, email: string }) {
+    // Try to find by supabaseId
+    let user = await this.prisma.user.findUnique({ where: { supabaseId: payload.id } });
+    if (user) return user;
+
+    // Try to find by email (for legacy users)
+    user = await this.prisma.user.findUnique({ where: { email: payload.email } });
+    if (user) {
+      // Update user with supabaseId if missing
+      if (!user.supabaseId) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { supabaseId: payload.id },
+        });
+        // Audit log user update for supabaseId
+        await this.auditLogger.log({
+          userId: user.id,
+          orgId: user.orgId,
+          action: 'user_update',
+          resource: 'user',
+          details: {
+            updatedUserId: user.id,
+            changes: { supabaseId: payload.id },
+          },
+        });
+      }
+      return user;
+    }
+
+    // If not found, create a new user (assign to a default org or handle org logic as needed)
+    const defaultOrg = await this.prisma.organization.findFirst();
+    if (!defaultOrg) throw new Error('No organization found for new user');
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        supabaseId: payload.id,
+        email: payload.email,
+        password: '', // Set a default or random password, or handle as appropriate
+        orgId: defaultOrg.id,
+        role: 'USER',
+        status: 'ACTIVE',
+      },
+    });
+    // Audit log user creation from Supabase
+    await this.auditLogger.log({
+      userId: newUser.id,
+      orgId: newUser.orgId,
+      action: 'user_create',
+      resource: 'user',
+      details: {
+        createdUserId: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+        supabaseId: newUser.supabaseId,
+      },
+    });
+    return newUser;
   }
 }
