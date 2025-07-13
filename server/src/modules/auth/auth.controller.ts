@@ -36,8 +36,10 @@ export class AuthController {
    */
   @Post('exchange')
   async exchange(@Body('token') supabaseToken: string, @Request() req) {
+    console.log('---[EXCHANGE]---');
     console.log(`[EXCHANGE] Received Supabase JWT:`, supabaseToken?.slice(0, 32) + '...');
     console.log(`[EXCHANGE] Request headers:`, req.headers);
+    console.log(`[EXCHANGE] Request body:`, req.body);
 
     // 1. Parse Supabase token payload
     let payload: any;
@@ -48,6 +50,7 @@ export class AuthController {
       let decoded = Buffer.from(body, 'base64url').toString('utf8');
       payload = JSON.parse(decoded);
     } catch (err) {
+      console.error('[EXCHANGE] Supabase token parse error:', err);
       return {
         error: 'Invalid Supabase token',
         details: err instanceof Error ? err.message : String(err),
@@ -68,8 +71,13 @@ export class AuthController {
       sub: user.id,
       role: user.role,
       orgId: user.orgId,
+      supabaseId: user.supabaseId || payload.sub,
+      tenant_id: user.orgId,
     });
 
+    console.log('[EXCHANGE] Backend JWT issued:', backendJwt?.slice(0, 32) + '...');
+    console.log('[EXCHANGE] User object:', user);
+    console.log('---[EXCHANGE END]---');
     return { token: backendJwt, user };
   }
 

@@ -93,8 +93,10 @@ const AnalyticsDashboardLanding: React.FC = () => {
           {/* Analytics avatar and info */}
           <div className="h-10 w-10 rounded-full bg-blue-600" />
           <div>
-            <div className="text-white font-semibold">Alex Analyst</div>
-            <div className="text-xs text-gray-400">Analytics Lead</div>
+            <div className="text-white font-semibold">{user?.name || 'User'}</div>
+            <div className="text-xs text-gray-400">User ID: {user?.supabaseId || 'N/A'}</div>
+            <div className="text-xs text-gray-400">Tenant: {user?.orgId || user?.supabaseId || 'N/A'}</div>
+            <div className="text-xs text-gray-400">Role: {user?.role || 'USER'}</div>
           </div>
         </div>
       </aside>

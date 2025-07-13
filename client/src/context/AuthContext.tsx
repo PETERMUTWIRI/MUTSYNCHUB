@@ -1,9 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { exchangeSupabaseJwt } from '@/lib/exchange';
+import { decodeJwt } from '@/lib/jwtDecode';
 
 export interface User {
   id: string;
+  supabaseId?: string;
   orgId: string;
+  tenant_id?: string;
   token: string;
   name: string;
   email: string;
@@ -35,31 +39,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
 
-  // Load user data from Supabase session
+  // Load user data from backend JWT in localStorage
   useEffect(() => {
-    let isMounted = true;
+    setLoading(true);
     (async () => {
-      setLoading(true);
-      // Exchange Supabase JWT for backend JWT and user context
-      const { exchangeSupabaseJwt } = await import('@/lib/exchange');
+      // Try to exchange Supabase JWT for backend JWT
       const result = await exchangeSupabaseJwt();
-      if (result && isMounted) {
+      if (result && result.token && result.user) {
+        localStorage.setItem('backend_jwt', result.token);
         setToken(result.token);
         setUser({
-          ...result.user,
+          id: result.user.id || '',
+          supabaseId: result.user.supabaseId || result.user.id || '',
+          orgId: result.user.orgId || '',
+          tenant_id: result.user.tenant_id || result.user.orgId || '',
           token: result.token,
-          orgId: result.user.orgId || result.user.organizationId || '',
-          plan: result.user.plan || result.user.subscriptionTier || 'basic',
+          name: result.user.name || '',
+          email: result.user.email || '',
           role: (result.user.role || 'user').toUpperCase(),
+          plan: result.user.plan || 'basic',
         });
-        localStorage.setItem('tenant_id', result.user.orgId || result.user.organizationId || '');
-      } else if (isMounted) {
-        setUser(null);
-        setToken(null);
+        localStorage.setItem('tenant_id', result.user.tenant_id || result.user.orgId || '');
+      } else {
+        // Fallback: try to load backend JWT from localStorage
+        const backendJwt = localStorage.getItem('backend_jwt');
+        if (backendJwt) {
+          const decoded = decodeJwt(backendJwt);
+          if (decoded) {
+            setToken(backendJwt);
+            setUser({
+              id: decoded.sub || decoded.id || '',
+              supabaseId: decoded.supabaseId || decoded.sub || '',
+              orgId: decoded.tenant_id || decoded.orgId || decoded.organizationId || '',
+              tenant_id: decoded.tenant_id || '',
+              token: backendJwt,
+              name: decoded.name || '',
+              email: decoded.email || '',
+              role: (decoded.role || 'user').toUpperCase(),
+              plan: decoded.plan || decoded.subscriptionTier || 'basic',
+            });
+            localStorage.setItem('tenant_id', decoded.tenant_id || decoded.orgId || decoded.organizationId || '');
+          } else {
+            setUser(null);
+            setToken(null);
+          }
+        } else {
+          setUser(null);
+          setToken(null);
+        }
       }
-      if (isMounted) setLoading(false);
+      setLoading(false);
     })();
-    return () => { isMounted = false; };
   }, []);
 
   return (
@@ -68,3 +98,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+

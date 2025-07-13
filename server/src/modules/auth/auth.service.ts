@@ -11,10 +11,16 @@ export class AuthService {
   /**
    * Sign a backend JWT for the user
    */
-  signJwt(payload: { sub: string; role: string; orgId: string }) {
+  signJwt(payload: { sub: string; role: string; orgId: string; supabaseId?: string; tenant_id?: string }) {
     const jwt = require('jsonwebtoken');
     const secret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET;
-    return jwt.sign(payload, secret, { algorithm: 'HS256', expiresIn: process.env.JWT_EXPIRES_IN || '1d' });
+    // Add supabaseId and tenant_id to payload for frontend compatibility
+    const jwtPayload = {
+      ...payload,
+      supabaseId: payload.supabaseId || payload.sub,
+      tenant_id: payload.tenant_id || payload.orgId,
+    };
+    return jwt.sign(jwtPayload, secret, { algorithm: 'HS256', expiresIn: process.env.JWT_EXPIRES_IN || '1d' });
   }
   private readonly logger = new Logger(AuthService.name);
 

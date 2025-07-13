@@ -20,6 +20,7 @@ export class UserService {
       where: { id: userId },
       select: {
         id: true,
+        supabaseId: true,
         email: true,
         password: true,
         firstName: true,

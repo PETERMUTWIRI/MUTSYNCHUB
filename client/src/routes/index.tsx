@@ -38,7 +38,7 @@ const routes: RouteObject[] = [
   {
     path: '/analytics',
     element: (
-      <ProtectedRoute requiredRoles={['USER', 'OWNER']}>
+      <ProtectedRoute requiredRoles={['USER']}>
         <AnalyticsDashboardLanding />
       </ProtectedRoute>
     ),
@@ -47,7 +47,7 @@ const routes: RouteObject[] = [
   {
     path: '/admin',
     element: (
-      <ProtectedRoute requiredRoles={['ADMIN', 'OWNER']}>
+      <ProtectedRoute requiredRoles={['ADMIN']}>
         <AdminDashboard />
       </ProtectedRoute>
     ),

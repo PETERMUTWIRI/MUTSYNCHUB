@@ -11,9 +11,9 @@ async function bootstrap() {
   // ✅ CORS setup FIRST with dynamic origin check and debug logging
   // Update allowedOrigins to match frontend and Codespaces proxy
   const allowedOrigins = [
-    'https://fantastic-palm-tree-6vgj79vg7qq25wr5.app.github.dev',
-    'https://fantastic-palm-tree-6vgj79vg7qq25wr5-5000.app.github.dev',
-    'https://fantastic-palm-tree-6vgj79vg7qq25wr5-5173.app.github.dev',
+    'https://humble-space-giggle-wr4pvvp69rrj2w4v.app.github.dev',
+    'https://humble-space-giggle-wr4pvvp69rrj2w4v-5000.app.github.dev',
+    'https://humble-space-giggle-wr4pvvp69rrj2w4v-5173.app.github.dev',
     'http://localhost:5173',
     'https://localhost:5173',
     'https://ufcjnhamtlmpcjzhizsn.supabase.co'

@@ -5,6 +5,8 @@ import React from "react";
 import DataSources from '../components/admin/DataSources';
 import NLQueries from '../components/admin/NLQueries';
 import Schedules from '../components/admin/Schedules';
+import { useAuth } from '../hooks/useAuth';
+
 
 const amber = "#FFA500";
 const sidebarBg = "#232347";
@@ -12,6 +14,7 @@ const cardBg = "#1A1A2E";
 const mainGradient = "bg-gradient-to-b from-[#321F61] to-[#1F224D]";
 
 const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
   return (
     <div className="min-h-screen w-full flex">
       {/* Sidebar */}
@@ -62,8 +65,10 @@ const AdminDashboard: React.FC = () => {
           {/* Admin avatar and info */}
           <div className="h-10 w-10 rounded-full bg-gray-600" />
           <div>
-            <div className="text-white font-semibold">Jane Admin</div>
-            <div className="text-xs text-gray-400">Administrator</div>
+            <div className="text-white font-semibold">{user?.name || 'Admin'}</div>
+            <div className="text-xs text-gray-400">User ID: {user?.supabaseId || 'N/A'}</div>
+            <div className="text-xs text-gray-400">Tenant: {user?.tenant_id || user?.orgId || 'N/A'}</div>
+            <div className="text-xs text-gray-400">Role: {user?.role || 'ADMIN'}</div>
           </div>
         </div>
       </aside>
