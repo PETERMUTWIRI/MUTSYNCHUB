@@ -23,6 +23,8 @@ import AuditLogsPage from '../pages/admin/AuditLogsPage';
 import RevenuePage from '../pages/admin/RevenuePage';
 import SystemStatusPage from '../pages/admin/SystemStatusPage';
 import SystemSettingsPage from '../pages/admin/SystemSettingsPage';
+import SupportPage from '../pages/admin/SupportPage';
+import NotificationsPage from '../pages/admin/NotificationsPage';
 
 
 
@@ -102,6 +104,22 @@ const routes: RouteObject[] = [
         element: (
           <ProtectedRoute requiredRoles={['ADMIN']}>
             <SystemSettingsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'support',
+        element: (
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <SupportPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'notifications',
+        element: (
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <NotificationsPage />
           </ProtectedRoute>
         ),
       },

@@ -1,9 +1,8 @@
 import React from 'react';
-import IncidentsList from './components/IncidentsList';
-import MaintenanceList from './components/MaintenanceList';
-import UptimeChart from './components/UptimeChart';
+import SendNotificationForm from './components/SendNotificationForm';
+import SentNotificationsList from './components/SentNotificationsList';
 
-const SystemStatusPage: React.FC = () => {
+const NotificationsPage: React.FC = () => {
   return (
     <div className="min-h-screen w-full flex">
       {/* Sidebar */}
@@ -27,7 +26,7 @@ const SystemStatusPage: React.FC = () => {
             <a href="/admin/revenue" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
               Revenue
             </a>
-            <a href="/admin/system-status" className="rounded-lg px-4 py-2 font-semibold text-white bg-[var(--accent-amber,#FFA500)]">
+            <a href="/admin/system-status" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
               System Status
             </a>
             <a href="/admin/settings" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
@@ -36,7 +35,7 @@ const SystemStatusPage: React.FC = () => {
             <a href="/admin/support" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
               Support
             </a>
-            <a href="/admin/notifications" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
+            <a href="/admin/notifications" className="rounded-lg px-4 py-2 font-semibold text-white bg-[var(--accent-amber,#FFA500)]">
               Notifications
             </a>
           </nav>
@@ -51,21 +50,18 @@ const SystemStatusPage: React.FC = () => {
         >
           <div className="flex-1 flex items-center gap-4">
             <h1 className="text-3xl font-bold text-white mr-8">
-              System Status
+              Notifications
             </h1>
           </div>
         </header>
         {/* Main Grid */}
         <main className="pt-[100px] pb-12 px-12 w-full min-h-screen flex flex-col gap-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <IncidentsList />
-            <MaintenanceList />
-          </div>
-          <UptimeChart />
+          <SendNotificationForm />
+          <SentNotificationsList />
         </main>
       </div>
     </div>
   );
 };
 
-export default SystemStatusPage;
+export default NotificationsPage;

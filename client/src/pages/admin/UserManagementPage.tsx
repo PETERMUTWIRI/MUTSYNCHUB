@@ -31,6 +31,12 @@ const UserManagementPage: React.FC = () => {
             <a href="/admin/settings" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
               System Settings
             </a>
+            <a href="/admin/support" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
+              Support
+            </a>
+            <a href="/admin/notifications" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
+              Notifications
+            </a>
           </nav>
         </div>
       </aside>
