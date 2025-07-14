@@ -18,6 +18,11 @@ import UsersOrgs from '../components/admin/UsersOrgs';
 import Analytics from '../components/admin/Analytics';
 import Settings from '../components/admin/Settings';
 import ProtectedRoute from '../components/ProtectedRoute';
+import UserManagementPage from '../pages/admin/UserManagementPage';
+import AuditLogsPage from '../pages/admin/AuditLogsPage';
+import RevenuePage from '../pages/admin/RevenuePage';
+import SystemStatusPage from '../pages/admin/SystemStatusPage';
+import SystemSettingsPage from '../pages/admin/SystemSettingsPage';
 
 
 
@@ -51,7 +56,56 @@ const routes: RouteObject[] = [
         <AdminDashboard />
       </ProtectedRoute>
     ),
-    // Add admin children if needed
+    children: [
+      {
+        path: 'users',
+        element: (
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <UserManagementPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'settings',
+        element: (
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <SystemSettingsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'audit-logs',
+        element: (
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <AuditLogsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'revenue',
+        element: (
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <RevenuePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'system-status',
+        element: (
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <SystemStatusPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'settings',
+        element: (
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <SystemSettingsPage />
+          </ProtectedRoute>
+        ),
+      },
+    ],
   },
 ];
 

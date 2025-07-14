@@ -2,12 +2,10 @@ import React from "react";
 // Import your logo and icons here
 // import Logo from "../assets/images/mutsynchub-logo.png";
 // import { ... } from "lucide-react";
-import AuditLogViewer from '../components/admin/AuditLogViewer/AuditLogViewer';
 import DataSources from '../components/admin/DataSources';
 import NLQueries from '../components/admin/NLQueries';
 import RevenuePanel from '../components/admin/RevenuePanel/RevenuePanel';
 import Schedules from '../components/admin/Schedules';
-import UserManagement from '../components/admin/UserManagement/UserManagement';
 import { useAuth } from '../hooks/useAuth';
 
 
@@ -154,9 +152,56 @@ const AdminDashboard: React.FC = () => {
           {/* Row 2: 2 cards (large + small) */}
           <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
             {/* Card 4: User Management (large) */}
-            <UserManagement />
+            <div
+              className="col-span-1 md:col-span-5 rounded-2xl shadow-xl flex flex-col"
+              style={{
+                background: '#1A1A2E',
+                padding: 32,
+                minHeight: 340,
+              }}
+            >
+              <div className="text-lg font-bold text-gray-200 mb-2">
+                User Management
+              </div>
+              <div
+                className="flex-1 overflow-y-auto bg-[#232347] rounded-lg p-4 text-gray-300 mb-4"
+                style={{ minHeight: 120 }}
+              >
+                <div className="text-gray-400">
+                  Navigate to the User Management page to view and manage users.
+                </div>
+              </div>
+              <a
+                href="/admin/users"
+                className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-auto"
+              >
+                Manage All Users
+              </a>
+            </div>
             {/* Card 5: Recent Audit Logs (small) */}
-            <AuditLogViewer />
+            <div
+              className="col-span-1 md:col-span-2 rounded-2xl shadow-xl flex flex-col"
+              style={{
+                background: '#1A1A2E',
+                padding: 32,
+                minHeight: 340,
+              }}
+            >
+              <div className="text-lg font-bold text-gray-200 mb-2">
+                Recent Audit Logs
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <div className="text-gray-400">
+                  Navigate to the Audit Logs page to view all logs.
+                </div>
+              </div>
+              <a
+                href="/admin/audit-logs"
+                className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
+              >
+                View All Logs
+              </a>
+            </div>
           </div>
           {/* Row 3: 3 management/alert cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
