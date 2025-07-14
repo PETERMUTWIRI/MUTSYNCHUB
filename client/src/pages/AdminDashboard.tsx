@@ -1,7 +1,5 @@
 import React from "react";
-// Import your logo and icons here
-// import Logo from "../assets/images/mutsynchub-logo.png";
-// import { ... } from "lucide-react";
+import { Link } from 'react-router-dom';
 import DataSources from '../components/admin/DataSources';
 import NLQueries from '../components/admin/NLQueries';
 import RevenuePanel from '../components/admin/RevenuePanel/RevenuePanel';
@@ -29,49 +27,13 @@ const AdminDashboard: React.FC = () => {
             </span>
           </div>
           <nav className="flex flex-col gap-2 mt-6 px-2">
-            {/* Admin nav items: Dashboard, Users, Audit Logs, Revenue, System Status */}
-            <a
-              href="#"
-              className="rounded-lg px-4 py-2 font-semibold text-white bg-[var(--accent-amber,#FFA500)]"
-            >
-              Dashboard
-            </a>
-            <a
-              href="#"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              User Management
-            </a>
-            <a
-              href="#"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              Audit Logs
-            </a>
-            <a
-              href="#"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              Revenue
-            </a>
-            <a
-              href="/admin/system-status"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              System Status
-            </a>
-            <a
-              href="/admin/support"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              Support
-            </a>
-            <a
-              href="/admin/notifications"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              Notifications
-            </a>
+            <Link to="/admin" className="rounded-lg px-4 py-2 font-semibold text-white bg-[var(--accent-amber,#FFA500)]">Dashboard</Link>
+            <Link to="/admin/users" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">User Management</Link>
+            <Link to="/admin/audit-logs" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">Audit Logs</Link>
+            <Link to="/admin/revenue" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">Revenue</Link>
+            <Link to="/admin/system-status" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">System Status</Link>
+            <Link to="/admin/support" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">Support</Link>
+            <Link to="/admin/notifications" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">Notifications</Link>
           </nav>
         </div>
         <div className="px-6 py-6 border-t border-[#282A36] flex items-center gap-3">
@@ -183,12 +145,12 @@ const AdminDashboard: React.FC = () => {
                   Navigate to the User Management page to view and manage users.
                 </div>
               </div>
-              <a
-                href="/admin/users"
+              <Link
+                to="/admin/users"
                 className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-auto"
               >
                 Manage All Users
-              </a>
+              </Link>
             </div>
             {/* Card 5: Recent Audit Logs (small) */}
             <div
@@ -207,12 +169,12 @@ const AdminDashboard: React.FC = () => {
                   Navigate to the Audit Logs page to view all logs.
                 </div>
               </div>
-              <a
-                href="/admin/audit-logs"
+              <Link
+                to="/admin/audit-logs"
                 className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
               >
                 View All Logs
-              </a>
+              </Link>
             </div>
           </div>
           {/* Row 3: 3 management/alert cards */}
@@ -237,12 +199,12 @@ const AdminDashboard: React.FC = () => {
                   <div className="text-xs text-gray-400">$6,900</div>
                 </div>
               </div>
-              <a
-                href="#"
+              <Link
+                to="/admin/revenue"
                 className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
               >
                 View Revenue Details
-              </a>
+              </Link>
             </div>
             {/* Card 7: System Alerts */}
             <div
@@ -264,12 +226,12 @@ const AdminDashboard: React.FC = () => {
                   <div className="text-xs text-gray-400">1d ago</div>
                 </div>
               </div>
-              <a
-                href="#"
+              <Link
+                to="/admin/system-status"
                 className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
               >
                 View System Status
-              </a>
+              </Link>
             </div>
             {/* Card 8: Admin Controls */}
             <div

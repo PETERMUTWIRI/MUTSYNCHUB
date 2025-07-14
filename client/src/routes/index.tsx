@@ -13,6 +13,7 @@ import AnalyticsEngineDashboard from '../pages/AdminDashboard';
 import AdminDashboard from '../pages/AdminDashboard';
 import AnalyticsDashboardLanding from '../pages/AnalyticsDashboardLanding';
 import AuditLogs from '../components/admin/AuditLogs';
+import AdminLayout from '../pages/admin/AdminLayout';
 import Revenue from '../components/admin/Revenue';
 import UsersOrgs from '../components/admin/UsersOrgs';
 import Analytics from '../components/admin/Analytics';
@@ -36,7 +37,6 @@ const routes: RouteObject[] = [
     element: <App />,
     children: [
       { index: true, element: <Home /> },
-      { path: 'home', element: <Home /> },
       { path: 'solutions', element: <SolutionsWithSidebar /> },
       { path: 'resources', element: <Resources /> },
       { path: 'support', element: <Support /> },
@@ -53,75 +53,39 @@ const routes: RouteObject[] = [
   },
   {
     path: '/admin',
-    element: (
-      <ProtectedRoute requiredRoles={['ADMIN']}>
-        <AdminDashboard />
-      </ProtectedRoute>
-    ),
+    element: <AdminLayout />, // No ProtectedRoute for visual testing
     children: [
       {
-        path: 'users',
-        element: (
-          <ProtectedRoute requiredRoles={['ADMIN']}>
-            <UserManagementPage />
-          </ProtectedRoute>
-        ),
+        index: true,
+        element: <AdminDashboard />,
       },
       {
-        path: 'settings',
-        element: (
-          <ProtectedRoute requiredRoles={['ADMIN']}>
-            <SystemSettingsPage />
-          </ProtectedRoute>
-        ),
+        path: 'users',
+        element: <UserManagementPage />,
       },
       {
         path: 'audit-logs',
-        element: (
-          <ProtectedRoute requiredRoles={['ADMIN']}>
-            <AuditLogsPage />
-          </ProtectedRoute>
-        ),
+        element: <AuditLogsPage />,
       },
       {
         path: 'revenue',
-        element: (
-          <ProtectedRoute requiredRoles={['ADMIN']}>
-            <RevenuePage />
-          </ProtectedRoute>
-        ),
+        element: <RevenuePage />,
       },
       {
         path: 'system-status',
-        element: (
-          <ProtectedRoute requiredRoles={['ADMIN']}>
-            <SystemStatusPage />
-          </ProtectedRoute>
-        ),
+        element: <SystemStatusPage />,
       },
       {
         path: 'settings',
-        element: (
-          <ProtectedRoute requiredRoles={['ADMIN']}>
-            <SystemSettingsPage />
-          </ProtectedRoute>
-        ),
+        element: <SystemSettingsPage />,
       },
       {
         path: 'support',
-        element: (
-          <ProtectedRoute requiredRoles={['ADMIN']}>
-            <SupportPage />
-          </ProtectedRoute>
-        ),
+        element: <SupportPage />,
       },
       {
         path: 'notifications',
-        element: (
-          <ProtectedRoute requiredRoles={['ADMIN']}>
-            <NotificationsPage />
-          </ProtectedRoute>
-        ),
+        element: <NotificationsPage />,
       },
     ],
   },

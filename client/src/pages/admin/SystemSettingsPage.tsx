@@ -1,6 +1,6 @@
 import React from 'react';
 import SettingsTabs from './components/SettingsTabs';
-import SettingsTabs from './components/SettingsTabs';
+
 
 const SystemSettingsPage: React.FC = () => {
   return (
