@@ -2,9 +2,12 @@ import React from "react";
 // Import your logo and icons here
 // import Logo from "../assets/images/mutsynchub-logo.png";
 // import { ... } from "lucide-react";
+import AuditLogViewer from '../components/admin/AuditLogViewer/AuditLogViewer';
 import DataSources from '../components/admin/DataSources';
 import NLQueries from '../components/admin/NLQueries';
+import RevenuePanel from '../components/admin/RevenuePanel/RevenuePanel';
 import Schedules from '../components/admin/Schedules';
+import UserManagement from '../components/admin/UserManagement/UserManagement';
 import { useAuth } from '../hooks/useAuth';
 
 
@@ -132,21 +135,7 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
             {/* Card 2: Revenue This Month */}
-            <div
-              className="rounded-2xl shadow-xl"
-              style={{ background: cardBg, padding: 32 }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                Revenue This Month
-              </div>
-              <div className="text-4xl font-extrabold text-white mb-1">
-                $18,900
-              </div>
-              <div className="text-sm text-gray-400">Enterprise & SaaS Plans</div>
-              <div className="text-xs text-green-400 mt-2">
-                +8% since last month
-              </div>
-            </div>
+            <RevenuePanel />
             {/* Card 3: System Status */}
             <div
               className="rounded-2xl shadow-xl"
@@ -165,76 +154,9 @@ const AdminDashboard: React.FC = () => {
           {/* Row 2: 2 cards (large + small) */}
           <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
             {/* Card 4: User Management (large) */}
-            <div
-              className="col-span-1 md:col-span-5 rounded-2xl shadow-xl flex flex-col"
-              style={{
-                background: cardBg,
-                padding: 32,
-                minHeight: 340,
-              }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                User Management
-              </div>
-              <input
-                className="w-full rounded-lg bg-[#232347] px-4 py-3 text-gray-100 placeholder:text-gray-400 mb-4 focus:outline-none"
-                placeholder="Search or add users..."
-              />
-              <div
-                className="flex-1 overflow-y-auto bg-[#232347] rounded-lg p-4 text-gray-300 mb-4"
-                style={{ minHeight: 120 }}
-              >
-                {/* List of users or management actions */}
-                <div className="text-gray-400">
-                  No users selected. Use search to find users.
-                </div>
-              </div>
-              <a
-                href="#"
-                className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-auto"
-              >
-                Manage All Users
-              </a>
-            </div>
+            <UserManagement />
             {/* Card 5: Recent Audit Logs (small) */}
-            <div
-              className="col-span-1 md:col-span-2 rounded-2xl shadow-xl flex flex-col"
-              style={{
-                background: cardBg,
-                padding: 32,
-                minHeight: 340,
-              }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                Recent Audit Logs
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {/* List of recent audit logs */}
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-blue-400" />
-                  <div className="flex-1 text-gray-100">
-                    User 'jdoe' updated permissions
-                  </div>
-                  <div className="text-xs text-gray-400">5:30 PM</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-yellow-400" />
-                  <div className="flex-1 text-gray-100">Plan upgraded: Enterprise</div>
-                  <div className="text-xs text-gray-400">4:00 PM</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-red-400" />
-                  <div className="flex-1 text-gray-100">Failed login attempt</div>
-                  <div className="text-xs text-gray-400">Yesterday</div>
-                </div>
-              </div>
-              <a
-                href="#"
-                className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
-              >
-                View All Logs
-              </a>
-            </div>
+            <AuditLogViewer />
           </div>
           {/* Row 3: 3 management/alert cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

@@ -1,36 +1,119 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
-import { UserRole } from '@prisma/client';
+import { Organization, User, UserRole } from '@prisma/client';
 import { AuditLoggerService } from '../../common/services/audit-logger.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
+import { CreateOrganizationDto } from './dto/create-organization.dto';
+import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { QueryDto } from './dto/query.dto';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
   // --- User Management ---
-  async getUserById(id: string) {
+  async getUserById(id: string): Promise<User> {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-  async createUser(body: any) {
-    // Validate input, hash password, assign default role/org, etc.
-    // TODO: Add validation and security checks
-    return this.prisma.user.create({ data: body });
+  async createUser(createUserDto: CreateUserDto): Promise<User> {
+    this.logger.log(`Admin creating user: ${createUserDto.email}`);
+    const { email, password, firstName, lastName, orgId } = createUserDto;
+
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      this.logger.warn(`Attempted to create user with existing email: ${email}`);
+      throw new Error('User with this email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        orgId,
+      },
+    });
+
+    // Audit log user creation
+    await this.auditLogger.log({
+      userId: 'admin',
+      action: 'admin_create_user',
+      resource: 'user',
+      details: {
+        targetUserId: user.id,
+        email: user.email,
+      },
+     });
+
+    this.logger.log(`Admin successfully created user: ${user.email}`);
+    return user;
   }
 
-  async updateUser(id: string, body: any) {
-    // TODO: Add validation, audit logging
-    return this.prisma.user.update({ where: { id }, data: body });
+  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    this.logger.log(`Admin updating user: ${id}`);
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: updateUserDto,
+    });
+
+    await this.auditLogger.log({
+      userId: 'admin', // Or get the admin user ID from the request context
+      action: 'admin_update_user',
+      resource: 'user',
+      details: {
+        targetUserId: id,
+        updatedData: updateUserDto,
+      },
+    });
+
+    this.logger.log(`Admin successfully updated user: ${id}`);
+    return user;
   }
 
-  async deleteUser(id: string) {
-    // TODO: Add audit logging, check for dependencies
-    return this.prisma.user.delete({ where: { id } });
+  async deleteUser(id: string): Promise<User> {
+    this.logger.log(`Admin deleting user: ${id}`);
+    const user = await this.prisma.user.delete({ where: { id } });
+
+    await this.auditLogger.log({
+      userId: 'admin', // Or get the admin user ID from the request context
+      action: 'admin_delete_user',
+      resource: 'user',
+      details: {
+        targetUserId: id,
+      },
+    });
+
+    this.logger.log(`Admin successfully deleted user: ${id}`);
+    return user;
   }
 
-  async setUserTenant(id: string, tenantId: string) {
-    // TODO: Validate tenantId, audit logging
-    return this.prisma.user.update({ where: { id }, data: { orgId: tenantId } });
+  async setUserTenant(id: string, tenantId: string): Promise<User> {
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: { orgId: tenantId },
+    });
+
+    await this.auditLogger.log({
+      userId: 'admin', // Or get the admin user ID from the request context
+      action: 'admin_set_user_tenant',
+      resource: 'user',
+      details: {
+        targetUserId: id,
+        tenantId,
+      },
+    });
+
+    return user;
   }
 
   // --- Organization/Tenant Management ---
@@ -40,25 +123,71 @@ export class AdminService {
     return org;
   }
 
-  async createOrganization(body: any) {
-    // TODO: Validate input, audit logging
-    return this.prisma.organization.create({ data: body });
+  async createOrganization(createOrganizationDto: CreateOrganizationDto): Promise<Organization> {
+    this.logger.log(`Admin creating organization: ${createOrganizationDto.name}`);
+    const organization = await this.prisma.organization.create({
+      data: createOrganizationDto,
+    });
+
+    await this.auditLogger.log({
+      userId: 'admin',
+      action: 'admin_create_organization',
+      resource: 'organization',
+      details: {
+        organizationId: organization.id,
+        name: organization.name,
+      },
+    });
+
+    this.logger.log(`Admin successfully created organization: ${organization.name}`);
+    return organization;
   }
 
-  async updateOrganization(id: string, body: any) {
-    // TODO: Validate input, audit logging
-    return this.prisma.organization.update({ where: { id }, data: body });
+  async updateOrganization(id: string, updateOrganizationDto: UpdateOrganizationDto): Promise<Organization> {
+    this.logger.log(`Admin updating organization: ${id}`);
+    const organization = await this.prisma.organization.update({
+      where: { id },
+      data: updateOrganizationDto,
+    });
+
+    await this.auditLogger.log({
+      userId: 'admin',
+      action: 'admin_update_organization',
+      resource: 'organization',
+      details: {
+        organizationId: id,
+        updatedData: updateOrganizationDto,
+      },
+    });
+
+    this.logger.log(`Admin successfully updated organization: ${id}`);
+    return organization;
   }
 
-  async deleteOrganization(id: string) {
-    // TODO: Audit logging, check for dependencies
-    return this.prisma.organization.delete({ where: { id } });
+  async deleteOrganization(id: string): Promise<Organization> {
+    this.logger.log(`Admin deleting organization: ${id}`);
+    // TODO: check for dependencies
+    const organization = await this.prisma.organization.delete({ where: { id } });
+
+    await this.auditLogger.log({
+      userId: 'admin',
+      action: 'admin_delete_organization',
+      resource: 'organization',
+      details: {
+        organizationId: id,
+      },
+    });
+
+    this.logger.log(`Admin successfully deleted organization: ${id}`);
+    return organization;
   }
 
   // --- Analytics & Usage ---
-  async getAnalytics(query: any) {
+  async getAnalytics(query: any): Promise<any> {
     // TODO: Aggregate analytics from multiple tables, filter by date/org/user
-    return { users: await this.prisma.user.count(), orgs: await this.prisma.organization.count() };
+    const users = await this.prisma.user.count();
+    const orgs = await this.prisma.organization.count();
+    return { users, orgs };
   }
 
   async exportAnalytics(query: any) {
@@ -67,9 +196,27 @@ export class AdminService {
   }
 
   // --- Audit Logs ---
-  async getAuditLogs(query: any) {
-    // TODO: Filter logs by user, action, date
-    return this.prisma.auditLog.findMany({ where: { ...query } });
+  async getAuditLogs(queryDto: QueryDto): Promise<any> {
+    const { page, limit } = queryDto;
+    const skip = (page - 1) * limit;
+
+    const [logs, total] = await this.prisma.$transaction([
+      this.prisma.auditLog.findMany({
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.auditLog.count(),
+    ]);
+
+    return {
+      data: logs,
+      total,
+      page,
+      limit,
+    };
   }
 
   // --- Revenue & Billing ---

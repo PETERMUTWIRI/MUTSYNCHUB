@@ -4,6 +4,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateOrganizationDto } from './dto/create-organization.dto';
+import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { QueryDto } from './dto/query.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -21,11 +26,11 @@ export class AdminController {
 
   @Post('users')
   @Roles('ADMIN')
-  async createUser(@Body() body: any) { return this.adminService.createUser(body); }
+  async createUser(@Body() createUserDto: CreateUserDto) { return this.adminService.createUser(createUserDto); }
 
   @Put('users/:id')
   @Roles('ADMIN')
-  async updateUser(@Param('id') id: string, @Body() body: any) { return this.adminService.updateUser(id, body); }
+  async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) { return this.adminService.updateUser(id, updateUserDto); }
 
   @Delete('users/:id')
   @Roles('ADMIN')
@@ -55,11 +60,11 @@ export class AdminController {
 
   @Post('orgs')
   @Roles('ADMIN')
-  async createOrg(@Body() body: any) { return this.adminService.createOrganization(body); }
+  async createOrg(@Body() createOrganizationDto: CreateOrganizationDto) { return this.adminService.createOrganization(createOrganizationDto); }
 
   @Put('orgs/:id')
   @Roles('ADMIN')
-  async updateOrg(@Param('id') id: string, @Body() body: any) { return this.adminService.updateOrganization(id, body); }
+  async updateOrg(@Param('id') id: string, @Body() updateOrganizationDto: UpdateOrganizationDto) { return this.adminService.updateOrganization(id, updateOrganizationDto); }
 
   @Delete('orgs/:id')
   @Roles('ADMIN')
@@ -77,7 +82,7 @@ export class AdminController {
   // --- Audit Logs ---
   @Get('audit-logs')
   @Roles('ADMIN')
-  async getAuditLogs(@Query() query: any) { return this.adminService.getAuditLogs(query); }
+  async getAuditLogs(@Query() queryDto: QueryDto) { return this.adminService.getAuditLogs(queryDto); }
 
   // --- Revenue & Billing ---
   @Get('revenue')

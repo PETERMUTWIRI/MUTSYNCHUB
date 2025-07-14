@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import math
 from datetime import datetime, timedelta
-from src.infrastructure.ml.industry_analytics_service import IndustryAnalyticsService
+from server.src.infrastructure.ml.industry_analytics_service import IndustryAnalyticsService
 
 @pytest.fixture
 def analytics_service():

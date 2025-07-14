@@ -20,6 +20,7 @@ import { PrismaClient } from '@prisma/client';
 import { NeonService } from './database/neon.service';
 import { HealthController } from './modules/health/health.controller';
 import { RedisService } from './database/redis.service';
+import { RateLimitService } from './modules/auth/services/rate-limit.service';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { RedisService } from './database/redis.service';
       provide: APP_INTERCEPTOR,
       useClass: RateLimitInterceptor,
     },
+    RateLimitService,
   ],
   exports: [DataGateway],
 })

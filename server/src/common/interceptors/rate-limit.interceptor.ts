@@ -5,40 +5,30 @@ import {
   CallHandler,
   HttpException,
   HttpStatus,
-  Logger
+  Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
-
-// In-memory store for demo; use Redis or similar for distributed environments
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 30;
-const requestCounts: Record<string, { count: number; windowStart: number }> = {};
+import { RateLimitService } from '../../modules/auth/services/rate-limit.service';
 
 @Injectable()
 export class RateLimitInterceptor implements NestInterceptor {
   private readonly logger = new Logger(RateLimitInterceptor.name);
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  constructor(private readonly rateLimitService: RateLimitService) {}
+
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     const req = context.switchToHttp().getRequest();
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    const now = Date.now();
+    const user = req.user;
+    const identifier = user ? user.id : ip;
 
-    if (!requestCounts[ip] || now - requestCounts[ip].windowStart > RATE_LIMIT_WINDOW_MS) {
-      requestCounts[ip] = { count: 1, windowStart: now };
-    } else {
-      requestCounts[ip].count += 1;
-    }
+    const isAllowed = await this.rateLimitService.checkRateLimit(identifier, ip);
 
-    if (requestCounts[ip].count > MAX_REQUESTS_PER_WINDOW) {
-      this.logger.warn(`Rate limit exceeded for IP: ${ip}`);
+    if (!isAllowed) {
+      this.logger.warn(`Rate limit exceeded for identifier: ${identifier}, IP: ${ip}`);
       throw new HttpException('Too many requests, please try again later.', HttpStatus.TOO_MANY_REQUESTS);
     }
 
-    return next.handle().pipe(
-      tap(() => {
-        // Optionally log successful requests
-      })
-    );
+    return next.handle();
   }
 }
