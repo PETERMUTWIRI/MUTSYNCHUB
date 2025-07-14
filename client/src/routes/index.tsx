@@ -7,7 +7,7 @@ import Home from '../pages/Home';
 import Support from '../pages/Support';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AdminLayout from '../components/AdminLayout';
-import Spinner from '../components/ui/spinner';
+import Spinner from '../components/ui/Spinner';
 
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
 const UserManagementPage = lazy(() => import('../pages/admin/UserManagementPage'));

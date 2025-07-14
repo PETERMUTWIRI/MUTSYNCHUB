@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import DataSources from '../components/admin/DataSources';
 import NLQueries from '../components/admin/NLQueries';
 import Schedules from '../components/admin/Schedules';
-import RevenuePanel from './admin/components/RevenuePanel';
+import RevenuePanel from '../components/admin/RevenuePanel/RevenuePanel';
 
 const AdminDashboard: React.FC = () => {
   return (
