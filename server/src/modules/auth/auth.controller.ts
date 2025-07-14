@@ -44,11 +44,9 @@ export class AuthController {
     // 1. Parse Supabase token payload
     let payload: any;
     try {
-      const [header, body, signature] = supabaseToken.split('.');
-      if (!header || !body || !signature) throw new Error('Malformed JWT');
-
-      let decoded = Buffer.from(body, 'base64url').toString('utf8');
-      payload = JSON.parse(decoded);
+      const jwt = require('jsonwebtoken');
+      const secret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET;
+      payload = jwt.verify(supabaseToken, secret, { algorithms: ['HS256'] });
     } catch (err) {
       console.error('[EXCHANGE] Supabase token parse error:', err);
       return {
