@@ -43,31 +43,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     setLoading(true);
     (async () => {
-      // Disabled exchangeSupabaseJwt for dashboard dev; fallback to localStorage only
-      const backendJwt = localStorage.getItem('backend_jwt');
-      if (backendJwt) {
-        const decoded = decodeJwt(backendJwt);
-        if (decoded) {
-          setToken(backendJwt);
-          setUser({
-            id: decoded.sub || decoded.id || '',
-            supabaseId: decoded.supabaseId || decoded.sub || '',
-            orgId: decoded.tenant_id || decoded.orgId || decoded.organizationId || '',
-            tenant_id: decoded.tenant_id || '',
-            token: backendJwt,
-            name: decoded.name || '',
-            email: decoded.email || '',
-            role: (decoded.role || 'user').toUpperCase(),
-            plan: decoded.plan || decoded.subscriptionTier || 'basic',
-          });
-          localStorage.setItem('tenant_id', decoded.tenant_id || decoded.orgId || decoded.organizationId || '');
+      // Try to exchange Supabase JWT for backend JWT
+      const result = await exchangeSupabaseJwt();
+      if (result && result.token && result.user) {
+        localStorage.setItem('backend_jwt', result.token);
+        setToken(result.token);
+        setUser({
+          id: result.user.id || '',
+          supabaseId: result.user.supabaseId || result.user.id || '',
+          orgId: result.user.orgId || '',
+          tenant_id: result.user.tenant_id || result.user.orgId || '',
+          token: result.token,
+          name: result.user.name || '',
+          email: result.user.email || '',
+          role: (result.user.role || 'user').toUpperCase(),
+          plan: result.user.plan || 'basic',
+        });
+        localStorage.setItem('tenant_id', result.user.tenant_id || result.user.orgId || '');
+      } else {
+        // Fallback: try to load backend JWT from localStorage
+        const backendJwt = localStorage.getItem('backend_jwt');
+        if (backendJwt) {
+          const decoded = decodeJwt(backendJwt);
+          if (decoded) {
+            setToken(backendJwt);
+            setUser({
+              id: decoded.sub || decoded.id || '',
+              supabaseId: decoded.supabaseId || decoded.sub || '',
+              orgId: decoded.tenant_id || decoded.orgId || decoded.organizationId || '',
+              tenant_id: decoded.tenant_id || '',
+              token: backendJwt,
+              name: decoded.name || '',
+              email: decoded.email || '',
+              role: (decoded.role || 'user').toUpperCase(),
+              plan: decoded.plan || decoded.subscriptionTier || 'basic',
+            });
+            localStorage.setItem('tenant_id', decoded.tenant_id || decoded.orgId || decoded.organizationId || '');
+          } else {
+            setUser(null);
+            setToken(null);
+          }
         } else {
           setUser(null);
           setToken(null);
         }
-      } else {
-        setUser(null);
-        setToken(null);
       }
       setLoading(false);
     })();

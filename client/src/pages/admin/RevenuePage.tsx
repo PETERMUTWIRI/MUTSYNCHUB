@@ -1,87 +1,10 @@
 import React from 'react';
-import RevenueChart from './components/RevenueChart';
-import PaymentsTable from './components/PaymentsTable';
 
 const RevenuePage: React.FC = () => {
   return (
-    <div className="min-h-screen w-full flex">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-[220px] flex flex-col justify-between bg-[#232347] shadow-lg z-30">
-        <div>
-          <div className="flex items-center gap-3 px-6 py-8">
-            <span className="text-2xl font-extrabold text-white tracking-wide">
-              MH <span className="text-[var(--accent-amber,#FFA500)]">Admin</span>
-            </span>
-          </div>
-          <nav className="flex flex-col gap-2 mt-6 px-2">
-            <a href="/admin" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
-              Dashboard
-            </a>
-            <a href="/admin/users" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
-              User Management
-            </a>
-            <a href="/admin/audit-logs" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
-              Audit Logs
-            </a>
-            <a href="/admin/revenue" className="rounded-lg px-4 py-2 font-semibold text-white bg-[var(--accent-amber,#FFA500)]">
-              Revenue
-            </a>
-            <a href="/admin/system-status" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
-              System Status
-            </a>
-            <a href="/admin/settings" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
-              System Settings
-            </a>
-            <a href="/admin/support" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
-              Support
-            </a>
-            <a href="/admin/notifications" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">
-              Notifications
-            </a>
-          </nav>
-        </div>
-      </aside>
-      {/* Main Content */}
-      <div className="flex-1 ml-[220px] min-h-screen bg-gradient-to-b from-[#321F61] to-[#1F224D] transition-all duration-300">
-        {/* Header */}
-        <header
-          className="fixed left-[220px] right-0 top-0 h-[76px] flex items-center px-12 bg-transparent z-20"
-          style={{ backdropFilter: 'blur(8px)' }}
-        >
-          <div className="flex-1 flex items-center gap-4">
-            <h1 className="text-3xl font-bold text-white mr-8">
-              Revenue
-            </h1>
-          </div>
-        </header>
-        {/* Main Grid */}
-        <main className="pt-[100px] pb-12 px-12 w-full min-h-screen flex flex-col gap-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="col-span-1 md:col-span-2 rounded-2xl shadow-xl bg-[#1A1A2E] p-8">
-              <h2 className="text-lg font-bold text-gray-200 mb-4">Revenue Over Time</h2>
-              <RevenueChart />
-            </div>
-            <div className="col-span-1 rounded-2xl shadow-xl bg-[#1A1A2E] p-8">
-              <h2 className="text-lg font-bold text-gray-200 mb-4">Key Performance Indicators</h2>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <p className="text-gray-400">Total MRR</p>
-                  <p className="text-2xl font-bold text-white">$18,900</p>
-                </div>
-                <div>
-                  <p className="text-gray-400">Total ARR</p>
-                  <p className="text-2xl font-bold text-white">$226,800</p>
-                </div>
-                <div>
-                  <p className="text-gray-400">Churn Rate</p>
-                  <p className="text-2xl font-bold text-white">5%</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <PaymentsTable />
-        </main>
-      </div>
+    <div className="max-w-5xl mx-auto py-12">
+      <h1 className="text-4xl font-bold text-white mb-8">Revenue</h1>
+      {/* The RevenueChart and PaymentsTable components will be rendered here by the router */}
     </div>
   );
 };

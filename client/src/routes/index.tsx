@@ -1,35 +1,23 @@
-// src/routes/index.tsx
-
-
-
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { createBrowserRouter, RouteObject } from 'react-router-dom';
 import App from '../App';
 import SolutionsWithSidebar from '../pages/Solutions';
 import Resources from '../pages/Resources';
 import Home from '../pages/Home';
 import Support from '../pages/Support';
-import AnalyticsEngineDashboard from '../pages/AdminDashboard';
-import AdminDashboard from '../pages/AdminDashboard';
-import AnalyticsDashboardLanding from '../pages/AnalyticsDashboardLanding';
-import AuditLogs from '../components/admin/AuditLogs';
-import AdminLayout from '../pages/admin/AdminLayout';
-import Revenue from '../components/admin/Revenue';
-import UsersOrgs from '../components/admin/UsersOrgs';
-import Analytics from '../components/admin/Analytics';
-import Settings from '../components/admin/Settings';
 import ProtectedRoute from '../components/ProtectedRoute';
-import UserManagementPage from '../pages/admin/UserManagementPage';
-import AuditLogsPage from '../pages/admin/AuditLogsPage';
-import RevenuePage from '../pages/admin/RevenuePage';
-import SystemStatusPage from '../pages/admin/SystemStatusPage';
-import SystemSettingsPage from '../pages/admin/SystemSettingsPage';
-import SupportPage from '../pages/admin/SupportPage';
-import NotificationsPage from '../pages/admin/NotificationsPage';
+import AdminLayout from '../components/AdminLayout';
+import Spinner from '../components/ui/spinner';
 
-
-
-
+const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
+const UserManagementPage = lazy(() => import('../pages/admin/UserManagementPage'));
+const AuditLogsPage = lazy(() => import('../pages/admin/AuditLogsPage'));
+const RevenuePage = lazy(() => import('../pages/admin/RevenuePage'));
+const SystemStatusPage = lazy(() => import('../pages/admin/SystemStatusPage'));
+const SystemSettingsPage = lazy(() => import('../pages/admin/SystemSettingsPage'));
+const SupportPage = lazy(() => import('../pages/admin/SupportPage'));
+const NotificationsPage = lazy(() => import('../pages/admin/NotificationsPage'));
+const AnalyticsDashboardLanding = lazy(() => import('../pages/AnalyticsDashboardLanding'));
 
 const routes: RouteObject[] = [
   {
@@ -37,6 +25,7 @@ const routes: RouteObject[] = [
     element: <App />,
     children: [
       { index: true, element: <Home /> },
+      { path: 'home', element: <Home /> },
       { path: 'solutions', element: <SolutionsWithSidebar /> },
       { path: 'resources', element: <Resources /> },
       { path: 'support', element: <Support /> },
@@ -46,50 +35,86 @@ const routes: RouteObject[] = [
     path: '/analytics',
     element: (
       <ProtectedRoute requiredRoles={['USER']}>
-        <AnalyticsDashboardLanding />
+        <Suspense fallback={<Spinner />}>
+          <AnalyticsDashboardLanding />
+        </Suspense>
       </ProtectedRoute>
     ),
-    // Add analytics children if needed
   },
   {
     path: '/admin',
-    element: <AdminLayout />, // No ProtectedRoute for visual testing
+    element: (
+      <ProtectedRoute requiredRoles={['ADMIN']}>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
-        element: <AdminDashboard />,
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <AdminDashboard />
+          </Suspense>
+        ),
       },
       {
         path: 'users',
-        element: <UserManagementPage />,
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <UserManagementPage />
+          </Suspense>
+        ),
       },
       {
         path: 'audit-logs',
-        element: <AuditLogsPage />,
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <AuditLogsPage />
+          </Suspense>
+        ),
       },
       {
         path: 'revenue',
-        element: <RevenuePage />,
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <RevenuePage />
+          </Suspense>
+        ),
       },
       {
         path: 'system-status',
-        element: <SystemStatusPage />,
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <SystemStatusPage />
+          </Suspense>
+        ),
       },
       {
         path: 'settings',
-        element: <SystemSettingsPage />,
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <SystemSettingsPage />
+          </Suspense>
+        ),
       },
       {
         path: 'support',
-        element: <SupportPage />,
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <SupportPage />
+          </Suspense>
+        ),
       },
       {
         path: 'notifications',
-        element: <NotificationsPage />,
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <NotificationsPage />
+          </Suspense>
+        ),
       },
     ],
   },
 ];
-
 
 export default createBrowserRouter(routes);
