@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,23 @@ import {
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
+import { useToast } from '../../../hooks/use-toast';
 
 const InviteUserModal: React.FC = () => {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: 'User invited',
+      description: 'The invitation has been sent successfully.',
+    });
+    setOpen(false);
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>Invite User</Button>
       </DialogTrigger>
@@ -25,7 +38,7 @@ const InviteUserModal: React.FC = () => {
             Enter the user's details to send an invitation.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
               Name
@@ -50,10 +63,10 @@ const InviteUserModal: React.FC = () => {
             </Label>
             <Input id="org" className="col-span-3" />
           </div>
-        </div>
-        <DialogFooter>
-          <Button type="submit">Send Invitation</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="submit">Send Invitation</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

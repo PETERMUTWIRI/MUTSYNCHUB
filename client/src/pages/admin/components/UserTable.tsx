@@ -92,13 +92,7 @@ const UserTable: React.FC = () => {
   );
 
   return (
-    <div
-      className="col-span-1 md:col-span-5 rounded-2xl shadow-xl flex flex-col"
-      style={{
-        background: '#1A1A2E',
-        padding: 32,
-      }}
-    >
+    <div className="flex-1 min-h-[500px] flex flex-col rounded-2xl shadow-2xl bg-gradient-to-br from-[#232347] to-[#1A1A2E] p-6 md:p-10 mt-2">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-bold text-gray-200">User Management</h2>
         <InviteUserModal />
@@ -154,7 +148,7 @@ const UserTable: React.FC = () => {
           />
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto bg-[#232347] rounded-lg">
+    <div className="flex-1 overflow-y-auto bg-gradient-to-br from-cyan-800 to-blue-900 rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>

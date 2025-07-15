@@ -22,8 +22,8 @@ const data = [
 
 const UptimeChart: React.FC = () => {
   return (
-    <div className="rounded-2xl shadow-xl bg-[#1A1A2E] p-8" style={{ width: '100%', height: 300 }}>
-      <h2 className="text-lg font-bold text-gray-200 mb-4">Uptime (%)</h2>
+    <div className="" style={{ width: '100%', height: 300 }}>
+      <h2 className="text-lg font-bold text-emerald-200 mb-4">Uptime (%)</h2>
       <ResponsiveContainer>
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />

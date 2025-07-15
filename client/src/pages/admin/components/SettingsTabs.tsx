@@ -5,6 +5,7 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { updateSettings } from '../../../api/admin';
 import { useToast } from '../../../hooks/use-toast';
+import { Checkbox } from '../../../components/ui/checkbox';
 
 const SettingsTabs: React.FC = () => {
   const { toast } = useToast();
@@ -40,7 +41,7 @@ const SettingsTabs: React.FC = () => {
 
   return (
     <Tabs defaultValue="general">
-      <TabsList>
+      <TabsList className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-xl shadow mb-6">
         <TabsTrigger value="general">General</TabsTrigger>
         <TabsTrigger value="authentication">Authentication</TabsTrigger>
         <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
@@ -48,8 +49,8 @@ const SettingsTabs: React.FC = () => {
         <TabsTrigger value="notifications">Notifications</TabsTrigger>
       </TabsList>
       <TabsContent value="general">
-        <div className="rounded-2xl shadow-xl bg-[#1A1A2E] p-8">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">General Settings</h2>
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-blue-800 to-indigo-900 p-8">
+          <h2 className="text-lg font-bold text-cyan-200 mb-4">General Settings</h2>
           <div className="grid gap-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="appName" className="text-right">
@@ -82,8 +83,8 @@ const SettingsTabs: React.FC = () => {
         </div>
       </TabsContent>
       <TabsContent value="authentication">
-        <div className="rounded-2xl shadow-xl bg-[#1A1A2E] p-8">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Authentication Settings</h2>
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-purple-800 to-indigo-900 p-8">
+          <h2 className="text-lg font-bold text-purple-200 mb-4">Authentication Settings</h2>
           <div className="grid gap-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="passwordPolicy" className="text-right">
@@ -102,8 +103,8 @@ const SettingsTabs: React.FC = () => {
         </div>
       </TabsContent>
       <TabsContent value="roles">
-        <div className="rounded-2xl shadow-xl bg-[#1A1A2E] p-8">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Roles & Permissions</h2>
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-fuchsia-800 to-indigo-900 p-8">
+          <h2 className="text-lg font-bold text-fuchsia-200 mb-4">Roles & Permissions</h2>
           {/* Roles and permissions table will go here */}
           <div className="flex justify-end">
             <Button>Save</Button>
@@ -111,8 +112,8 @@ const SettingsTabs: React.FC = () => {
         </div>
       </TabsContent>
       <TabsContent value="billing">
-        <div className="rounded-2xl shadow-xl bg-[#1A1A2E] p-8">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Billing Settings</h2>
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-emerald-800 to-green-900 p-8">
+          <h2 className="text-lg font-bold text-emerald-200 mb-4">Billing Settings</h2>
           <div className="grid gap-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="defaultCurrency" className="text-right">
@@ -139,8 +140,8 @@ const SettingsTabs: React.FC = () => {
         </div>
       </TabsContent>
       <TabsContent value="notifications">
-        <div className="rounded-2xl shadow-xl bg-[#1A1A2E] p-8">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Notifications Settings</h2>
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-yellow-700 to-orange-900 p-8">
+          <h2 className="text-lg font-bold text-yellow-200 mb-4">Notifications Settings</h2>
           <div className="grid gap-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="emailTemplates" className="text-right">

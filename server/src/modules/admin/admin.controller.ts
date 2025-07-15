@@ -1,3 +1,28 @@
+  // --- Analytics Chart/Trend Endpoints ---
+  @Get('stats/user-growth/:orgId')
+  @Roles('ADMIN')
+  async getUserGrowth(@Param('orgId') orgId: string) {
+    return this.adminService.getUserGrowth(orgId);
+  }
+
+  @Get('stats/revenue-trend/:orgId')
+  @Roles('ADMIN')
+  async getRevenueTrend(@Param('orgId') orgId: string) {
+    return this.adminService.getRevenueTrend(orgId);
+  }
+
+  @Get('stats/active-users-trend/:orgId')
+  @Roles('ADMIN')
+  async getActiveUsersTrend(@Param('orgId') orgId: string) {
+    return this.adminService.getActiveUsersTrend(orgId);
+  }
+
+  @Get('stats/churn-trend/:orgId')
+  @Roles('ADMIN')
+  async getChurnTrend(@Param('orgId') orgId: string) {
+    return this.adminService.getChurnTrend(orgId);
+  }
+
 import { Controller, Get, Put, Param, Body, UseGuards,Delete,Post,Query, Req } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -13,6 +38,30 @@ import { QueryDto } from './dto/query.dto';
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
+  // --- Per-User Feature Flags ---
+  @Get('users/:id/feature-flags')
+  @Roles('ADMIN')
+  async getUserFeatureFlags(@Param('id') id: string) {
+    return this.adminService.getUserFeatureFlags(id);
+  }
+
+  @Put('users/:id/feature-flags')
+  @Roles('ADMIN')
+  async setUserFeatureFlags(@Param('id') id: string, @Body('flags') flags: Record<string, any>) {
+    return this.adminService.setUserFeatureFlags(id, flags);
+  }
+  // --- Feature Flags (Global) ---
+  @Get('feature-flags')
+  @Roles('ADMIN')
+  async getFeatureFlags() {
+    return this.adminService.getFeatureFlags();
+  }
+
+  @Put('feature-flags/:key')
+  @Roles('ADMIN')
+  async updateFeatureFlag(@Param('key') key: string, @Body('value') value: any) {
+    return this.adminService.updateFeatureFlag(key, value);
+  }
   constructor(private readonly adminService: AdminService) {}
 
   // --- User Management ---

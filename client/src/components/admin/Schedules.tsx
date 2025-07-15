@@ -16,15 +16,16 @@ const Schedules: React.FC = () => {
       .finally(() => setLoading(false));
   }, [user, token]);
 
-  if (loading) return <div>Loading Schedules...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center w-full h-full animate-pulse">
+      <span className="text-lg font-semibold text-gray-300 mb-2">Loading Schedules...</span>
+    </div>
+  );
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Schedules</h2>
-      <ul>
-        {schedules.map((s) => (
-          <li key={s.id}>{s.name}</li>
-        ))}
-      </ul>
+    <div className="flex flex-col items-center justify-center w-full h-full">
+      <h2 className="text-lg font-bold text-gray-200 mb-2">Schedules</h2>
+      <div className="text-4xl font-extrabold text-white mb-1">{schedules.length}</div>
+      <div className="text-sm text-gray-400">Total Schedules</div>
     </div>
   );
 };

@@ -22,16 +22,16 @@ const data = [
 
 const RevenueChart: React.FC = () => {
   return (
-    <div style={{ width: '100%', height: 300 }}>
-      <ResponsiveContainer>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="Enterprise" stroke="#8884d8" />
-          <Line type="monotone" dataKey="SaaS" stroke="#82ca9d" />
+    <div className="w-full h-[420px] md:h-[520px] bg-gradient-to-br from-emerald-900 to-green-900 rounded-2xl shadow-2xl p-4">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 32, right: 32, left: 8, bottom: 8 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#2dd4bf" />
+          <XAxis dataKey="name" stroke="#a7f3d0" />
+          <YAxis stroke="#a7f3d0" />
+          <Tooltip contentStyle={{ background: '#134e4a', border: 'none', color: '#a7f3d0' }} labelStyle={{ color: '#a7f3d0' }} />
+          <Legend wrapperStyle={{ color: '#a7f3d0' }} />
+          <Line type="monotone" dataKey="Enterprise" stroke="#34d399" strokeWidth={3} dot={{ r: 5, fill: '#34d399' }} />
+          <Line type="monotone" dataKey="SaaS" stroke="#60a5fa" strokeWidth={3} dot={{ r: 5, fill: '#60a5fa' }} />
         </LineChart>
       </ResponsiveContainer>
     </div>

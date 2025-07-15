@@ -9,8 +9,8 @@ const incidents = [
 
 const IncidentsList: React.FC = () => {
   return (
-    <div className="rounded-2xl shadow-xl bg-[#1A1A2E] p-8">
-      <h2 className="text-lg font-bold text-gray-200 mb-4">Incidents</h2>
+    <div className="">
+      <h2 className="text-lg font-bold text-yellow-200 mb-4">Incidents</h2>
       <ul>
         {incidents.map((incident) => (
           <li key={incident.id} className="flex justify-between items-center py-2">

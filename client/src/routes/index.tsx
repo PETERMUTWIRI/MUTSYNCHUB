@@ -17,6 +17,9 @@ const SystemStatusPage = lazy(() => import('../pages/admin/SystemStatusPage'));
 const SystemSettingsPage = lazy(() => import('../pages/admin/SystemSettingsPage'));
 const SupportPage = lazy(() => import('../pages/admin/SupportPage'));
 const NotificationsPage = lazy(() => import('../pages/admin/NotificationsPage'));
+const AdvancedAnalytics = lazy(() => import('../pages/admin/AdvancedAnalytics'));
+const FeatureFlags = lazy(() => import('../pages/admin/FeatureFlags'));
+const SystemControls = lazy(() => import('../pages/admin/SystemControls'));
 const AnalyticsDashboardLanding = lazy(() => import('../pages/AnalyticsDashboardLanding'));
 
 const routes: RouteObject[] = [
@@ -54,6 +57,30 @@ const routes: RouteObject[] = [
         element: (
           <Suspense fallback={<Spinner />}>
             <AdminDashboard />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'advanced-analytics',
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <AdvancedAnalytics />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'feature-flags',
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <FeatureFlags />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'system-controls',
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <SystemControls />
           </Suspense>
         ),
       },

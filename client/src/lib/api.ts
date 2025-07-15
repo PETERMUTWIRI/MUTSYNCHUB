@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ||
-    'https://humble-space-giggle-wr4pvvp69rrj2w4v-5173-5000.app.github.dev/api', // <-- add /api
+    'https://turbo-zebra-69pq7r6g59g63qw9-5173-5000.app.github.dev/api', // <-- add /api
   withCredentials: true,
   timeout: 10000,
   headers: {

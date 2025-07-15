@@ -58,13 +58,7 @@ const AuditLogTable: React.FC = () => {
   );
 
   return (
-    <div
-      className="col-span-1 md:col-span-7 rounded-2xl shadow-xl flex flex-col"
-      style={{
-        background: '#1A1A2E',
-        padding: 32,
-      }}
-    >
+    <div className="flex-1 min-h-[500px] flex flex-col rounded-2xl shadow-2xl bg-gradient-to-br from-fuchsia-800 to-indigo-900 p-6 md:p-10 mt-2">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-bold text-gray-200">Audit Logs</h2>
         <Button onClick={handleExport}>Export CSV</Button>

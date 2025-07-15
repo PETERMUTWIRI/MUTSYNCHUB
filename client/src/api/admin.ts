@@ -1,5 +1,15 @@
 import api from '../lib/api';
 
+// Per-User Feature Flags
+export const getUserFeatureFlags = (userId: string) => api.get(`/admin/users/${userId}/feature-flags`);
+export const setUserFeatureFlags = (userId: string, flags: Record<string, any>) => api.put(`/admin/users/${userId}/feature-flags`, { flags });
+// Feature Flags (Global)
+export const getFeatureFlags = () => api.get('/admin/feature-flags');
+export const updateFeatureFlag = (key: string, value: any) => api.put(`/admin/feature-flags/${key}`, { value });
+// System Controls (Platform Toggles)
+export const getSystemControls = () => api.get('/admin/system-controls');
+export const updateSystemControls = (data: any) => api.put('/admin/system-controls', data);
+
 // User Management
 export const getUsers = (params = {}) => api.get('/admin/users', { params });
 export const getUser = (id: string) => api.get(`/admin/users/${id}`);

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Input } from '../../../components/ui/input';
 import { getInvoices } from '../../../api/admin';
 import {
   Table,
@@ -9,44 +10,89 @@ import {
   TableRow,
 } from '../../../components/ui/table';
 import { Button } from '../../../components/ui/button';
+import Spinner from '../../../components/ui/Spinner';
+import { toast } from '../../../hooks/use-toast';
 
 const PaymentsTable: React.FC = () => {
   const [payments, setPayments] = useState<any[]>([]);
+  const [filteredPayments, setFilteredPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const paymentsPerPage = 10;
 
   useEffect(() => {
     const fetchPayments = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await getInvoices();
         setPayments(response.data);
+        setFilteredPayments(response.data);
+        if (response.data.length === 0) {
+          toast({
+            title: 'No Payments',
+            description: 'There are currently no payments.',
+          });
+        }
       } catch (error) {
-        console.error('Error fetching payments:', error);
+        setError('Failed to load payments.');
+        toast({
+          title: 'Error',
+          description: 'Failed to load payments.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
       }
     };
-
     fetchPayments();
   }, []);
+
+  useEffect(() => {
+    if (!search) {
+      setFilteredPayments(payments);
+    } else {
+      const lower = search.toLowerCase();
+      setFilteredPayments(
+        payments.filter(
+          (p) =>
+            p.userId?.toLowerCase().includes(lower) ||
+            p.plan?.toLowerCase().includes(lower) ||
+            p.paymentMethod?.toLowerCase().includes(lower) ||
+            p.status?.toLowerCase().includes(lower)
+        )
+      );
+      setPage(1);
+    }
+  }, [search, payments]);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
 
-  const paginatedPayments = payments.slice(
+  const paginatedPayments = filteredPayments.slice(
     (page - 1) * paymentsPerPage,
     page * paymentsPerPage
   );
 
+  if (loading) {
+    return <Spinner />;
+  }
+
   return (
-    <div
-      className="col-span-1 md:col-span-7 rounded-2xl shadow-xl flex flex-col"
-      style={{
-        background: '#1A1A2E',
-        padding: 32,
-      }}
-    >
-      <h2 className="text-lg font-bold text-gray-200 mb-4">User Payments</h2>
-      <div className="flex-1 overflow-y-auto bg-[#232347] rounded-lg">
+    <div className="flex flex-col">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
+        <h2 className="text-2xl font-bold text-cyan-200 flex items-center gap-2">User Payments</h2>
+        <Input
+          placeholder="Search payments..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+      </div>
+      <div className="flex-1 overflow-x-auto bg-gradient-to-br from-blue-800 to-indigo-900 rounded-xl shadow-2xl p-4">
         <Table>
           <TableHeader>
             <TableRow>
@@ -61,26 +107,32 @@ const PaymentsTable: React.FC = () => {
           <TableBody>
             {paginatedPayments.length > 0 ? (
               paginatedPayments.map((payment) => (
-                <TableRow key={payment.id}>
+                <TableRow key={payment.id} className="hover:bg-[#282A36] transition-colors">
                   <TableCell>{payment.userId}</TableCell>
                   <TableCell>{payment.plan}</TableCell>
                   <TableCell>${payment.amount.toLocaleString()}</TableCell>
                   <TableCell>{new Date(payment.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>{payment.paymentMethod}</TableCell>
-                  <TableCell>{payment.status}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded text-xs font-semibold 
+                      ${payment.status === 'Paid' ? 'bg-green-600 text-white' : payment.status === 'Pending' ? 'bg-yellow-500 text-black' : 'bg-gray-600 text-white'}`}>{payment.status}</span>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
-                  No payments found.
+                <TableCell colSpan={6} className="text-center py-8 text-gray-400">
+                  <div className="flex flex-col items-center justify-center">
+                    <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mb-2 text-gray-500"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span>No payments found.</span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <div className="flex justify-end items-center mt-4">
+      <div className="flex justify-end items-center mt-6">
         <Button
           onClick={() => handlePageChange(page - 1)}
           disabled={page === 1}
@@ -89,7 +141,7 @@ const PaymentsTable: React.FC = () => {
           Previous
         </Button>
         <span className="mx-4 text-gray-200">
-          Page {page} of {Math.ceil(payments.length / paymentsPerPage)}
+          Page {page} of {Math.max(1, Math.ceil(payments.length / paymentsPerPage))}
         </span>
         <Button
           onClick={() => handlePageChange(page + 1)}

@@ -7,8 +7,8 @@ const maintenances = [
 
 const MaintenanceList: React.FC = () => {
   return (
-    <div className="rounded-2xl shadow-xl bg-[#1A1A2E] p-8">
-      <h2 className="text-lg font-bold text-gray-200 mb-4">Scheduled Maintenance</h2>
+    <div className="">
+      <h2 className="text-lg font-bold text-cyan-200 mb-4">Scheduled Maintenance</h2>
       <ul>
         {maintenances.map((maintenance) => (
           <li key={maintenance.id} className="flex justify-between items-center py-2">
