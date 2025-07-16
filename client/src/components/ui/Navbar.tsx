@@ -112,7 +112,7 @@ const Navbar: React.FC = () => {
           token,
           name: data.user?.user_metadata?.full_name || '',
           email: data.user?.email || '',
-          role: 'ADMIN', // Force admin for dev
+          role: 'USER', // Force admin for dev
           plan: 'basic',
         });
         navigate('/admin');

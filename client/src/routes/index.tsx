@@ -46,7 +46,7 @@ const routes: RouteObject[] = [
     element: (
       <ProtectedRoute requiredRoles={['USER']}>
         <Suspense fallback={<Spinner />}>
-          <AnalyticsDashboardLanding />
+          <UserDashboard />
         </Suspense>
       </ProtectedRoute>
     ),
