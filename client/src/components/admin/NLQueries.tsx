@@ -16,15 +16,16 @@ const NLQueries: React.FC = () => {
       .finally(() => setLoading(false));
   }, [user, token]);
 
-  if (loading) return <div>Loading NL Queries...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center w-full h-full animate-pulse">
+      <span className="text-lg font-semibold text-gray-300 mb-2">Loading NL Queries...</span>
+    </div>
+  );
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">NL Query History</h2>
-      <ul>
-        {queries.map((q) => (
-          <li key={q.id}>{q.query}</li>
-        ))}
-      </ul>
+    <div className="flex flex-col items-center justify-center w-full h-full">
+      <h2 className="text-lg font-bold text-gray-200 mb-2">NL Queries</h2>
+      <div className="text-4xl font-extrabold text-white mb-1">{queries.length}</div>
+      <div className="text-sm text-gray-400">Total Queries</div>
     </div>
   );
 };

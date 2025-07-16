@@ -1,13 +1,67 @@
+  // --- Analytics Chart/Trend Endpoints ---
+  @Get('stats/user-growth/:orgId')
+  @Roles('ADMIN')
+  async getUserGrowth(@Param('orgId') orgId: string) {
+    return this.adminService.getUserGrowth(orgId);
+  }
+
+  @Get('stats/revenue-trend/:orgId')
+  @Roles('ADMIN')
+  async getRevenueTrend(@Param('orgId') orgId: string) {
+    return this.adminService.getRevenueTrend(orgId);
+  }
+
+  @Get('stats/active-users-trend/:orgId')
+  @Roles('ADMIN')
+  async getActiveUsersTrend(@Param('orgId') orgId: string) {
+    return this.adminService.getActiveUsersTrend(orgId);
+  }
+
+  @Get('stats/churn-trend/:orgId')
+  @Roles('ADMIN')
+  async getChurnTrend(@Param('orgId') orgId: string) {
+    return this.adminService.getChurnTrend(orgId);
+  }
+
 import { Controller, Get, Put, Param, Body, UseGuards,Delete,Post,Query, Req } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateOrganizationDto } from './dto/create-organization.dto';
+import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { QueryDto } from './dto/query.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
+  // --- Per-User Feature Flags ---
+  @Get('users/:id/feature-flags')
+  @Roles('ADMIN')
+  async getUserFeatureFlags(@Param('id') id: string) {
+    return this.adminService.getUserFeatureFlags(id);
+  }
+
+  @Put('users/:id/feature-flags')
+  @Roles('ADMIN')
+  async setUserFeatureFlags(@Param('id') id: string, @Body('flags') flags: Record<string, any>) {
+    return this.adminService.setUserFeatureFlags(id, flags);
+  }
+  // --- Feature Flags (Global) ---
+  @Get('feature-flags')
+  @Roles('ADMIN')
+  async getFeatureFlags() {
+    return this.adminService.getFeatureFlags();
+  }
+
+  @Put('feature-flags/:key')
+  @Roles('ADMIN')
+  async updateFeatureFlag(@Param('key') key: string, @Body('value') value: any) {
+    return this.adminService.updateFeatureFlag(key, value);
+  }
   constructor(private readonly adminService: AdminService) {}
 
   // --- User Management ---
@@ -21,11 +75,11 @@ export class AdminController {
 
   @Post('users')
   @Roles('ADMIN')
-  async createUser(@Body() body: any) { return this.adminService.createUser(body); }
+  async createUser(@Body() createUserDto: CreateUserDto) { return this.adminService.createUser(createUserDto); }
 
   @Put('users/:id')
   @Roles('ADMIN')
-  async updateUser(@Param('id') id: string, @Body() body: any) { return this.adminService.updateUser(id, body); }
+  async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) { return this.adminService.updateUser(id, updateUserDto); }
 
   @Delete('users/:id')
   @Roles('ADMIN')
@@ -55,11 +109,11 @@ export class AdminController {
 
   @Post('orgs')
   @Roles('ADMIN')
-  async createOrg(@Body() body: any) { return this.adminService.createOrganization(body); }
+  async createOrg(@Body() createOrganizationDto: CreateOrganizationDto) { return this.adminService.createOrganization(createOrganizationDto); }
 
   @Put('orgs/:id')
   @Roles('ADMIN')
-  async updateOrg(@Param('id') id: string, @Body() body: any) { return this.adminService.updateOrganization(id, body); }
+  async updateOrg(@Param('id') id: string, @Body() updateOrganizationDto: UpdateOrganizationDto) { return this.adminService.updateOrganization(id, updateOrganizationDto); }
 
   @Delete('orgs/:id')
   @Roles('ADMIN')
@@ -77,7 +131,7 @@ export class AdminController {
   // --- Audit Logs ---
   @Get('audit-logs')
   @Roles('ADMIN')
-  async getAuditLogs(@Query() query: any) { return this.adminService.getAuditLogs(query); }
+  async getAuditLogs(@Query() queryDto: QueryDto) { return this.adminService.getAuditLogs(queryDto); }
 
   // --- Revenue & Billing ---
   @Get('revenue')

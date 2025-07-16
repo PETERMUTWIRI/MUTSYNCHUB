@@ -9,7 +9,10 @@ echo "Running tests for MutSyncHub Analytics..."
 export PYTHONPATH=/home/peter/mutsynchub/server
 
 # Activate virtual environment
-source venv/bin/activate
+source server/venv/bin/activate
+
+# Install dependencies
+pip install -r server/requirements.txt --no-cache-dir
 
 # Run tests with full output
-python -m pytest tests/test_analytics_service.py -vv --capture=no
+python -m pytest server/tests/test_import.py -vv --capture=no

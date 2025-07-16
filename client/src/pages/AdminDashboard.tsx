@@ -1,319 +1,163 @@
-import React from "react";
-// Import your logo and icons here
-// import Logo from "../assets/images/mutsynchub-logo.png";
-// import { ... } from "lucide-react";
+import React from 'react';
+import { HiUserGroup, HiCurrencyDollar, HiShieldCheck, HiClipboardList, HiUsers, HiCog } from 'react-icons/hi';
+// ...existing code...
+import { Link } from "react-router-dom";
 import DataSources from '../components/admin/DataSources';
 import NLQueries from '../components/admin/NLQueries';
 import Schedules from '../components/admin/Schedules';
-import { useAuth } from '../hooks/useAuth';
-
-
-const amber = "#FFA500";
-const sidebarBg = "#232347";
-const cardBg = "#1A1A2E";
-const mainGradient = "bg-gradient-to-b from-[#321F61] to-[#1F224D]";
+import RevenuePanel from '../components/admin/RevenuePanel/RevenuePanel';
 
 const AdminDashboard: React.FC = () => {
-  const { user } = useAuth();
   return (
-    <div className="min-h-screen w-full flex">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-[220px] flex flex-col justify-between bg-[#232347] shadow-lg z-30">
-        <div>
-          <div className="flex items-center gap-3 px-6 py-8">
-            {/* <img src={Logo} alt="MutSyncHub Logo" className="h-10 w-10" /> */}
-            <span className="text-2xl font-extrabold text-white tracking-wide">
-              MH{" "}
-              <span className="text-[var(--accent-amber,#FFA500)]">Admin</span>
-            </span>
-          </div>
-          <nav className="flex flex-col gap-2 mt-6 px-2">
-            {/* Admin nav items: Dashboard, Users, Audit Logs, Revenue, System Status */}
-            <a
-              href="#"
-              className="rounded-lg px-4 py-2 font-semibold text-white bg-[var(--accent-amber,#FFA500)]"
-            >
-              Dashboard
-            </a>
-            <a
-              href="#"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              User Management
-            </a>
-            <a
-              href="#"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              Audit Logs
-            </a>
-            <a
-              href="#"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              Revenue
-            </a>
-            <a
-              href="#"
-              className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]"
-            >
-              System Status
-            </a>
-          </nav>
+    <div className="max-w-5xl mx-auto py-12">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+        {/* Overview Title (left) */}
+        <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg mb-4 md:mb-0 text-left">Overview</h1>
+        {/* Welcome Banner (right) */}
+        <div className="rounded-2xl bg-gradient-to-r from-blue-900 to-indigo-900 shadow-xl p-8 flex flex-col justify-center animate-fade-in max-w-xl w-full md:w-auto">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">Welcome back, Admin!</h2>
+          <p className="text-gray-300 text-lg">Here's a quick overview of your system health and activity.</p>
         </div>
-        <div className="px-6 py-6 border-t border-[#282A36] flex items-center gap-3">
-          {/* Admin avatar and info */}
-          <div className="h-10 w-10 rounded-full bg-gray-600" />
-          <div>
-            <div className="text-white font-semibold">{user?.name || 'Admin'}</div>
-            <div className="text-xs text-gray-400">User ID: {user?.supabaseId || 'N/A'}</div>
-            <div className="text-xs text-gray-400">Tenant: {user?.tenant_id || user?.orgId || 'N/A'}</div>
-            <div className="text-xs text-gray-400">Role: {user?.role || 'ADMIN'}</div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+        {/* Data Sources Card */}
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-blue-800 to-indigo-900 p-6 md:p-10 transition-transform duration-200 hover:scale-105 cursor-pointer flex flex-col items-center justify-center min-h-[180px]">
+          <HiClipboardList className="text-cyan-400 text-4xl mb-2" />
+          <DataSources />
+        </div>
+        {/* NL Queries Card */}
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-purple-800 to-indigo-900 p-6 md:p-10 transition-transform duration-200 hover:scale-105 cursor-pointer flex flex-col items-center justify-center min-h-[180px]">
+          <HiUsers className="text-purple-300 text-4xl mb-2" />
+          <NLQueries />
+        </div>
+        {/* Schedules Card */}
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-green-800 to-teal-900 p-6 md:p-10 transition-transform duration-200 hover:scale-105 cursor-pointer flex flex-col items-center justify-center min-h-[180px]">
+          <HiCog className="text-green-300 text-4xl mb-2" />
+          <Schedules />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 mt-8">
+        {/* Total Users Card */}
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-blue-700 to-indigo-900 p-6 md:p-10 transition-transform duration-200 hover:scale-105 cursor-pointer flex flex-col items-center justify-center min-h-[180px]">
+          <HiUserGroup className="text-blue-300 text-4xl mb-2" />
+          <div className="text-lg font-bold text-gray-200 mb-2">Total Users</div>
+          <div className="text-4xl font-extrabold text-white mb-1">2,340</div>
+          <div className="text-sm text-gray-400">Active Accounts</div>
+          <div className="text-xs text-green-400 mt-2">+5% since last month</div>
+        </div>
+        {/* Revenue Card */}
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-green-700 to-teal-900 p-6 md:p-10 transition-transform duration-200 hover:scale-105 cursor-pointer flex flex-col items-center justify-center min-h-[180px]">
+          <HiCurrencyDollar className="text-green-300 text-4xl mb-2" />
+          <RevenuePanel />
+        </div>
+        {/* System Status Card */}
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-purple-700 to-indigo-900 p-6 md:p-10 transition-transform duration-200 hover:scale-105 cursor-pointer flex flex-col items-center justify-center min-h-[180px]">
+          <HiShieldCheck className="text-purple-300 text-4xl mb-2" />
+          <div className="text-lg font-bold text-gray-200 mb-2">System Status</div>
+          <div className="text-4xl font-extrabold text-green-400 mb-1">All Systems Operational</div>
+          <div className="text-sm text-gray-400">No major incidents</div>
+          <div className="text-xs text-green-400 mt-2">100% uptime</div>
+        </div>
+      </div>
+
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-6 md:gap-8 mt-8">
+        {/* User Management Card */}
+        <div className="col-span-1 md:col-span-5 rounded-2xl shadow-2xl bg-gradient-to-br from-cyan-800 to-blue-900 flex flex-col p-8 min-h-[340px]">
+          <HiUsers className="text-cyan-300 text-4xl mb-2 self-center" />
+          <div className="text-lg font-bold text-gray-200 mb-2 text-center">User Management</div>
+          <div className="flex-1 overflow-y-auto bg-[#232347] rounded-lg p-4 text-gray-300 mb-4">
+            <div className="text-gray-400 text-center">
+              Navigate to the User Management page to view and manage users.
+            </div>
+          </div>
+          <Link
+            to="/admin/users"
+            className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-auto text-center"
+          >
+            Manage All Users
+          </Link>
+        </div>
+        {/* Recent Audit Logs Card */}
+        <div className="col-span-1 md:col-span-2 rounded-2xl shadow-2xl bg-gradient-to-br from-fuchsia-800 to-indigo-900 flex flex-col p-8 min-h-[340px]">
+          <HiClipboardList className="text-fuchsia-300 text-4xl mb-2 self-center" />
+          <div className="text-lg font-bold text-gray-200 mb-2 text-center">Recent Audit Logs</div>
+          <div className="flex-1 overflow-y-auto">
+            <div className="text-gray-400 text-center">
+              Navigate to the Audit Logs page to view all logs.
+            </div>
+          </div>
+          <Link
+            to="/admin/audit-logs"
+            className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4 text-center"
+          >
+            View All Logs
+          </Link>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 mt-8">
+        {/* Revenue Breakdown Card */}
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-emerald-800 to-green-900 flex flex-col p-8 min-h-[240px] items-center justify-center">
+          <HiCurrencyDollar className="text-emerald-300 text-4xl mb-2" />
+          <div className="text-lg font-bold text-gray-200 mb-2">Revenue Breakdown</div>
+          <div className="flex-1 w-full">
+            <div className="flex items-center gap-3 py-2">
+              <div className="h-3 w-3 rounded-full bg-green-400" />
+              <div className="flex-1 text-gray-100">Enterprise</div>
+              <div className="text-xs text-gray-400">$12,000</div>
+            </div>
+            <div className="flex items-center gap-3 py-2">
+              <div className="h-3 w-3 rounded-full bg-blue-400" />
+              <div className="flex-1 text-gray-100">SaaS</div>
+              <div className="text-xs text-gray-400">$6,900</div>
+            </div>
+          </div>
+          <Link
+            to="/admin/revenue"
+            className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
+          >
+            View Revenue Details
+          </Link>
+        </div>
+        {/* System Alerts Card */}
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-yellow-700 to-orange-900 flex flex-col p-8 min-h-[240px] items-center justify-center">
+          <HiShieldCheck className="text-yellow-300 text-4xl mb-2" />
+          <div className="text-lg font-bold text-gray-200 mb-2">System Alerts</div>
+          <div className="flex-1 w-full overflow-y-auto">
+            <div className="flex items-center gap-3 py-2">
+              <div className="h-3 w-3 rounded-full bg-green-400" />
+              <div className="flex-1 text-gray-100">No incidents reported</div>
+              <div className="text-xs text-gray-400">2h ago</div>
+            </div>
+            <div className="flex items-center gap-3 py-2">
+              <div className="h-3 w-3 rounded-full bg-yellow-400" />
+              <div className="flex-1 text-gray-100">Scheduled maintenance</div>
+              <div className="text-xs text-gray-400">1d ago</div>
+            </div>
+          </div>
+          <Link
+            to="/admin/system-status"
+            className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
+          >
+            View System Status
+          </Link>
+        </div>
+        {/* Admin Controls Card */}
+        <div className="rounded-2xl shadow-2xl bg-gradient-to-br from-gray-700 to-gray-900 flex flex-col p-8 min-h-[240px] items-center justify-center">
+          <HiCog className="text-gray-300 text-4xl mb-2" />
+          <div className="text-lg font-bold text-gray-200 mb-2">Admin Controls</div>
+          <div className="flex-1 w-full flex flex-col gap-2">
+            <button className="w-full rounded-lg bg-[#232347] px-4 py-2 text-white font-semibold mb-2 hover:bg-[#282A36]">
+              Invite User
+            </button>
+            <button className="w-full rounded-lg bg-[#232347] px-4 py-2 text-white font-semibold mb-2 hover:bg-[#282A36]">
+              Manage Roles
+            </button>
+            <button className="w-full rounded-lg bg-[#232347] px-4 py-2 text-white font-semibold hover:bg-[#282A36]">
+              System Settings
+            </button>
           </div>
         </div>
-      </aside>
-      {/* Main Content */}
-      <div
-        className={`flex-1 ml-[220px] min-h-screen ${mainGradient} transition-all duration-300`}
-      >
-        {/* Header */}
-        <header
-          className="fixed left-[220px] right-0 top-0 h-[76px] flex items-center px-12 bg-transparent z-20"
-          style={{ backdropFilter: "blur(8px)" }}
-        >
-          <div className="flex-1 flex items-center gap-4">
-            <h1 className="text-3xl font-bold text-white mr-8">
-              Admin Dashboard
-            </h1>
-            {/* Date Range Picker */}
-            <div className="bg-[#232347] rounded-lg px-4 py-2 text-gray-200 text-sm font-medium ml-2">
-              Jan 2025 - May 2025
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Search bar, notifications, help, AI chat icons */}
-            <input
-              className="bg-[#232347] rounded-lg px-4 py-2 text-gray-100 placeholder:text-gray-400 w-64 focus:outline-none"
-              placeholder="Search users, logs, revenue..."
-            />
-            {/* ...icons... */}
-          </div>
-        </header>
-        {/* Main Grid */}
-        <main className="pt-[100px] pb-12 px-12 w-full min-h-screen flex flex-col gap-8">
-          {/* Row 0: Feature Components */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="col-span-1 md:col-span-1">
-              <DataSources />
-            </div>
-            <div className="col-span-1 md:col-span-1">
-              <NLQueries />
-            </div>
-            <div className="col-span-1 md:col-span-1">
-              <Schedules />
-            </div>
-          </div>
-          {/* Row 1: 3 summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Card 1: Total Users */}
-            <div
-              className="rounded-2xl shadow-xl"
-              style={{ background: cardBg, padding: 32 }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                Total Users
-              </div>
-              <div className="text-4xl font-extrabold text-white mb-1">
-                2,340
-              </div>
-              <div className="text-sm text-gray-400">Active Accounts</div>
-              <div className="text-xs text-green-400 mt-2">
-                +5% since last month
-              </div>
-            </div>
-            {/* Card 2: Revenue This Month */}
-            <div
-              className="rounded-2xl shadow-xl"
-              style={{ background: cardBg, padding: 32 }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                Revenue This Month
-              </div>
-              <div className="text-4xl font-extrabold text-white mb-1">
-                $18,900
-              </div>
-              <div className="text-sm text-gray-400">Enterprise & SaaS Plans</div>
-              <div className="text-xs text-green-400 mt-2">
-                +8% since last month
-              </div>
-            </div>
-            {/* Card 3: System Status */}
-            <div
-              className="rounded-2xl shadow-xl"
-              style={{ background: cardBg, padding: 32 }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                System Status
-              </div>
-              <div className="text-4xl font-extrabold text-green-400 mb-1">
-                All Systems Operational
-              </div>
-              <div className="text-sm text-gray-400">No major incidents</div>
-              <div className="text-xs text-green-400 mt-2">100% uptime</div>
-            </div>
-          </div>
-          {/* Row 2: 2 cards (large + small) */}
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
-            {/* Card 4: User Management (large) */}
-            <div
-              className="col-span-1 md:col-span-5 rounded-2xl shadow-xl flex flex-col"
-              style={{
-                background: cardBg,
-                padding: 32,
-                minHeight: 340,
-              }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                User Management
-              </div>
-              <input
-                className="w-full rounded-lg bg-[#232347] px-4 py-3 text-gray-100 placeholder:text-gray-400 mb-4 focus:outline-none"
-                placeholder="Search or add users..."
-              />
-              <div
-                className="flex-1 overflow-y-auto bg-[#232347] rounded-lg p-4 text-gray-300 mb-4"
-                style={{ minHeight: 120 }}
-              >
-                {/* List of users or management actions */}
-                <div className="text-gray-400">
-                  No users selected. Use search to find users.
-                </div>
-              </div>
-              <a
-                href="#"
-                className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-auto"
-              >
-                Manage All Users
-              </a>
-            </div>
-            {/* Card 5: Recent Audit Logs (small) */}
-            <div
-              className="col-span-1 md:col-span-2 rounded-2xl shadow-xl flex flex-col"
-              style={{
-                background: cardBg,
-                padding: 32,
-                minHeight: 340,
-              }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                Recent Audit Logs
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {/* List of recent audit logs */}
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-blue-400" />
-                  <div className="flex-1 text-gray-100">
-                    User 'jdoe' updated permissions
-                  </div>
-                  <div className="text-xs text-gray-400">5:30 PM</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-yellow-400" />
-                  <div className="flex-1 text-gray-100">Plan upgraded: Enterprise</div>
-                  <div className="text-xs text-gray-400">4:00 PM</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-red-400" />
-                  <div className="flex-1 text-gray-100">Failed login attempt</div>
-                  <div className="text-xs text-gray-400">Yesterday</div>
-                </div>
-              </div>
-              <a
-                href="#"
-                className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
-              >
-                View All Logs
-              </a>
-            </div>
-          </div>
-          {/* Row 3: 3 management/alert cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Card 6: Revenue Breakdown */}
-            <div
-              className="rounded-2xl shadow-xl flex flex-col"
-              style={{ background: cardBg, padding: 32 }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                Revenue Breakdown
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-green-400" />
-                  <div className="flex-1 text-gray-100">Enterprise</div>
-                  <div className="text-xs text-gray-400">$12,000</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-blue-400" />
-                  <div className="flex-1 text-gray-100">SaaS</div>
-                  <div className="text-xs text-gray-400">$6,900</div>
-                </div>
-              </div>
-              <a
-                href="#"
-                className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
-              >
-                View Revenue Details
-              </a>
-            </div>
-            {/* Card 7: System Alerts */}
-            <div
-              className="rounded-2xl shadow-xl flex flex-col"
-              style={{ background: cardBg, padding: 32 }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                System Alerts
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-green-400" />
-                  <div className="flex-1 text-gray-100">No incidents reported</div>
-                  <div className="text-xs text-gray-400">2h ago</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-yellow-400" />
-                  <div className="flex-1 text-gray-100">Scheduled maintenance</div>
-                  <div className="text-xs text-gray-400">1d ago</div>
-                </div>
-              </div>
-              <a
-                href="#"
-                className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
-              >
-                View System Status
-              </a>
-            </div>
-            {/* Card 8: Admin Controls */}
-            <div
-              className="rounded-2xl shadow-xl flex flex-col"
-              style={{ background: cardBg, padding: 32 }}
-            >
-              <div className="text-lg font-bold text-gray-200 mb-2">
-                Admin Controls
-              </div>
-              <div className="flex-1">
-                <button className="w-full rounded-lg bg-[#232347] px-4 py-2 text-white font-semibold mb-2 hover:bg-[#282A36]">
-                  Invite Admin
-                </button>
-                <button className="w-full rounded-lg bg-[#232347] px-4 py-2 text-white font-semibold mb-2 hover:bg-[#282A36]">
-                  Manage Roles
-                </button>
-                <button className="w-full rounded-lg bg-[#232347] px-4 py-2 text-white font-semibold hover:bg-[#282A36]">
-                  System Settings
-                </button>
-              </div>
-            </div>
-          </div>
-        </main>
       </div>
     </div>
   );

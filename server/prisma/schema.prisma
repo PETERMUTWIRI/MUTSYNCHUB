@@ -59,6 +59,8 @@ model User {
   refreshTokenHash      String?   // Hashed refresh token for secure refresh
   resetTokenHash        String?   // Hashed password reset token
   resetTokenExpiresAt   DateTime?
+
+  featureFlags          Json?     // Per-user feature flag overrides
 }
 
 // API Management
