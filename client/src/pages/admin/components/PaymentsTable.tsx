@@ -15,7 +15,7 @@ import { toast } from '../../../hooks/use-toast';
 
 const PaymentsTable: React.FC = () => {
   const [payments, setPayments] = useState<any[]>([]);
-  const [filteredPayments, setFilteredPayments] = useState<any[]>([]);
+  const [totalPayments, setTotalPayments] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -27,10 +27,14 @@ const PaymentsTable: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await getInvoices();
-        setPayments(response.data);
-        setFilteredPayments(response.data);
-        if (response.data.length === 0) {
+        const response = await getInvoices({
+          page,
+          pageSize: paymentsPerPage,
+          search,
+        });
+        setPayments(response.data.items || []);
+        setTotalPayments(response.data.total || 0);
+        if ((response.data.items || []).length === 0) {
           toast({
             title: 'No Payments',
             description: 'There are currently no payments.',
@@ -48,34 +52,11 @@ const PaymentsTable: React.FC = () => {
       }
     };
     fetchPayments();
-  }, []);
-
-  useEffect(() => {
-    if (!search) {
-      setFilteredPayments(payments);
-    } else {
-      const lower = search.toLowerCase();
-      setFilteredPayments(
-        payments.filter(
-          (p) =>
-            p.userId?.toLowerCase().includes(lower) ||
-            p.plan?.toLowerCase().includes(lower) ||
-            p.paymentMethod?.toLowerCase().includes(lower) ||
-            p.status?.toLowerCase().includes(lower)
-        )
-      );
-      setPage(1);
-    }
-  }, [search, payments]);
+  }, [page, search]);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
-
-  const paginatedPayments = filteredPayments.slice(
-    (page - 1) * paymentsPerPage,
-    page * paymentsPerPage
-  );
 
   if (loading) {
     return <Spinner />;
@@ -88,7 +69,7 @@ const PaymentsTable: React.FC = () => {
         <Input
           placeholder="Search payments..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => { setSearch(e.target.value); setPage(1); }}
           className="max-w-xs"
         />
       </div>
@@ -105,8 +86,8 @@ const PaymentsTable: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedPayments.length > 0 ? (
-              paginatedPayments.map((payment) => (
+            {payments.length > 0 ? (
+              payments.map((payment) => (
                 <TableRow key={payment.id} className="hover:bg-[#282A36] transition-colors">
                   <TableCell>{payment.userId}</TableCell>
                   <TableCell>{payment.plan}</TableCell>
@@ -141,11 +122,11 @@ const PaymentsTable: React.FC = () => {
           Previous
         </Button>
         <span className="mx-4 text-gray-200">
-          Page {page} of {Math.max(1, Math.ceil(payments.length / paymentsPerPage))}
+          Page {page} of {Math.max(1, Math.ceil(totalPayments / paymentsPerPage))}
         </span>
         <Button
           onClick={() => handlePageChange(page + 1)}
-          disabled={page * paymentsPerPage >= payments.length}
+          disabled={page * paymentsPerPage >= totalPayments}
           variant="outline"
         >
           Next
