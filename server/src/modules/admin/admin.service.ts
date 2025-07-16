@@ -121,7 +121,15 @@ export class AdminService {
   async getUserFeatureFlags(userId: string): Promise<Record<string, any>> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    return user.featureFlags || {};
+    if (typeof user.featureFlags === 'string') {
+      try {
+        const parsed = JSON.parse(user.featureFlags);
+        return typeof parsed === 'object' && parsed !== null ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+    return typeof user.featureFlags === 'object' && user.featureFlags !== null ? user.featureFlags : {};
   }
 
   async setUserFeatureFlags(userId: string, flags: Record<string, any>): Promise<Record<string, any>> {
@@ -129,7 +137,15 @@ export class AdminService {
       where: { id: userId },
       data: { featureFlags: flags },
     });
-    return user.featureFlags || {};
+    if (typeof user.featureFlags === 'string') {
+      try {
+        const parsed = JSON.parse(user.featureFlags);
+        return typeof parsed === 'object' && parsed !== null ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+    return typeof user.featureFlags === 'object' && user.featureFlags !== null ? user.featureFlags : {};
   }
   private readonly logger = new Logger(AdminService.name);
   // --- User Management ---

@@ -1,27 +1,3 @@
-  // --- Analytics Chart/Trend Endpoints ---
-  @Get('stats/user-growth/:orgId')
-  @Roles('ADMIN')
-  async getUserGrowth(@Param('orgId') orgId: string) {
-    return this.adminService.getUserGrowth(orgId);
-  }
-
-  @Get('stats/revenue-trend/:orgId')
-  @Roles('ADMIN')
-  async getRevenueTrend(@Param('orgId') orgId: string) {
-    return this.adminService.getRevenueTrend(orgId);
-  }
-
-  @Get('stats/active-users-trend/:orgId')
-  @Roles('ADMIN')
-  async getActiveUsersTrend(@Param('orgId') orgId: string) {
-    return this.adminService.getActiveUsersTrend(orgId);
-  }
-
-  @Get('stats/churn-trend/:orgId')
-  @Roles('ADMIN')
-  async getChurnTrend(@Param('orgId') orgId: string) {
-    return this.adminService.getChurnTrend(orgId);
-  }
 
 import { Controller, Get, Put, Param, Body, UseGuards,Delete,Post,Query, Req } from '@nestjs/common';
 import { AdminService } from './admin.service';
@@ -167,4 +143,30 @@ export class AdminController {
   @Post('notifications')
   @Roles('ADMIN')
   async sendNotification(@Body() body: any) { return this.adminService.sendNotification(body); }
+
+    // --- Analytics Chart/Trend Endpoints ---
+  @Get('stats/user-growth/:orgId')
+  @Roles('ADMIN')
+  async getUserGrowth(@Param('orgId') orgId: string) {
+    return this.adminService.getUserGrowth(orgId);
+  }
+
+  @Get('stats/revenue-trend/:orgId')
+  @Roles('ADMIN')
+  async getRevenueTrend(@Param('orgId') orgId: string) {
+    return this.adminService.getRevenueTrend(orgId);
+  }
+
+  @Get('stats/active-users-trend/:orgId')
+  @Roles('ADMIN')
+  async getActiveUsersTrend(@Param('orgId') orgId: string) {
+    return this.adminService.getActiveUsersTrend(orgId);
+  }
+
+  @Get('stats/churn-trend/:orgId')
+  @Roles('ADMIN')
+  async getChurnTrend(@Param('orgId') orgId: string) {
+    return this.adminService.getChurnTrend(orgId);
+  }
+
 }

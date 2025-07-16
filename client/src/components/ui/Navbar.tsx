@@ -106,16 +106,22 @@ const Navbar: React.FC = () => {
         setToken(token);
         // Optionally fetch user profile from backend or supabase
         // For now, just set user as logged in
+        // TODO: Replace with real role from backend or user metadata
+        const role = (data.user?.user_metadata?.role || 'USER').toUpperCase();
         setUser({
           id: data.user?.id || '',
           orgId: '',
           token,
           name: data.user?.user_metadata?.full_name || '',
           email: data.user?.email || '',
-          role: 'USER', // Force admin for dev
+          role,
           plan: 'basic',
         });
-        navigate('/admin');
+        if (role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setLoginError('No session token received.');
       }
