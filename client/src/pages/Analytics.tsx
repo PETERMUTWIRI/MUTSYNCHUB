@@ -1,80 +1,158 @@
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import ScheduleAnalytics from '../components/user/ScheduleAnalytics';
-import QueryAnalytics from '../components/user/QueryAnalytics';
-import { getUsageAnalytics, exportAnalytics } from '../api/user';
-import Spinner from '../components/ui/Spinner';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useState } from 'react';
+import KPICard from '@/components/analytics/KPICard';
+import TimeSeriesChart from '@/components/analytics/TimeSeriesChart';
+import TopNBarChart from '@/components/analytics/TopNBarChart';
+import ForecastChart from '@/components/analytics/ForecastChart';
+import DonutChart from '@/components/analytics/DonutChart';
+import EDASummary from '@/components/analytics/EDASummary';
+import SankeyDiagram from '@/components/analytics/SankeyDiagram';
 
-const Analytics: React.FC = () => {
-  const [usageData, setUsageData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getUsageAnalytics()
-      .then(response => {
-        setUsageData(response.data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Failed to fetch usage analytics:', error);
-        setLoading(false);
-      });
-  }, []);
-
-  const handleExport = (format: 'csv' | 'pdf') => {
-    exportAnalytics(format)
-      .then(response => {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `analytics.${format}`);
-        document.body.appendChild(link);
-        link.click();
-      })
-      .catch(error => {
-        console.error(`Failed to export analytics as ${format}:`, error);
-      });
+export default function AnalyticsPage() {
+  // Synthetic demo data
+  const kpi = { daily: 5.2, monthly: 12.8, yoy: 22.4 };
+  const trendData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+    datasets: [
+      {
+        label: 'Sales',
+        data: [12000, 13500, 12800, 14500, 16000, 15500, 17000],
+        borderColor: '#38bdf8',
+        backgroundColor: 'rgba(56,189,248,0.2)',
+        tension: 0.4,
+        pointRadius: 4,
+      },
+      {
+        label: 'Profit',
+        data: [3200, 4100, 3900, 4700, 5200, 5100, 5900],
+        borderColor: '#a78bfa',
+        backgroundColor: 'rgba(167,139,250,0.2)',
+        tension: 0.4,
+        pointRadius: 4,
+      },
+    ],
   };
-
-  if (loading) {
-    return <Spinner />;
-  }
+  const anomalies = [
+    { x: 'Mar', y: 12800 },
+    { x: 'Jun', y: 15500 },
+  ];
+  const topNData = {
+    labels: ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'],
+    datasets: [
+      {
+        label: 'Sales',
+        data: [5200, 4800, 4300, 3900, 3700],
+        backgroundColor: [
+          '#38bdf8', '#a78bfa', '#f472b6', '#facc15', '#34d399'
+        ],
+      },
+    ],
+  };
+  const forecastData = {
+    labels: ['Jul', 'Aug', 'Sep', 'Oct'],
+    datasets: [
+      {
+        label: 'Forecast',
+        data: [17000, 18000, 18500, 19000],
+        borderColor: '#34d399',
+        backgroundColor: 'rgba(52,211,153,0.2)',
+        fill: false,
+        tension: 0.4,
+      },
+      {
+        label: 'Lower Bound',
+        data: [16500, 17500, 18000, 18500],
+        borderColor: '#f87171',
+        borderDash: [5,5],
+        fill: false,
+        tension: 0.4,
+      },
+      {
+        label: 'Upper Bound',
+        data: [17500, 18500, 19000, 19500],
+        borderColor: '#60a5fa',
+        borderDash: [5,5],
+        fill: false,
+        tension: 0.4,
+      },
+    ],
+  };
+  const donutData = {
+    labels: ['Card', 'Cash', 'Mpesa', 'Bank Transfer'],
+    datasets: [
+      {
+        label: 'Payment Methods',
+        data: [8200, 5400, 6100, 3200],
+        backgroundColor: [
+          '#38bdf8', '#a78bfa', '#f472b6', '#facc15'
+        ],
+      },
+    ],
+  };
+  const edaStats = { count: 12000, mean: 14000, std: 1800, nulls: 2 };
+  const sankeyData = {
+    nodes: [
+      { id: 'Start', name: 'Start' },
+      { id: 'Browse', name: 'Browse' },
+      { id: 'Add to Cart', name: 'Add to Cart' },
+      { id: 'Checkout', name: 'Checkout' },
+      { id: 'Purchase', name: 'Purchase' },
+    ],
+    links: [
+      { source: 'Start', target: 'Browse', value: 1000 },
+      { source: 'Browse', target: 'Add to Cart', value: 700 },
+      { source: 'Add to Cart', target: 'Checkout', value: 500 },
+      { source: 'Checkout', target: 'Purchase', value: 400 },
+    ],
+  };
+  const [query, setQuery] = useState('');
 
   return (
-    <div className="max-w-5xl mx-auto py-12">
-      <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg mb-8 text-left">Analytics</h1>
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 p-8 font-inter">
+      {/* KPI Cards */}
+      <section className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+        <KPICard label="Daily Growth" value={`${kpi.daily}%`} trend={kpi.daily > 0 ? 'up' : 'down'} />
+        <KPICard label="Monthly Growth" value={`${kpi.monthly}%`} trend={kpi.monthly > 0 ? 'up' : 'down'} />
+        <KPICard label="YoY Growth" value={`${kpi.yoy}%`} trend={kpi.yoy > 0 ? 'up' : 'down'} />
+        <KPICard label="Active Customers" value={1200} trend="neutral" />
+      </section>
 
-      <Card className="mb-8 bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white">Usage Analytics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={usageData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="queries" stroke="#8884d8" />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Storytelling Visuals */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <TimeSeriesChart data={trendData} anomalies={anomalies} />
+        <ForecastChart data={forecastData} title="Sales Forecast" />
+        <TopNBarChart data={topNData} title="Top Products" />
+        <DonutChart data={donutData} title="Sales Breakdown" />
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <ScheduleAnalytics />
-        <QueryAnalytics />
-      </div>
+      {/* EDA Summary & Sankey */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <EDASummary stats={edaStats} />
+        <SankeyDiagram data={sankeyData} title="Customer Funnel" />
+      </section>
 
-      <div className="mt-8 text-right">
-        <Button variant="outline" onClick={() => handleExport('csv')}>Export as CSV</Button>
-        <Button variant="outline" className="ml-4" onClick={() => handleExport('pdf')}>Export as PDF</Button>
-      </div>
+      {/* Ask AI & Scheduling */}
+      <section className="mb-8">
+        <div className="text-xl font-bold text-white mb-4">Ask About Your Data</div>
+        <div className="flex gap-4">
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="e.g. Show sales trends for Q2"
+            className="bg-slate-800 text-white px-4 py-2 rounded-xl w-full"
+          />
+          <button className="bg-gradient-to-r from-teal-400 to-purple-600 text-white px-6 py-2 rounded-xl shadow hover:scale-105 transition">Ask AI</button>
+        </div>
+      </section>
+
+      <section>
+        <div className="text-xl font-bold text-white mb-4">Scheduled Analytics</div>
+        <div className="text-slate-400">You have 2 active schedules. Next run: <span className="text-teal-400 font-bold">2025-07-20</span></div>
+        <div className="flex gap-4 mt-2">
+          <button className="bg-gradient-to-r from-purple-600 to-teal-400 text-white px-6 py-2 rounded-2xl shadow-lg hover:scale-105 transition">Export PDF</button>
+          <button className="bg-gradient-to-r from-indigo-600 to-blue-400 text-white px-6 py-2 rounded-2xl shadow-lg hover:scale-105 transition">Export CSV</button>
+        </div>
+      </section>
     </div>
   );
-};
-
-export default Analytics;
+}

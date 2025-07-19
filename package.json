@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "chalk": "^5.4.1",
+    "chart.js": "^4.5.0",
     "openai": "^5.1.1",
+    "react-chartjs-2": "^5.3.0",
     "readline-sync": "^1.4.10",
     "uuid": "^11.1.0"
   },

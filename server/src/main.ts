@@ -11,9 +11,6 @@ async function bootstrap() {
   // ✅ CORS setup FIRST with dynamic origin check and debug logging
   // Update allowedOrigins to match frontend and Codespaces proxy
   const allowedOrigins = [
-    'https://turbo-zebra-69pq7r6g59g63qw9.app.github.dev',
-    'https://turbo-zebra-69pq7r6g59g63qw9-5000.app.github.dev',
-    'https://turbo-zebra-69pq7r6g59g63qw9-5173.app.github.dev',
     'https://effective-space-goggles-x5465xg9vwrxh9pw7.app.github.dev',
     'https://effective-space-goggles-x5465xg9vwrxh9pw7-5000.app.github.dev',
     'https://effective-space-goggles-x5465xg9vwrxh9pw7-5173.app.github.dev',
