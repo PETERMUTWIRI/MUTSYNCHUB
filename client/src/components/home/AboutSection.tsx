@@ -24,9 +24,7 @@ const AboutSection: React.FC = () => {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
-        className="mx-auto max-w-4xl"
       >
-        {/* Text Content Only */}
         <motion.div variants={item} className="space-y-8">
           <h2 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 tracking-tight" style={{ color: '#1de9b6' }}>
             Empowering Businesses with Intelligent Technology.
@@ -65,6 +63,7 @@ const AboutSection: React.FC = () => {
             </p>
           </div>
         </motion.div>
+
         {/* CTA Section */}
         <motion.div
           variants={item}

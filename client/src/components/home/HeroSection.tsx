@@ -12,7 +12,6 @@ import IBM from "@/assets/logos/ibm.svg";
 import SAP from "@/assets/logos/sap.svg";
 import GDPR from "@/assets/logos/gdpr.svg";
 import NIST from "@/assets/logos/nist.svg";
-import stracture from '/stracture.png';
 
 const logos = [
   Aws, Cisco, GoogleCloud, ISO, Microsoft, Fortinet, Oracle, IBM, SAP, GDPR, NIST,
@@ -36,65 +35,59 @@ const item = {
 
 const HeroSection: React.FC = () => {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 py-24 px-8 text-white">
-      {/* Background accents */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 left-0 h-1/3 w-full bg-gradient-to-b from-white/10 to-transparent" />
-        <div className="absolute bottom-20 left-20 h-32 w-32 rounded-full bg-purple-500/20 blur-3xl" />
-        <div className="absolute top-20 right-20 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
-      </div>
-
-      {/* Hero Content Row */}
-      <div className="relative z-10 mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between text-left md:text-left gap-10 md:gap-20">
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="flex-1 px-2 md:px-8 lg:px-16 xl:px-24"
-        >
-          <motion.div variants={item} className="mb-6">
-            <span className="rounded-full bg-white/10 px-4 py-1 text-sm font-medium backdrop-blur-md">
-              New: AI-powered analytics →
-            </span>
-          </motion.div>
-
+    <>
+      {/* Video Section - full width, increased height, square edges */}
+      <section className="relative overflow-hidden w-full h-[600px] flex items-center justify-start shadow-xl">
+        {/* Video Background */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          src="/hero-vedio.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+        {/* Overlay gradient for readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/30 to-transparent z-10" />
+        {/* Hero Content */}
+        <div className="relative z-20 flex flex-col justify-center items-start h-full px-8 md:px-24 pt-24">
           <motion.h1
-            variants={item}
-            className="max-w-4xl text-4xl font-bold leading-tight sm:text-5xl md:text-6xl lg:leading-[1.2] mb-8"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1 }}
+            className="text-white text-4xl md:text-6xl font-bold mb-6 max-w-2xl"
           >
-            Accelerate Your <span className="text-blue-300">Digital</span>{" "}
-            Transformation
+            Accelerate Your <span className="text-blue-300">Digital</span> Transformation
           </motion.h1>
-
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 1 }}
+            className="rounded-full bg-white/10 px-4 py-1 text-sm font-medium backdrop-blur-md mb-4"
+          >
+            New: AI-powered analytics →
+          </motion.div>
           <motion.ul
-            variants={item}
-            className="mt-6 max-w-2xl text-lg leading-relaxed text-blue-100 sm:text-xl space-y-4 list-disc list-inside pl-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 1 }}
+            className="mt-2 max-w-xl text-lg leading-relaxed text-blue-100 sm:text-xl space-y-4 list-disc list-inside pl-4"
           >
             <li>Automate complex workflows to drive operational efficiency across your enterprise.</li>
             <li>Gain deep, actionable data insights for confident, strategic decision-making.</li>
             <li>Scale operations seamlessly with AI-powered analytics.</li>
             <li>Empower teams with secure, integrated, and future-ready SaaS infrastructure.</li>
           </motion.ul>
-        </motion.div>
-        {/* Structure Image on the right */}
-        <div className="flex-1 flex items-stretch justify-center md:justify-end w-full max-w-none" style={{ minHeight: '500px' }}>
-          <img
-            src={stracture}
-            alt="AI-Driven Analytics Pipeline"
-            className="rounded-2xl shadow-2xl object-contain bg-white/10 h-full"
-            style={{ height: '100%', width: 'auto', marginLeft: '1rem', alignSelf: 'stretch', maxHeight: '900px', minHeight: '500px' }}
-          />
         </div>
-      </div>
-
-      {/* Logo Carousel */}
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="relative z-10 mx-auto max-w-7xl text-center mt-16"
-      >
-        <div className="overflow-hidden w-full">
+      </section>
+      {/* Logo Carousel Below Video - full width, themed background */}
+      <section className="w-full py-6 px-0 bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+          className="overflow-hidden"
+        >
           <div
             className="flex gap-12 animate-logo-marquee py-4"
             style={{ minWidth: "100%" }}
@@ -109,9 +102,8 @@ const HeroSection: React.FC = () => {
               />
             ))}
           </div>
-        </div>
-      </motion.div>
-
+        </motion.div>
+      </section>
       {/* Carousel animation styles */}
       <style>{`
         @keyframes logo-marquee {
@@ -123,7 +115,7 @@ const HeroSection: React.FC = () => {
           width: 200%;
         }
       `}</style>
-    </section>
+    </>
   );
 };
 

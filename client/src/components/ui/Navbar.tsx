@@ -10,6 +10,7 @@ import {
   NavigationMenuLink,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { FcGoogle } from "react-icons/fc";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -120,6 +121,7 @@ const Navbar: React.FC = () => {
         if (role === 'ADMIN') {
           navigate('/admin');
         } else {
+
           navigate('/dashboard');
         }
       } else {
@@ -178,6 +180,16 @@ const Navbar: React.FC = () => {
       setSignupLoading(false);
     }
   };
+
+  // Google SSO handler (copied from SignUpPage)
+  const handleGoogleSignup = async () => {
+    setLoginLoading(true);
+    setLoginError(null);
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+    setLoginLoading(false);
+    if (error) setLoginError(error.message);
+  };
+
   const location = useLocation();
 
   return (
@@ -266,130 +278,73 @@ const Navbar: React.FC = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md w-3/4 md:w-[380px] rounded-2xl shadow-2xl bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800">
-                <DialogHeader>
-                  <DialogTitle>Login</DialogTitle>
-                  <DialogDescription>Enter your credentials to sign in.</DialogDescription>
-                </DialogHeader>
-                <form className="space-y-4 mt-4" onSubmit={handleLogin}>
-                  <div>
-                    <Label htmlFor="email" className="text-gray-700 dark:text-gray-200">Email</Label>
-                    <Input
-                      type="email"
-                      id="email"
-                      placeholder="you@example.com"
-                      value={loginEmail}
-                      onChange={e => setLoginEmail(e.target.value)}
-                      required
-                    />
+                <div className="min-h-[400px] w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 p-0 relative">
+                  {/* Overlay for readability */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-blue-900/70 to-purple-900/80 z-0" />
+                  <div className="relative z-10 w-full flex flex-col items-center justify-center p-8">
+                    <DialogHeader>
+                      <DialogTitle className="text-blue-300 text-2xl font-extrabold mb-2">Login</DialogTitle>
+                      <DialogDescription className="text-blue-100 text-base mb-4">Enter your credentials to sign in.</DialogDescription>
+                    </DialogHeader>
+                    <form className="w-full flex flex-col gap-4" onSubmit={handleLogin}>
+                      <input
+                        type="email"
+                        id="email"
+                        placeholder="Email"
+                        value={loginEmail}
+                        onChange={e => setLoginEmail(e.target.value)}
+                        required
+                        className="px-4 py-2 rounded-lg bg-slate-800 text-white border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base"
+                      />
+                      <input
+                        type="password"
+                        id="password"
+                        placeholder="Password"
+                        value={loginPassword}
+                        onChange={e => setLoginPassword(e.target.value)}
+                        required
+                        className="px-4 py-2 rounded-lg bg-slate-800 text-white border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base"
+                      />
+                      {loginError && <div className="text-red-400 text-sm text-center">{loginError}</div>}
+                      <button
+                        type="submit"
+                        disabled={loginLoading}
+                        className="bg-gradient-to-r from-blue-400 to-teal-400 text-white font-bold py-2 rounded-lg shadow-lg hover:scale-105 transition text-base"
+                      >
+                        {loginLoading ? 'Logging in...' : 'Login'}
+                      </button>
+                      <div className="flex justify-end mt-1">
+                        <button type="button" className="text-xs text-blue-300 hover:underline font-semibold">Forgot password?</button>
+                      </div>
+                    </form>
+                    {/* OR divider */}
+                    <div className="flex items-center my-2 w-full">
+                      <div className="flex-1 h-px bg-blue-400" />
+                      <span className="mx-2 text-blue-300 text-xs font-semibold">or</span>
+                      <div className="flex-1 h-px bg-blue-400" />
+                    </div>
+                    {/* SSO Login with Google - styled like signup */}
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignup}
+                      className="flex items-center justify-center gap-2 bg-white text-blue-900 font-bold py-2 rounded-lg shadow-lg hover:scale-105 transition border border-blue-400 text-base w-full"
+                    >
+                      <FcGoogle className="text-xl" /> Login with Google
+                    </button>
                   </div>
-                  <div>
-                    <Label htmlFor="password" className="text-gray-700 dark:text-gray-200">Password</Label>
-                    <Input
-                      type="password"
-                      id="password"
-                      placeholder="••••••••"
-                      value={loginPassword}
-                      onChange={e => setLoginPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  {loginError && <div className="text-red-500 text-sm">{loginError}</div>}
-                  <div className="flex justify-between items-center">
-                    <Button type="submit" className="w-full" disabled={loginLoading}>
-                      {loginLoading ? 'Logging in...' : 'Login'}
-                    </Button>
-                  </div>
-                  <div className="flex justify-end mt-1">
-                    <button type="button" className="text-xs text-[var(--accent-teal,#1de9b6)] hover:underline font-semibold">Forgot password?</button>
-                  </div>
-                </form>
-                <OrDivider />
-                <SSOLogin />
+                </div>
               </DialogContent>
             </Dialog>
 
-            {/* Signup Dialog */}
-            <Dialog open={signupOpen} onOpenChange={setSignupOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
-                  style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
-                  onClick={() => setSignupOpen(true)}
-                >
-                  Sign Up
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md w-3/4 md:w-[380px] rounded-2xl shadow-2xl bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 pb-8 mt-8">
-                <DialogHeader>
-                  <DialogTitle>Create Account</DialogTitle>
-                  <DialogDescription>Fill in your details to get started.</DialogDescription>
-                </DialogHeader>
-                <form className="space-y-4 mt-4" onSubmit={handleSignup}>
-                  <div>
-                    <Label htmlFor="name" className="text-gray-700 dark:text-gray-200">Full Name</Label>
-                    <Input
-                      type="text"
-                      id="name"
-                      placeholder="John Doe"
-                      value={signupName}
-                      onChange={e => setSignupName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email" className="text-gray-700 dark:text-gray-200">Email</Label>
-                    <Input
-                      type="email"
-                      id="email"
-                      placeholder="you@example.com"
-                      value={signupEmail}
-                      onChange={e => setSignupEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="org" className="text-gray-700 dark:text-gray-200">Organization</Label>
-                    <Input
-                      type="text"
-                      id="org"
-                      placeholder="Your Company"
-                      value={signupOrg}
-                      onChange={e => setSignupOrg(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="subdomain" className="text-gray-700 dark:text-gray-200">Subdomain</Label>
-                    <Input
-                      type="text"
-                      id="subdomain"
-                      placeholder="xx.com"
-                      value={signupSubdomain}
-                      onChange={e => setSignupSubdomain(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="password" className="text-gray-700 dark:text-gray-200">Password</Label>
-                    <Input
-                      type="password"
-                      id="password"
-                      placeholder="••••••••"
-                      value={signupPassword}
-                      onChange={e => setSignupPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  {signupError && <div className="text-red-500 text-sm">{signupError}</div>}
-                  {signupSuccess && <div className="text-green-500 text-sm">{signupSuccess}</div>}
-                  <Button type="submit" className="w-full" disabled={signupLoading}>
-                    {signupLoading ? 'Signing up...' : 'Sign Up'}
-                  </Button>
-                </form>
-                <OrDivider />
-                <SSOLogin />
-              </DialogContent>
-            </Dialog>
+            {/* Signup Call-to-Action Button (links to full-page signup) */}
+            <Link to="/signup">
+              <Button
+                className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
+                style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
+              >
+                Sign Up
+              </Button>
+            </Link>
           </div>
         </div>
         {/* HomeSidebar overlay (mobile sidebar) */}

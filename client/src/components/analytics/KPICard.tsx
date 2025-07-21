@@ -1,6 +1,7 @@
 import React from 'react';
 
 interface KPICardProps {
+  id?: string;
   label: string;
   value: string | number;
   trend?: 'up' | 'down' | 'neutral';
@@ -13,11 +14,12 @@ const TrendIcon: React.FC<{ trend?: 'up' | 'down' | 'neutral' }> = ({ trend }) =
   return null;
 };
 
-export default function KPICard({ label, value, trend, description }: KPICardProps) {
+export default function KPICard({ id, label, value, trend, description }: KPICardProps) {
   const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
-
+  
   return (
     <div 
+      id={id}
       className="rounded-xl bg-gradient-to-br from-indigo-800/70 to-slate-900/80 p-4 shadow flex flex-col items-start min-w-[120px]"
       aria-label={`${label}: ${formattedValue}${trend ? `, trend ${trend}` : ''}`}
     >

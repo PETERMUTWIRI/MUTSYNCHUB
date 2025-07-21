@@ -1,28 +1,53 @@
 import React from 'react';
-import { Bar } from 'react-chartjs-2';
-import type { ChartData, ChartOptions } from 'chart.js';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+  Tooltip, Legend, ResponsiveContainer 
+} from 'recharts';
 
 interface TopNBarChartProps {
-  data: ChartData<'bar'>;
-  title?: string;
+  data: {
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+      backgroundColor?: string[];
+    }[];
+  };
+  title: string;
 }
 
-const options: ChartOptions<'bar'> = {
-  responsive: true,
-  plugins: {
-    legend: { display: false },
-    // TODO: add title plugin, tooltip callbacks, etc.
-  },
-};
-
 export default function TopNBarChart({ data, title }: TopNBarChartProps) {
+  const chartData = data.labels.map((label, index) => ({
+    name: label,
+    value: data.datasets[0].data[index]
+  }));
+
   return (
-    <div
-      className="bg-gradient-to-br from-purple-900/60 to-indigo-900/80 rounded-2xl p-6 shadow"
-      aria-label={title ?? 'Top N Bar Chart'}
-    >
-      {title && <div className="text-white font-bold mb-2">{title}</div>}
-      <Bar data={data} options={options} />
+    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+      <h3 className="text-lg font-bold text-white mb-4">{title}</h3>
+      <div className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={chartData}
+            layout="vertical"
+            margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
+            <XAxis type="number" stroke="#94a3b8" />
+            <YAxis dataKey="name" type="category" width={80} stroke="#94a3b8" />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155' }}
+              formatter={(value) => [Number(value).toLocaleString(), 'Sales']}
+            />
+            <Bar 
+              dataKey="value" 
+              name="Sales" 
+              fill="#38bdf8" 
+              radius={[0, 4, 4, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

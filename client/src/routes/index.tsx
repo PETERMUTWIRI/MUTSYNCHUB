@@ -8,6 +8,7 @@ import Support from '../pages/Support';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AdminLayout from '../components/AdminLayout';
 import Spinner from '../components/ui/Spinner';
+import SignUpPage from '../pages/SignUpPage';
 
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
 const UserManagementPage = lazy(() => import('../pages/admin/UserManagementPage'));
@@ -39,6 +40,7 @@ const routes: RouteObject[] = [
       { path: 'solutions', element: <SolutionsWithSidebar /> },
       { path: 'resources', element: <Resources /> },
       { path: 'support', element: <Support /> },
+      { path: 'signup', element: <SignUpPage /> },
     ],
   },
   {

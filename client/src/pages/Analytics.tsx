@@ -5,11 +5,13 @@ import TopNBarChart from '@/components/analytics/TopNBarChart';
 import ForecastChart from '@/components/analytics/ForecastChart';
 import DonutChart from '@/components/analytics/DonutChart';
 import EDASummary from '@/components/analytics/EDASummary';
-import SankeyDiagram from '@/components/analytics/SankeyDiagram';
+import SankeyDiagram from '@/components/analytics/SankeyDiagram'; // Keep Sankey with Recharts
 
 export default function AnalyticsPage() {
   // Synthetic demo data
   const kpi = { daily: 5.2, monthly: 12.8, yoy: 22.4 };
+  
+  // Time Series Data
   const trendData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
     datasets: [
@@ -18,23 +20,17 @@ export default function AnalyticsPage() {
         data: [12000, 13500, 12800, 14500, 16000, 15500, 17000],
         borderColor: '#38bdf8',
         backgroundColor: 'rgba(56,189,248,0.2)',
-        tension: 0.4,
-        pointRadius: 4,
       },
       {
         label: 'Profit',
         data: [3200, 4100, 3900, 4700, 5200, 5100, 5900],
         borderColor: '#a78bfa',
         backgroundColor: 'rgba(167,139,250,0.2)',
-        tension: 0.4,
-        pointRadius: 4,
       },
     ],
   };
-  const anomalies = [
-    { x: 'Mar', y: 12800 },
-    { x: 'Jun', y: 15500 },
-  ];
+  
+  // Top Products Data
   const topNData = {
     labels: ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'],
     datasets: [
@@ -47,6 +43,8 @@ export default function AnalyticsPage() {
       },
     ],
   };
+  
+  // Forecast Data
   const forecastData = {
     labels: ['Jul', 'Aug', 'Sep', 'Oct'],
     datasets: [
@@ -54,28 +52,23 @@ export default function AnalyticsPage() {
         label: 'Forecast',
         data: [17000, 18000, 18500, 19000],
         borderColor: '#34d399',
-        backgroundColor: 'rgba(52,211,153,0.2)',
-        fill: false,
-        tension: 0.4,
       },
       {
         label: 'Lower Bound',
         data: [16500, 17500, 18000, 18500],
         borderColor: '#f87171',
         borderDash: [5,5],
-        fill: false,
-        tension: 0.4,
       },
       {
         label: 'Upper Bound',
         data: [17500, 18500, 19000, 19500],
         borderColor: '#60a5fa',
         borderDash: [5,5],
-        fill: false,
-        tension: 0.4,
       },
     ],
   };
+  
+  // Donut Chart Data
   const donutData = {
     labels: ['Card', 'Cash', 'Mpesa', 'Bank Transfer'],
     datasets: [
@@ -88,7 +81,11 @@ export default function AnalyticsPage() {
       },
     ],
   };
+  
+  // EDA Summary
   const edaStats = { count: 12000, mean: 14000, std: 1800, nulls: 2 };
+  
+  // Sankey Data
   const sankeyData = {
     nodes: [
       { id: 'Start', name: 'Start' },
@@ -104,6 +101,7 @@ export default function AnalyticsPage() {
       { source: 'Checkout', target: 'Purchase', value: 400 },
     ],
   };
+  
   const [query, setQuery] = useState('');
 
   return (
@@ -118,7 +116,7 @@ export default function AnalyticsPage() {
 
       {/* Storytelling Visuals */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <TimeSeriesChart data={trendData} anomalies={anomalies} />
+        <TimeSeriesChart data={trendData} />
         <ForecastChart data={forecastData} title="Sales Forecast" />
         <TopNBarChart data={topNData} title="Top Products" />
         <DonutChart data={donutData} title="Sales Breakdown" />
@@ -141,16 +139,25 @@ export default function AnalyticsPage() {
             placeholder="e.g. Show sales trends for Q2"
             className="bg-slate-800 text-white px-4 py-2 rounded-xl w-full"
           />
-          <button className="bg-gradient-to-r from-teal-400 to-purple-600 text-white px-6 py-2 rounded-xl shadow hover:scale-105 transition">Ask AI</button>
+          <button className="bg-gradient-to-r from-teal-400 to-purple-600 text-white px-6 py-2 rounded-xl shadow hover:scale-105 transition">
+            Ask AI
+          </button>
         </div>
       </section>
 
       <section>
         <div className="text-xl font-bold text-white mb-4">Scheduled Analytics</div>
-        <div className="text-slate-400">You have 2 active schedules. Next run: <span className="text-teal-400 font-bold">2025-07-20</span></div>
+        <div className="text-slate-400">
+          You have 2 active schedules. Next run: 
+          <span className="text-teal-400 font-bold"> 2025-07-20</span>
+        </div>
         <div className="flex gap-4 mt-2">
-          <button className="bg-gradient-to-r from-purple-600 to-teal-400 text-white px-6 py-2 rounded-2xl shadow-lg hover:scale-105 transition">Export PDF</button>
-          <button className="bg-gradient-to-r from-indigo-600 to-blue-400 text-white px-6 py-2 rounded-2xl shadow-lg hover:scale-105 transition">Export CSV</button>
+          <button className="bg-gradient-to-r from-purple-600 to-teal-400 text-white px-6 py-2 rounded-2xl shadow-lg hover:scale-105 transition">
+            Export PDF
+          </button>
+          <button className="bg-gradient-to-r from-indigo-600 to-blue-400 text-white px-6 py-2 rounded-2xl shadow-lg hover:scale-105 transition">
+            Export CSV
+          </button>
         </div>
       </section>
     </div>
