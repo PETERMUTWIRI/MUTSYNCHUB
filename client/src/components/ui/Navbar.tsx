@@ -220,17 +220,57 @@ const Navbar: React.FC = () => {
 
         {/* Desktop Navigation - Only Solutions (landing) and Analytics Engine, spaced apart */}
         <nav className="hidden md:flex items-center justify-center gap-8 flex-1">
-          <Link
-            to="/home"
-            className={`px-6 py-2 rounded-full text-lg font-bold transition-all duration-150 border border-transparent shadow-sm
-              ${location.pathname === "/home" || location.pathname === "/" 
-                ? "bg-[var(--accent-teal,#1de9b6)] text-white hover:bg-[var(--accent-teal,#1de9b6)] hover:shadow-md"
-                : "bg-[rgba(0,0,0,0.03)] text-gray-700 dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] hover:shadow-md"}
-            `}
-            style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)', letterSpacing: '0.01em' }}
-          >
-            Solutions
-          </Link>
+          <div className="relative group">
+            <button
+              className={`px-6 py-2 rounded-full text-lg font-bold transition-all duration-150 border border-transparent shadow-sm flex items-center gap-2
+                ${location.pathname === "/home" || location.pathname === "/solutions" || location.pathname === "/resources" || location.pathname === "/support"
+                  ? "bg-[var(--accent-teal,#1de9b6)] text-white hover:bg-[var(--accent-teal,#1de9b6)] hover:shadow-md"
+                  : "bg-[rgba(0,0,0,0.03)] text-gray-700 dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] hover:shadow-md"}
+              `}
+              style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)', letterSpacing: '0.01em' }}
+              type="button"
+            >
+              What We Do <ChevronDown className="w-5 h-5" />
+            </button>
+            <div className="absolute left-0 mt-2 w-[540px] rounded-xl shadow-2xl z-50 hidden group-hover:block animate-fade-in flex"
+              style={{ background: 'linear-gradient(to bottom right, #312e81 0%, #1e3a8a 50%, #6d28d9 100%)' }}
+            >
+              {/* Left: Links */}
+              <div className="flex flex-row w-full">
+                <div className="flex-1 py-4 px-6 grid grid-cols-2 gap-x-8 gap-y-2">
+                  <div>
+                    <div className="text-indigo-200 font-bold mb-2 text-sm uppercase tracking-wider">What We Do</div>
+                    <Link to="/solutions#saas-apps" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">SaaS Applications</Link>
+                    <Link to="/solutions#full-stack" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Full-Stack Web Development</Link>
+                    <Link to="/solutions#dynamic-systems" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Dynamic Systems Integration</Link>
+                    <Link to="/solutions#cloud" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Cloud Solutions</Link>
+                    <Link to="/solutions#ai-agents" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">AI Agents and Chatbots</Link>
+                  </div>
+                  <div>
+                    <div className="text-indigo-200 font-bold mb-2 text-sm uppercase tracking-wider">Resources</div>
+                    <Link to="/resources#documentation" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Documentation</Link>
+                    <Link to="/resources#api-reference" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">API Reference</Link>
+                    <Link to="/resources#guides" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Guides & Tutorials</Link>
+                    <div className="text-indigo-200 font-bold mt-4 mb-2 text-sm uppercase tracking-wider">Support</div>
+                    <Link to="/support#support-center" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Support Center</Link>
+                    <Link to="/support#help-center" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Help Center</Link>
+                    <Link to="/support#contact" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Contact Us</Link>
+                    <Link to="/support#community" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Community Forum</Link>
+                    <Link to="/support#system-status" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">System Status</Link>
+                  </div>
+                </div>
+                {/* Right: Agent Support icon and label, vertically centered and with a distinct background */}
+                <div className="flex flex-col items-center justify-center w-56 py-6 px-4 border-l border-indigo-800 bg-gradient-to-br from-blue-600/90 to-blue-900/90">
+                  <div className="text-white text-center font-bold text-base mb-2">Agent Support</div>
+                  <div className="flex items-center justify-center">
+                    <span className="inline-block bg-gradient-to-br from-blue-400 to-purple-500 rounded-full p-4 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 32 32" className="h-10 w-10 text-white"><circle cx="16" cy="16" r="16" fill="url(#agent-gradient)"/><g filter="url(#a)"><path d="M16 8a6 6 0 0 1 6 6v2.5a2.5 2.5 0 0 0 2.5 2.5h.5v2a6 6 0 0 1-12 0v-2h.5A2.5 2.5 0 0 0 16 16.5V14a6 6 0 0 1 6-6Z" fill="#fff"/></g><defs><linearGradient id="agent-gradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#38bdf8"/><stop offset="1" stop-color="#a78bfa"/></linearGradient><filter id="a" x="8" y="8" width="16" height="16" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/></filter></defs></svg>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <button
             onClick={() => {
               if (user) {

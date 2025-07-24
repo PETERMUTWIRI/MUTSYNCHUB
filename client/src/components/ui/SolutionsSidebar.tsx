@@ -36,7 +36,10 @@ const SolutionsSidebar: React.FC<SidebarProps> = ({ open, onClose }) => (
             `flex flex-col items-center mb-8 text-xl transition-colors ${isActive ? 'text-yellow-300' : 'text-white hover:text-yellow-200'}`
           }
           title={item.label}
-          onClick={onClose}
+          onClick={(e) => {
+            // Only close sidebar if the link is from the sidebar, not from dropdown
+            if (onClose) onClose();
+          }}
         >
           {/* Force sidebar menu icon to black if this is the menu icon */}
           {item.label === 'Solutions' && false /* placeholder for menu icon logic */}

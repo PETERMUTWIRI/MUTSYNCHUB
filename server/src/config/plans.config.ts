@@ -20,7 +20,7 @@ export const PLANS: Plan[] = [
     name: 'Free',
     description: 'Basic access for individuals and small teams.',
     price: 0,
-    currency: 'USD',
+    currency: 'KSH',
     features: [
       { name: 'Agent Queries', description: 'Monthly queries to the agent', limit: 15 },
       { name: 'Scheduling', description: 'Number of scheduled reports', limit: 2, allowedFrequencies: ['weekly'] },
@@ -31,8 +31,8 @@ export const PLANS: Plan[] = [
     id: 'pro',
     name: 'Pro',
     description: 'For growing teams and businesses.',
-    price: 29,
-    currency: 'USD',
+    price: 3000,
+    currency: 'KSH',
     features: [
       { name: 'Agent Queries', description: 'Monthly queries to the agent', limit: 500 },
       { name: 'Scheduling', description: 'Number of scheduled reports', limit: 20, allowedFrequencies: ['daily', 'weekly'] },
@@ -44,8 +44,8 @@ export const PLANS: Plan[] = [
     id: 'enterprise',
     name: 'Enterprise',
     description: 'Custom solutions for large organizations.',
-    price: 99,
-    currency: 'USD',
+    price: 10000,
+    currency: 'KSH',
     features: [
       { name: 'Agent Queries', description: 'Monthly queries to the agent', limit: 5000 },
       { name: 'Scheduling', description: 'Number of scheduled reports', limit: 100, allowedFrequencies: ['hourly', 'daily', 'weekly', 'monthly', 'custom'] },

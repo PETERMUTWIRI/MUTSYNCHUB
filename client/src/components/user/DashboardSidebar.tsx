@@ -1,10 +1,12 @@
-import React from 'react';
+import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FaChartPie, FaChartBar, FaCreditCard, FaUser, FaLifeRing, FaBell, FaLock } from 'react-icons/fa';
 import mutsynchLogo from '@/assets/images/mutsynchub-logo.png';
 
+import { FaDatabase } from 'react-icons/fa';
 const navLinks = [
   { to: '/dashboard', label: 'Overview', icon: <FaChartPie /> },
+  { to: '/dashboard/datasource', label: 'Data Sources', icon: <FaDatabase /> },
   { to: '/dashboard/analytics', label: 'Analytics', icon: <FaChartBar /> },
   { to: '/dashboard/billing', label: 'Billing', icon: <FaCreditCard /> },
   { to: '/dashboard/profile', label: 'Profile', icon: <FaUser /> },

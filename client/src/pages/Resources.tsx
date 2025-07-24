@@ -7,6 +7,11 @@ const Resources: React.FC = () => {
     <div className={gradientBg}>
       <main className="w-full max-w-none px-8 py-12 mx-auto" style={{maxWidth: '100vw', minHeight: '100vh'}}>
         <h1 className="text-4xl font-extrabold text-white mb-8 text-center drop-shadow-lg">Resources</h1>
+        <section id="documentation" className="mb-12"></section>
+        <section id="api-reference" className="mb-12"></section>
+        <section id="guides" className="mb-12"></section>
+        <section id="support-center" className="mb-12"></section>
+        {/* ...existing code... */}
         <section id="docs" className="mb-12">
           <h2 className="text-2xl font-bold text-[var(--accent-teal,#1de9b6)] mb-3">Documentation</h2>
           <p className="text-lg text-gray-200 mb-2">

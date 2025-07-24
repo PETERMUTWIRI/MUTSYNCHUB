@@ -12,6 +12,8 @@ const Support: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState('');
 
   useEffect(() => {
     fetchTickets();
@@ -31,26 +33,44 @@ const Support: React.FC = () => {
   };
 
   const handleSubmitTicket = () => {
+    setSubmitError('');
+    setSubmitSuccess('');
+    if (!subject.trim() || !description.trim()) {
+      setSubmitError('Please fill in both subject and description.');
+      return;
+    }
     createSupportTicket({ subject, description })
       .then(() => {
         setSubject('');
         setDescription('');
+        setSubmitSuccess('Support ticket submitted successfully!');
+        setSubmitError('');
         fetchTickets();
+        setTimeout(() => setSubmitSuccess(''), 3000);
       })
       .catch(error => {
-        console.error('Failed to create support ticket:', error);
+        setSubmitError('Failed to create support ticket.');
+        setSubmitSuccess('');
       });
   };
 
   return (
     <div className="max-w-5xl mx-auto py-12">
-      <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg mb-8 text-left">Support & Help</h1>
+      <div id="support-center"></div>
+      <div id="help-center"></div>
+      <div id="contact"></div>
+      <div id="community"></div>
+      <div id="system-status"></div>
+      <h1 className="text-4xl font-extrabold text-blue-400 tracking-tight mb-8 text-left">Support & Help</h1>
 
       <Card className="mb-8 bg-gray-800 border-gray-700">
         <CardHeader>
-          <CardTitle className="text-white">Submit a Support Ticket</CardTitle>
+          <CardTitle className="text-blue-300">Submit a Support Ticket</CardTitle>
+          <p className="text-sm text-gray-300 mt-2">Need help? Submit a ticket and our support team will get back to you promptly. Please provide as much detail as possible.</p>
         </CardHeader>
         <CardContent className="space-y-4">
+          {submitSuccess && <div className="text-green-400 text-sm mb-2">{submitSuccess}</div>}
+          {submitError && <div className="text-red-400 text-sm mb-2">{submitError}</div>}
           <div className="space-y-2">
             <Input
               id="subject"
@@ -74,8 +94,14 @@ const Support: React.FC = () => {
       </Card>
 
       <Card className="mb-8 bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white">My Support Tickets</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+          <CardTitle className="text-blue-300">My Support Tickets</CardTitle>
+          <p className="text-sm text-gray-300 mt-2">Track your submitted tickets and their status. Click 'View' for more details or updates.</p>
+          </div>
+          <Button variant="outline" onClick={fetchTickets} disabled={loading}>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -84,20 +110,18 @@ const Support: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-white">Ticket ID</TableHead>
-                  <TableHead className="text-white">Subject</TableHead>
-                  <TableHead className="text-white">Status</TableHead>
+                  <TableHead className="text-blue-400">Ticket ID</TableHead>
+                  <TableHead className="text-blue-400">Subject</TableHead>
+                  <TableHead className="text-blue-400">Status</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {tickets.map(ticket => (
                   <TableRow key={ticket.id}>
-                    <TableCell className="text-gray-300">#{ticket.id}</TableCell>
-                    <TableCell className="text-gray-300">{ticket.subject}</TableCell>
-                    <TableCell className={ticket.status === 'Open' ? 'text-yellow-400' : 'text-green-400'}>
-                      {ticket.status}
-                    </TableCell>
+                    <TableCell className="text-gray-200">#{ticket.id}</TableCell>
+                    <TableCell className="text-gray-200">{ticket.subject}</TableCell>
+                    <TableCell className={ticket.status === 'Open' ? 'text-yellow-400' : 'text-green-400'}>{ticket.status}</TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm">View</Button>
                     </TableCell>
@@ -111,7 +135,8 @@ const Support: React.FC = () => {
 
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
-          <CardTitle className="text-white">Knowledge Base</CardTitle>
+          <CardTitle className="text-blue-300">Knowledge Base</CardTitle>
+          <p className="text-sm text-gray-300 mt-2">Find answers to common questions and guides. Search or browse articles below.</p>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">

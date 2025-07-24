@@ -1,6 +1,5 @@
 // src/routes/Home.tsx
 
-import SolutionsSidebar from "../components/ui/SolutionsSidebar";
 import HeroSection from "../components/home/HeroSection";
 import AboutSection from "../components/home/AboutSection";
 import ProblemSolutionSection from "../components/home/ProblemSolutionSection";
@@ -8,7 +7,7 @@ import FeaturesSection from "../components/home/FeaturesSection";
 import { FAQSection } from "../components/home/faq";
 import { CTASection } from "../components/home/cta";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FaBars } from 'react-icons/fa';
 
 export default function Home() {
@@ -24,7 +23,7 @@ export default function Home() {
         <FaBars />
       </button>
       {/* Sidebar drawer */}
-      <SolutionsSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* Sidebar removed: use HomeSidebar or other navigation as needed */}
       <main className="flex-1">
         <HeroSection />
         <AboutSection />

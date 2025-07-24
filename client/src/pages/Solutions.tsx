@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import SolutionsSidebar from "@/components/ui/SolutionsSidebar";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -601,14 +600,4 @@ const SolutionsPage: React.FC = () => {
 };
 
 
-// Wrap the page with the sidebar for contextual navigation
-export default function SolutionsWithSidebar() {
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <SolutionsSidebar />
-      <main className="flex-1">
-        <SolutionsPage />
-      </main>
-    </div>
-  );
-}
+export default SolutionsPage;

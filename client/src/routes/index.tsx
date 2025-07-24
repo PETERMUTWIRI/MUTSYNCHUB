@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { createBrowserRouter, RouteObject } from 'react-router-dom';
 import App from '../App';
 import SolutionsWithSidebar from '../pages/Solutions';
@@ -25,6 +25,7 @@ const AnalyticsDashboardLanding = lazy(() => import('../pages/AnalyticsDashboard
 const UserLayout = lazy(() => import('../components/UserLayout'));
 const UserDashboard = lazy(() => import('../pages/UserDashboard'));
 const Analytics = lazy(() => import('../pages/Analytics'));
+const DataSource = lazy(() => import('../pages/DataSource'));
 const Billing = lazy(() => import('../pages/Billing'));
 const Profile = lazy(() => import('../pages/Profile'));
 const Notifications = lazy(() => import('../pages/Notifications'));
@@ -68,6 +69,14 @@ const routes: RouteObject[] = [
         element: (
           <Suspense fallback={<Spinner />}>
             <UserDashboard />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'datasource',
+        element: (
+          <Suspense fallback={<Spinner />}>
+            <DataSource />
           </Suspense>
         ),
       },

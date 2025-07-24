@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import KPICard from '@/components/analytics/KPICard';
 import TimeSeriesChart from '@/components/analytics/TimeSeriesChart';
 import TopNBarChart from '@/components/analytics/TopNBarChart';
@@ -6,6 +6,8 @@ import ForecastChart from '@/components/analytics/ForecastChart';
 import DonutChart from '@/components/analytics/DonutChart';
 import EDASummary from '@/components/analytics/EDASummary';
 import SankeyDiagram from '@/components/analytics/SankeyDiagram'; // Keep Sankey with Recharts
+import TradingChart from '@/components/analytics/TradingChart';
+import { useState } from 'react';
 
 export default function AnalyticsPage() {
   // Synthetic demo data
@@ -104,8 +106,38 @@ export default function AnalyticsPage() {
   
   const [query, setQuery] = useState('');
 
+  // Synthetic profit candlestick data for TradingChart (7 days)
+  // Each candle: open, high, low, close, volume (profit in KSH)
+  // time is UNIX timestamp (midnight for each day)
+  const candleData = [
+    { time: 1752960000, open: 5000, high: 5200, low: 4800, close: 5100, volume: 120 }, // Day 1
+    { time: 1753046400, open: 5100, high: 5300, low: 5050, close: 5250, volume: 140 }, // Day 2
+    { time: 1753132800, open: 5250, high: 5400, low: 5200, close: 5350, volume: 110 }, // Day 3
+    { time: 1753219200, open: 5350, high: 5500, low: 5300, close: 5450, volume: 150 }, // Day 4
+    { time: 1753305600, open: 5450, high: 5600, low: 5400, close: 5550, volume: 130 }, // Day 5
+    { time: 1753392000, open: 5550, high: 5700, low: 5500, close: 5650, volume: 160 }, // Day 6
+    { time: 1753478400, open: 5650, high: 5800, low: 5600, close: 5750, volume: 170 }, // Day 7
+  ];
+
+  // Simulate user plan (replace with real user plan from context/auth)
+  const [userPlan, setUserPlan] = useState<'Free' | 'Pro' | 'Enterprise'>('Free'); // Change value for testing
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 p-8 font-inter">
+      {/* Profit Candlestick Chart Card */}
+      <section className="mb-8 w-full">
+        <div className="w-full bg-gradient-to-br from-blue-900/80 to-purple-900/80 rounded-2xl shadow-2xl border border-blue-500/30 flex flex-col items-center justify-center" style={{ minHeight: '320px', height: '75%' }}>
+          {/* Chart title and description moved above the chart */}
+          <div className="w-full flex flex-col items-center justify-center pt-6">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2 drop-shadow-lg">Profit (KSH) Candlestick Chart</h2>
+            <p className="text-lg text-blue-200 mb-4 font-medium">Visualize your daily profit trends. Each candle shows open, high, low, close, and volume for the day.</p>
+          </div>
+          {/* TradingChart with no blur for all users */}
+          <div className="w-full">
+            <TradingChart candles={candleData} blur={false} />
+          </div>
+        </div>
+      </section>
       {/* KPI Cards */}
       <section className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-6">
         <KPICard label="Daily Growth" value={`${kpi.daily}%`} trend={kpi.daily > 0 ? 'up' : 'down'} />
@@ -163,3 +195,4 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+

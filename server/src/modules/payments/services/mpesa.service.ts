@@ -230,10 +230,22 @@ export class MpesaService {
 
       // Create payment record
 
+      // Check if payment for this user and plan already exists and is not failed/cancelled
+      const existingPayment = await this.prisma.payment.findFirst({
+        where: {
+          userId: userId,
+          status: { notIn: ['FAILED', 'CANCELLED'] },
+        },
+      });
+      if (existingPayment) {
+        // Optionally, return or throw an error
+        throw new Error('A payment for this plan already exists for this user.');
+      }
+
       await this.prisma.payment.create({
         data: {
-          user: { connect: { id: userId } },
-          organization: { connect: { id: user.orgId } },
+          userId: userId,
+          orgId: user.orgId,
           amount: request.amount,
           provider: 'MPESA',
           status: 'PENDING',
@@ -341,16 +353,12 @@ export class MpesaService {
 
         // Upgrade organization plan if payment is valid
         if (payment && plan) {
-          // Find the user's organization
-          const user = await this.prisma.user.findUnique({ where: { id: payment.userId } });
-          if (user && user.orgId) {
-            await this.prisma.organization.update({
-              where: { id: user.orgId },
-              data: {
-                planId: plan.id,
-              },
-            });
-          }
+          await this.prisma.organization.update({
+            where: { id: payment.orgId },
+            data: {
+              planId: plan.id,
+            },
+          });
         }
       } else {
         await this.prisma.payment.updateMany({

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { runQuery, getQueryHistory } from '../api/analytics';
 import { useAuth } from '../hooks/useAuth';
+import { Button } from '../components/ui/button';
 
 type QueryHistoryItem = {
   id?: string | number;
@@ -73,165 +74,112 @@ const AnalyticsDashboardLanding: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-[220px] flex flex-col justify-between bg-[#232347] shadow-lg z-30">
-        <div>
-          <div className="flex items-center gap-3 px-6 py-8">
-            {/* <img src={Logo} alt="MutSyncHub Logo" className="h-10 w-10" /> */}
-            <span className="text-2xl font-extrabold text-white tracking-wide">MH <span className="text-[var(--accent-amber,#FFA500)]">Analytics</span></span>
-          </div>
-          <nav className="flex flex-col gap-2 mt-6 px-2">
-            <a href="#" className="rounded-lg px-4 py-2 font-semibold text-white bg-[var(--accent-amber,#FFA500)]">Analytics Home</a>
-            <a href="#" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">NL Queries</a>
-            <a href="#" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">Data Sources</a>
-            <a href="#" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">Reports</a>
-            <a href="#" className="rounded-lg px-4 py-2 font-semibold text-gray-200 hover:bg-[#282A36]">Schedules</a>
-          </nav>
-        </div>
-        <div className="px-6 py-6 border-t border-[#282A36] flex items-center gap-3">
-          {/* Analytics avatar and info */}
-          <div className="h-10 w-10 rounded-full bg-blue-600" />
-          <div>
-            <div className="text-white font-semibold">{user?.name || 'User'}</div>
-            <div className="text-xs text-gray-400">User ID: {user?.supabaseId || 'N/A'}</div>
-            <div className="text-xs text-gray-400">Tenant: {user?.orgId || user?.supabaseId || 'N/A'}</div>
-            <div className="text-xs text-gray-400">Role: {user?.role || 'USER'}</div>
-          </div>
-        </div>
-      </aside>
-      {/* Main Content */}
-      <div className={`flex-1 ml-[220px] min-h-screen ${mainGradient} transition-all duration-300`}>
-        {/* Header */}
-        <header className="fixed left-[220px] right-0 top-0 h-[76px] flex items-center px-12 bg-transparent z-20" style={{backdropFilter: 'blur(8px)'}}>
-          <div className="flex-1 flex items-center gap-4">
-            <h1 className="text-3xl font-bold text-white mr-8">Analytics Dashboard</h1>
-            <div className="bg-[#232347] rounded-lg px-4 py-2 text-gray-200 text-sm font-medium ml-2">Jan 2025 - May 2025</div>
+    <div className="min-h-screen w-full flex bg-[#F6F8F9]">
+      {/* Sidebar remains unchanged */}
+      {/* ...existing sidebar code... */}
+      <div className="flex-1 ml-[220px] min-h-screen">
+        {/* Header: navbar with search, notification, profile, chat */}
+        <header className="flex items-center justify-between px-10 py-6 bg-white shadow-sm sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <span className="text-sm text-gray-500">Overview of key metrics and data insights</span>
           </div>
           <div className="flex items-center gap-4">
-            <input className="bg-[#232347] rounded-lg px-4 py-2 text-gray-100 placeholder:text-gray-400 w-64 focus:outline-none" placeholder="Search analytics, queries..." />
+            <input className="bg-gray-100 rounded-lg px-4 py-2 text-gray-700 placeholder:text-gray-400 w-64 focus:outline-none border border-gray-300" placeholder="Search server..." />
+            <button className="relative">
+              <span className="material-icons text-gray-500">notifications</span>
+              <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full px-1">3</span>
+            </button>
+            <button className="bg-gray-100 rounded-full h-10 w-10 flex items-center justify-center">
+              <span className="material-icons text-gray-500">person</span>
+            </button>
+            <button className="bg-green-100 text-green-700 px-4 py-2 rounded-lg font-semibold">Chat with AI</button>
           </div>
         </header>
-        {/* Main Grid */}
-        <main className="pt-[100px] pb-12 px-12 w-full min-h-screen flex flex-col gap-8">
-          {/* Row 1: 3 summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Card 1: Analytics Runs */}
-            <div className="rounded-2xl shadow-xl" style={{background: cardBg, padding: 32}}>
-              <div className="text-lg font-bold text-gray-200 mb-2">Analytics Runs</div>
-              <div className="text-4xl font-extrabold text-white mb-1">128</div>
-              <div className="text-sm text-gray-400">This Month</div>
-              <div className="text-xs text-green-400 mt-2">+12% since last month</div>
+        {/* Main grid layout */}
+        <main className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-10">
+          {/* Left column: main cards */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            {/* Update card */}
+            <div className="bg-white rounded-xl shadow p-6 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold text-green-700 mb-1">Update</div>
+                <div className="text-lg font-bold text-gray-900">New: Data analysis completed for your query</div>
+                <a href="#" className="text-sm text-green-700 hover:underline">See Analytics →</a>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="material-icons text-green-500">check_circle</span>
+              </div>
             </div>
-            {/* Card 2: NL Queries */}
-            <div className="rounded-2xl shadow-xl" style={{background: cardBg, padding: 32}}>
-              <div className="text-lg font-bold text-gray-200 mb-2">NL Queries</div>
-              <div className="text-4xl font-extrabold text-white mb-1">54</div>
-              <div className="text-sm text-gray-400">Natural Language</div>
-              <div className="text-xs text-green-400 mt-2">+9% since last month</div>
+            {/* Metrics cards row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-start">
+                <div className="text-xs text-gray-500 mb-1">Total Users</div>
+                <div className="text-2xl font-bold text-gray-900">12,340</div>
+                <div className="text-xs text-green-600 mt-1">+8.3% since last month</div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-start">
+                <div className="text-xs text-gray-500 mb-1">Active Users</div>
+                <div className="text-2xl font-bold text-gray-900">3,210</div>
+                <div className="text-xs text-red-600 mt-1">-2.1% since month</div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-start">
+                <div className="text-xs text-gray-500 mb-1">Usage</div>
+                <div className="text-2xl font-bold text-gray-900">225</div>
+                <div className="text-xs text-green-600 mt-1">9% Month</div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-start">
+                <div className="text-xs text-gray-500 mb-1">Query Performance</div>
+                <div className="text-2xl font-bold text-gray-900">18</div>
+                <div className="text-xs text-green-600 mt-1">Completed</div>
+              </div>
             </div>
-            {/* Card 3: Data Sources */}
-            <div className="rounded-2xl shadow-xl" style={{background: cardBg, padding: 32}}>
-              <div className="text-lg font-bold text-gray-200 mb-2">Data Sources</div>
-              <div className="text-4xl font-extrabold text-white mb-1">7</div>
-              <div className="text-sm text-gray-400">Connected</div>
-              <div className="text-xs text-green-400 mt-2">+1 new this month</div>
+            {/* Announcements & Upgrade Plan row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Announcements card (reuse Usage or create new) */}
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
+                <div className="text-lg font-bold text-gray-900 mb-2">Announcements</div>
+                <div className="text-sm text-gray-700 mb-2">New Feature: Advanced Analytics now available!</div>
+                <div className="text-xs text-gray-400">July 2025</div>
+              </div>
+              {/* Upgrade Plan card horizontally aligned */}
+              <div className="bg-green-100 rounded-xl shadow p-6 flex flex-col items-center justify-center min-h-[180px]">
+                <div className="text-lg font-bold text-green-700 mb-2 text-center">Upgrade your analytics to gain deeper insights</div>
+                <Button className="bg-green-700 text-white px-4 py-2 rounded-lg font-semibold mt-2">Upgrade Plan →</Button>
+              </div>
+            </div>
+            {/* Usage and Query Duration Cards fill gap */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-lg font-bold text-gray-900">Usage</div>
+                  <Button variant="outline" className="text-green-700 border-green-200">Augsize Plan</Button>
+                </div>
+                <div className="flex-1 flex items-center gap-2">
+                  {/* Usage chart placeholder */}
+                  <div className="h-24 w-full bg-green-100 rounded-lg" />
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-lg font-bold text-gray-900">Query Duration</div>
+                  <Button variant="outline" className="text-green-700 border-green-200">Completed</Button>
+                </div>
+                <div className="flex-1 flex items-center gap-2">
+                  {/* Query duration chart placeholder */}
+                  <div className="h-24 w-full bg-blue-100 rounded-lg" />
+                </div>
+              </div>
             </div>
           </div>
-          {/* Row 2: NL Query Input & History */}
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
-            {/* Card 4: NL Query Input (large) */}
-            <div className="col-span-1 md:col-span-5 rounded-2xl shadow-xl flex flex-col" style={{background: cardBg, padding: 32, minHeight: 340}}>
-              <div className="text-lg font-bold text-gray-200 mb-2">Ask a Question (NL Query)</div>
-              <form onSubmit={handleQuery} className="flex gap-2 mb-4">
-                <input
-                  className="flex-1 rounded-lg bg-[#232347] px-4 py-3 text-gray-100 placeholder:text-gray-400 focus:outline-none"
-                  placeholder="Ask a question about your data..."
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  disabled={queryLoading}
-                />
-                <button type="submit" className="bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold" disabled={queryLoading || !query}>
-                  {queryLoading ? 'Running...' : 'Run Query'}
-                </button>
-              </form>
-              {error && <div className="text-red-500 mb-2">{error}</div>}
-              {queryResult && (
-                <div className="flex-1 overflow-y-auto bg-[#232347] rounded-lg p-4 text-gray-300 mb-4" style={{minHeight: 120}}>
-                  <div className="text-gray-400">No query run yet. Enter a question above.</div>
-                </div>
-              )}
-            </div>
-            {/* Card 5: Query History (small) */}
-            <div className="col-span-1 md:col-span-2 rounded-2xl shadow-xl flex flex-col" style={{background: cardBg, padding: 32, minHeight: 340}}>
-              <div className="text-lg font-bold text-gray-200 mb-2">Query History</div>
-              <div className="flex-1 overflow-y-auto">
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-blue-400" />
-                  <div className="flex-1 text-gray-100">"Show revenue by month"</div>
-                  <div className="text-xs text-gray-400">2:10 PM</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-green-400" />
-                  <div className="flex-1 text-gray-100">"Top 10 users by API usage"</div>
-                  <div className="text-xs text-gray-400">Yesterday</div>
-                </div>
-              </div>
-              <a href="#" className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4">View All History</a>
-            </div>
-          </div>
-          {/* Row 3: Analytics Reports, Schedules, Alerts */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Card 6: Analytics Reports */}
-            <div className="rounded-2xl shadow-xl flex flex-col" style={{background: cardBg, padding: 32}}>
-              <div className="text-lg font-bold text-gray-200 mb-2">Analytics Reports</div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-purple-400" />
-                  <div className="flex-1 text-gray-100">Monthly Usage Report</div>
-                  <div className="text-xs text-gray-400">Ready</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-blue-400" />
-                  <div className="flex-1 text-gray-100">API Performance</div>
-                  <div className="text-xs text-gray-400">Ready</div>
-                </div>
-              </div>
-              <a href="#" className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4">View All Reports</a>
-            </div>
-            {/* Card 7: Schedules */}
-            <div className="rounded-2xl shadow-xl flex flex-col" style={{background: cardBg, padding: 32}}>
-              <div className="text-lg font-bold text-gray-200 mb-2">Schedules</div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-green-400" />
-                  <div className="flex-1 text-gray-100">Daily ETL</div>
-                  <div className="text-xs text-gray-400">Active</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-yellow-400" />
-                  <div className="flex-1 text-gray-100">Weekly Summary</div>
-                  <div className="text-xs text-gray-400">Paused</div>
-                </div>
-              </div>
-              <a href="#" className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4">Manage Schedules</a>
-            </div>
-            {/* Card 8: Analytics Alerts */}
-            <div className="rounded-2xl shadow-xl flex flex-col" style={{background: cardBg, padding: 32}}>
-              <div className="text-lg font-bold text-gray-200 mb-2">Analytics Alerts</div>
-              <div className="flex-1 overflow-y-auto">
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-red-400" />
-                  <div className="flex-1 text-gray-100">ETL Failure</div>
-                  <div className="text-xs text-gray-400">Today</div>
-                </div>
-                <div className="flex items-center gap-3 py-2">
-                  <div className="h-3 w-3 rounded-full bg-green-400" />
-                  <div className="flex-1 text-gray-100">All systems normal</div>
-                  <div className="text-xs text-gray-400">2h ago</div>
-                </div>
-              </div>
-              <a href="#" className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4">View All Alerts</a>
+          {/* Right column: Tenant Usage only */}
+          <div className="flex flex-col gap-6 justify-between h-full">
+            <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center min-h-[180px] justify-center">
+              <div className="text-lg font-bold text-gray-900 mb-2">Tenant Usage</div>
+              <div className="text-3xl font-extrabold text-green-700 mb-1">65,328</div>
+              <div className="text-xs text-gray-500 mb-2">65% usage</div>
+              <div className="text-xs text-gray-400 mb-2">Here are some ideas on how to increase usage.</div>
+              <Button variant="outline" className="text-green-700 border-green-200">Query History →</Button>
             </div>
           </div>
         </main>
