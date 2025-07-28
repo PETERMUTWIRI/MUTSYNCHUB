@@ -1,70 +1,197 @@
-import React from "react";
+// src/pages/Resources.tsx
+import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  SearchIcon, BookOpenIcon, CodeIcon, 
+  VideoIcon, LifeBuoyIcon, NewspaperIcon, 
+  FileTextIcon, LibraryIcon, FilterIcon 
+} from 'lucide-react';
 
-const gradientBg = "bg-gradient-to-br from-[#321F61] to-[#1F224D] min-h-screen w-full";
+// Components
+import ResourceCard from '../components/resources/ResourceCard';
+import SearchBar from '../components/resources/SearchBar';
+import CategoryFilter from '../components/resources/CategoryFilter';
+import ResourceTable from '../components/resources/ResourceTable';
+import FeaturedResources from '../components/resources/FeaturedResources';
+import Breadcrumb from '../components/resources/Breadcrumb';
 
-const Resources: React.FC = () => {
+// Mock data (replace with API calls)
+import { resources } from '../data/resources';
+
+const Resources = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+
+  // Filter resources based on search and category
+  const filteredResources = useMemo(() => {
+    return resources.filter(resource => {
+      const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        resource.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesCategory = activeCategory === 'all' || 
+        resource.category === activeCategory;
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchTerm, activeCategory]);
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    resources.forEach(resource => {
+      counts[resource.category] = (counts[resource.category] || 0) + 1;
+    });
+    return counts;
+  }, []);
+
+  // Categories with icons
+  const categories = [
+    { id: 'all', name: 'All Resources', icon: <LibraryIcon size={18} />, count: resources.length },
+    { id: 'documentation', name: 'Documentation', icon: <BookOpenIcon size={18} />, count: categoryCounts.documentation || 0 },
+    { id: 'api', name: 'API Reference', icon: <CodeIcon size={18} />, count: categoryCounts.api || 0 },
+    { id: 'guides', name: 'Guides & Tutorials', icon: <VideoIcon size={18} />, count: categoryCounts.guides || 0 },
+    { id: 'support', name: 'Support', icon: <LifeBuoyIcon size={18} />, count: categoryCounts.support || 0 },
+    { id: 'blog', name: 'Blog', icon: <NewspaperIcon size={18} />, count: categoryCounts.blog || 0 },
+    { id: 'whitepapers', name: 'White Papers', icon: <FileTextIcon size={18} />, count: categoryCounts.whitepapers || 0 },
+  ];
+
   return (
-    <div className={gradientBg}>
-      <main className="w-full max-w-none px-8 py-12 mx-auto" style={{maxWidth: '100vw', minHeight: '100vh'}}>
-        <h1 className="text-4xl font-extrabold text-white mb-8 text-center drop-shadow-lg">Resources</h1>
-        <section id="documentation" className="mb-12"></section>
-        <section id="api-reference" className="mb-12"></section>
-        <section id="guides" className="mb-12"></section>
-        <section id="support-center" className="mb-12"></section>
-        {/* ...existing code... */}
-        <section id="docs" className="mb-12">
-          <h2 className="text-2xl font-bold text-[var(--accent-teal,#1de9b6)] mb-3">Documentation</h2>
-          <p className="text-lg text-gray-200 mb-2">
-            Access comprehensive, up-to-date documentation for every aspect of the MutSyncHub platform. Our documentation covers everything from onboarding and platform architecture to advanced configuration, security, and best practices. Whether you’re a developer, admin, or business user, you’ll find clear guides, code samples, and real-world scenarios to help you maximize value and accelerate adoption.
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900">
+      <div className="container mx-auto px-4 py-12">
+        {/* Breadcrumb */}
+        <Breadcrumb items={[
+          { name: 'Home', href: '/' },
+          { name: 'Resources', href: '/resources' }
+        ]} />
+        
+        {/* Hero Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 mb-4">
+            Knowledge Center
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
+            Everything you need to integrate, analyze, and optimize with MUTSYNCHUB
           </p>
-          <ul className="list-disc pl-6 text-gray-200">
-            <li>Getting Started & Quickstart Guides</li>
-            <li>Platform Architecture & Concepts</li>
-            <li>Authentication, Security, and Compliance</li>
-            <li>Integration Patterns & Data Flows</li>
-            <li>Release Notes & Change Logs</li>
-          </ul>
-        </section>
-        <section id="api" className="mb-12">
-          <h2 className="text-2xl font-bold text-[var(--accent-teal,#1de9b6)] mb-3">API Reference</h2>
-          <p className="text-lg text-gray-200 mb-2">
-            Explore our robust, well-documented API suite designed for seamless integration and automation. The API Reference provides detailed endpoint documentation, request/response schemas, authentication flows, error handling, and usage examples. Empower your team to build, extend, and automate with confidence.
-          </p>
-          <ul className="list-disc pl-6 text-gray-200">
-            <li>RESTful Endpoints & Methods</li>
-            <li>Authentication & Authorization</li>
-            <li>Webhooks & Event Subscriptions</li>
-            <li>Error Codes & Troubleshooting</li>
-            <li>SDKs & Client Libraries</li>
-          </ul>
-        </section>
-        <section id="guides" className="mb-12">
-          <h2 className="text-2xl font-bold text-[var(--accent-teal,#1de9b6)] mb-3">Guides & Tutorials</h2>
-          <p className="text-lg text-gray-200 mb-2">
-            Accelerate your learning with step-by-step guides, hands-on tutorials, and real-world use cases. Our curated content is designed for all skill levels, from new users to advanced architects. Learn how to deploy, customize, and optimize MutSyncHub for your unique business needs.
-          </p>
-          <ul className="list-disc pl-6 text-gray-200">
-            <li>End-to-End Integration Walkthroughs</li>
-            <li>Customizing Workflows & Automation</li>
-            <li>Best Practices for Scalability & Security</li>
-            <li>Industry-Specific Solution Guides</li>
-            <li>Video Tutorials & Webinars</li>
-          </ul>
-        </section>
-        <section id="support" className="mb-12">
-          <h2 className="text-2xl font-bold text-[var(--accent-teal,#1de9b6)] mb-3">Support Center</h2>
-          <p className="text-lg text-gray-200 mb-2">
-            Get the help you need, when you need it. The Support Center connects you with our global team of experts, a vibrant user community, and a rich knowledge base. Submit support tickets, browse FAQs, or join the conversation in our forums. We’re committed to your success at every stage of your journey.
-          </p>
-          <ul className="list-disc pl-6 text-gray-200">
-            <li>24/7 Technical Support & Ticketing</li>
-            <li>Knowledge Base & FAQs</li>
-            <li>Community Forums & Peer Networking</li>
-            <li>Live Chat & Dedicated Account Managers</li>
-            <li>Service Status & Incident Updates</li>
-          </ul>
-        </section>
-      </main>
+          
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto">
+            <SearchBar 
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search documentation, APIs, guides..."
+            />
+          </div>
+        </motion.div>
+
+        {/* Featured Resources */}
+        <FeaturedResources />
+        
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Category Sidebar */}
+          <div className="lg:w-1/4">
+            <div className="sticky top-24 bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900 rounded-xl shadow-xl p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                <FilterIcon size={20} /> Filter Resources
+              </h2>
+              
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveCategory(category.id)}
+                    className={`flex items-center justify-between w-full p-3 rounded-lg text-left transition-all ${
+                      activeCategory === category.id
+                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-blue-500 dark:text-blue-400">{category.icon}</span>
+                      <span>{category.name}</span>
+                    </div>
+                    <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full px-2 py-1 text-xs">
+                      {category.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-3 text-white drop-shadow-lg">
+                  Popular Tags
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {['API', 'Integration', 'Dashboard', 'Analytics', 'Security', 'Onboarding', 'Best Practices', 'Data Models'].map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => setSearchTerm(tag)}
+                      className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full transition-colors"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Resource Content */}
+          <div className="lg:w-3/4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white drop-shadow-lg">
+                {activeCategory === 'all' ? 'All Resources' : categories.find(c => c.id === activeCategory)?.name}
+                <span className="text-white/70 text-lg font-normal ml-2">
+                  ({filteredResources.length} items)
+                </span>
+              </h2>
+              
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-white/20 text-white font-bold shadow-lg' : 'text-white/80 hover:bg-white/10'}`}
+                >
+                  Grid
+                </button>
+                <button 
+                  onClick={() => setViewMode('table')}
+                  className={`p-2 rounded-lg ${viewMode === 'table' ? 'bg-white/20 text-white font-bold shadow-lg' : 'text-white/80 hover:bg-white/10'}`}
+                >
+                  Table
+                </button>
+              </div>
+            </div>
+            
+            {filteredResources.length === 0 ? (
+              <div className="bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900 rounded-xl shadow-xl p-12 text-center">
+                <SearchIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">
+                  No resources found
+                </h3>
+                <p className="text-white/80">
+                  Try adjusting your search or filter criteria
+                </p>
+              </div>
+            ) : viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredResources.map((resource) => (
+                  <div className="rounded-2xl shadow-lg bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900 p-6 transition-transform duration-200 hover:scale-105">
+                    <ResourceCard key={resource.id} resource={resource} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ResourceTable resources={filteredResources} />
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

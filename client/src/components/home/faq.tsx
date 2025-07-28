@@ -69,19 +69,8 @@ interface FAQItem {
       show: { y: 0, opacity: 1 },
     };
   
-    // Divide into two columns
-    const leftColumn = FAQ_DATA.slice(0, Math.ceil(FAQ_DATA.length / 2));
-    const rightColumn = FAQ_DATA.slice(Math.ceil(FAQ_DATA.length / 2));
-  
     return (
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 py-24 px-6 text-white">
-        {/* Background accents */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-0 h-1/3 w-full bg-gradient-to-b from-white/10 to-transparent" />
-          <div className="absolute top-16 right-20 h-40 w-40 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="absolute bottom-16 left-24 h-32 w-32 rounded-full bg-purple-500/20 blur-3xl" />
-        </div>
-  
+      <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-purple-500 py-24 px-6 text-white">
         <motion.div
           variants={container}
           initial="hidden"
@@ -90,55 +79,70 @@ interface FAQItem {
           className="relative z-10 mx-auto max-w-7xl"
         >
           <motion.div variants={item} className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-              Frequently Asked <span className="text-blue-300">Questions</span>
+            <span className="inline-block bg-white/10 px-4 py-1 rounded-full text-xl font-bold text-[#22D3EE] backdrop-blur-md shadow-lg mb-4">
+              FAQ
+            </span>
+            <h2 className="text-3xl font-bold mb-4 text-[#22D3EE]">
+              Frequently Asked <span className="text-[#22D3EE]">Questions</span>
             </h2>
-            <p className="text-lg sm:text-xl text-blue-100 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-[#E5E7EB] font-normal max-w-3xl mx-auto">
               Everything you need to know about our services, timelines, and support.
             </p>
           </motion.div>
-  
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[leftColumn, rightColumn].map((column, colIdx) => (
-              <Accordion
-                key={colIdx}
-                type="single"
-                collapsible
-                className="space-y-4"
+
+          <Accordion type="multiple" className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {FAQ_DATA.map((faq, idx) => (
+              <motion.div
+                key={faq.id}
+                variants={item}
+                initial="hidden"
+                whileInView="show"
+                whileHover={{ scale: 1.04, y: -4 }}
+                whileTap={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                viewport={{ once: true }}
               >
-                {column.map((faq) => (
-                  <motion.div
-                    key={faq.id}
-                    variants={item}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true }}
-                  >
-                    <AccordionItem
-                      value={faq.id}
-                      className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-md p-4 hover:bg-white/10 transition duration-300"
-                    >
-                      <AccordionTrigger className="text-left text-lg font-semibold text-white flex items-start gap-3">
-                        <span className="mt-1">{faq.icon}</span>
-                        {faq.question}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-blue-100 mt-2">
-                        <p className="mb-4">{faq.answer}</p>
-                        <div className="flex items-center gap-2 text-blue-300 text-sm">
-                          <span>Was this helpful?</span>
-                          <button className="hover:text-white transition">
-                            <ThumbsUp className="w-4 h-4" />
-                          </button>
-                          <button className="hover:text-white transition">
-                            <ThumbsDown className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </motion.div>
-                ))}
-              </Accordion>
+                <AccordionItem
+                  value={faq.id}
+                  className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-md p-4 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 transition duration-300"
+                >
+                  <AccordionTrigger className="text-left text-2xl font-semibold text-[#A5F3FC] flex items-start gap-3">
+                    <span className="mt-1">{faq.icon}</span>
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-lg text-[#E5E7EB] font-normal mt-2">
+                    <p className="mb-4">{faq.answer}</p>
+                    <div className="flex items-center gap-2 text-[#22D3EE] text-base">
+                      <span>Was this helpful?</span>
+                      <button className="hover:text-white transition">
+                        <ThumbsUp className="w-4 h-4" />
+                      </button>
+                      <button className="hover:text-white transition">
+                        <ThumbsDown className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </motion.div>
             ))}
+          </Accordion>
+
+          {/* Instant answers section */}
+          <div className="mt-16 text-center">
+            <h3 className="text-2xl font-bold text-[#A5F3FC] mb-2">Get instant answers from our agent</h3>
+            <p className="text-lg text-[#E5E7EB] mb-6">Still have questions? Start a conversation with our support agent for real-time help.</p>
+            <button
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition"
+              onClick={() => {
+                // Replace this with your actual chat open logic if needed
+                if (window && window.dispatchEvent) {
+                  window.dispatchEvent(new CustomEvent('openChatWidget'));
+                }
+              }}
+            >
+              <Headset className="w-5 h-5" />
+              Chat with Agent
+            </button>
           </div>
         </motion.div>
       </section>

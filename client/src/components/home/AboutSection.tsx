@@ -1,87 +1,201 @@
+// src/components/home/AboutSection.tsx
 import React from "react";
 import { motion } from "framer-motion";
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2,
-    },
-  },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0 },
-};
+import { 
+  Database, BarChart, Clock, Users, Lock, 
+  Cpu, LineChart, PieChart, Globe, MessageSquare, 
+  ArrowRight, ChevronRight 
+} from "lucide-react";
+import { Button } from "../ui/button";
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 const AboutSection: React.FC = () => {
-  return (
-    <section className="bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 py-24 px-8 text-white">
-      <motion.div
-        variants={container}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-      >
-        <motion.div variants={item} className="space-y-8">
-          <h2 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 tracking-tight" style={{ color: '#1de9b6' }}>
-            Empowering Businesses with Intelligent Technology.
-          </h2>
-          <div className="prose prose-invert max-w-none text-blue-100 text-lg md:text-xl leading-relaxed space-y-6">
-            <p>
-              At <span className="font-semibold" style={{ color: '#1de9b6' }}>MutSyncHub</span>, we're not just building software; we're crafting intelligent ecosystems that help businesses grow with confidence. From real-time data automation to smart cloud solutions, our approach is always tailored and future-forward.
-            </p>
-            <p>
-              For too long, businesses have wrestled with data scattered across systems, struggling to extract timely, actionable insights. Manual reporting delays crucial decisions, and the true potential of your operations remains locked away. This is where <span className="font-semibold" style={{ color: '#1de9b6' }}>MutSyncHub</span> steps in, transforming your raw data into your most strategic asset.
-            </p>
-            <h3 className="text-2xl font-bold mt-8 mb-4" style={{ color: '#1de9b6' }}>The AI-Powered Intelligence Platform: Your Data, Amplified.</h3>
-            <p>
-              We've engineered an enterprise-grade AI Data Analytics Platform designed for the core of your business. Whether you're a major wholesaler, a dynamic retail chain, a bustling supermarket, or a manufacturing powerhouse, if you possess data – from intricate databases to daily POS transactions – <span className="font-semibold" style={{ color: '#1de9b6' }}>MutSyncHub</span> is built for you. We understand that data integration can be a hurdle, which is why our platform offers seamless connectivity to existing databases. And we're not stopping there; we're actively developing a game-changing plugin to directly pull and unify data from POS systems that traditionally lack API access, ensuring all your valuable insights are captured.
-            </p>
-            <p>
-              This isn't just about data collection; it's about real-time synchronization and automated analytics that run on your schedule, or even autonomously. At its heart lies our dedicated, <span className="font-bold" style={{ color: '#1de9b6' }}>Automated AI Engine</span> – the brain that turns complexity into clarity:
-            </p>
-            <ul className="list-disc pl-6 space-y-3">
-              <li><span className="font-semibold" style={{ color: '#1de9b6' }}>Unrivaled Data Exploration:</span> <span className="text-white">Our engine dives deep, generating advanced statistics (mean, std, skewness, kurtosis), mapping crucial correlations, and highlighting feature importance. We pinpoint outliers and anomalies with precision using advanced statistical and machine learning methods, ensuring your data's integrity. We even perform distribution tests and dimensionality reduction (PCA) to give you a crystal-clear understanding of your data's underlying structure.</span></li>
-              <li><span className="font-semibold" style={{ color: '#1de9b6' }}>Strategic Forecasting & Time Series Mastery:</span> <span className="text-white">Look to the future with confidence. MutSyncHub expertly analyzes temporal patterns, decomposes time series for trends and seasonality, and integrates with cutting-edge tools like Prophet for advanced forecasting. Never be caught off guard by market shifts again.</span></li>
-              <li><span className="font-semibold" style={{ color: '#1de9b6' }}>Precision Clustering & Segmentation:</span> <span className="text-white">Understand your customers and products like never before. Our platform employs powerful clustering algorithms (KMeans, DBSCAN) to segment your market with unparalleled accuracy, providing the insights needed for hyper-targeted strategies.</span></li>
-              <li><span className="font-semibold" style={{ color: '#1de9b6' }}>Actionable Industry & Cross-Industry Insights:</span> <span className="text-white">We speak your language. MutSyncHub delivers tailored metrics for specific industries including retail, wholesale, supermarket, manufacturing, and healthcare. But our vision extends further, providing vital cross-industry analytics on market dynamics, supply chain efficiency, customer behavior, operational excellence, risk assessment, and even sustainability – giving you a holistic competitive edge.</span></li>
-              <li><span className="font-semibold" style={{ color: '#1de9b6' }}>Unlocking Textual Goldmines:</span> <span className="text-white">Don't let unstructured data go to waste. Our text analytics capabilities (using TF-IDF) extract valuable insights from reviews, feedback, and other textual sources, giving voice to your qualitative data.</span></li>
-              <li><span className="font-semibold" style={{ color: '#1de9b6' }}>Built for Performance & Future-Proof Scalability:</span> <span className="text-white">We cache results for lightning-fast access, ensuring your most critical reports are always at your fingertips. And with our modular, extensible design, MutSyncHub effortlessly grows with your business, allowing for seamless addition of new industry metrics or custom analytics modules.</span></li>
-            </ul>
-            <h3 className="text-2xl font-bold mt-8 mb-4" style={{ color: '#1de9b6' }}>Your Trusted AI Partner: The Contextual Agent.</h3>
-            <p>
-              Imagine having a data analyst on demand, available 24/7. Our groundbreaking contextual-aware agent makes this a reality. Simply query it using natural language, and it delves into the analyzed data, delivering comprehensive reports and answers to your questions instantly. This isn't just convenience; it's a paradigm shift in data accessibility.
-            </p>
-            <p>
-              Crucially, in an era where AI adoption can raise concerns about data privacy, we’ve prioritized your peace of mind. Our agent operates <span className="font-bold" style={{ color: '#1de9b6' }}>locally</span>, meaning your sensitive enterprise data remains within your secure environment. This commitment to local processing ensures unparalleled data safety and privacy, building trust even among those new to AI’s transformative power.
-            </p>
-            <p style={{ color: '#1de9b6', fontWeight: 600 }}>
-              With MutSyncHub, the need for an in-house team of data analysts is alleviated. Our platform does the heavy lifting, providing insights previously accessible only to the largest corporations. This isn't just a SaaS; it's a comprehensive suite of solutions, and our dedicated <span className="font-semibold">Solutions</span> section outlines the full spectrum of ways MutSyncHub can empower your unique enterprise journey. We are the next generation of business intelligence, ready to revolutionize how you understand, operate, and innovate.
-            </p>
-          </div>
-        </motion.div>
+  const sections = [
+    {
+      title: "Empowering Businesses with Intelligent Technology",
+      content: "At MutSyncHub, we're not just building software; we're crafting intelligent ecosystems that help businesses grow with confidence. From real-time data automation to smart cloud solutions, our approach is always tailored and future-forward.",
+      visual: (
+        <div className="relative w-full h-80">
+          <video
+            src="/Scene-2.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-80 rounded-3xl object-cover shadow-xl border-4 border-blue-500/10"
+            style={{ display: 'block', background: '#fff' }}
+          />
+         
+        </div>
+      )
+    },
+    {
+      title: "The Data Challenge Enterprises Face",
+      content: "For too long, businesses have wrestled with data scattered across systems, struggling to extract timely, actionable insights. Manual reporting delays crucial decisions, and the true potential of your operations remains locked away. This is where MutSyncHub steps in, transforming your raw data into your most strategic asset.",
+      visual: (
+        <video
+          src="/scattered.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-80 rounded-3xl object-cover shadow-xl border-4 border-blue-500/10"
+          style={{ display: 'block', background: '#fff' }}
+        />
+      )
+    },
+    {
+      title: "The AI-Powered Intelligence Platform",
+      content: "We've engineered an enterprise-grade AI Data Analytics Platform designed for the core of your business. Whether you're a major wholesaler, a dynamic retail chain, a bustling supermarket, or a manufacturing powerhouse, if you possess data – from intricate databases to daily POS transactions – MutSyncHub is built for you.",
+      visual: (
+        <video
+          src="/powered-2.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-80 rounded-3xl object-cover shadow-xl border-4 border-blue-500/10"
+          style={{ display: 'block', background: '#fff' }}
+        />
+      )
+    },
+    {
+      title: "Unrivaled Data Exploration",
+      content: "Our engine dives deep, generating advanced statistics (mean, std, skewness, kurtosis), mapping crucial correlations, and highlighting feature importance. We pinpoint outliers and anomalies with precision using advanced statistical and machine learning methods, ensuring your data's integrity. We even perform distribution tests and dimensionality reduction (PCA) to give you a crystal-clear understanding of your data's underlying structure.",
+      visual: (
+        <div className="relative w-full h-80">
+          <video
+            src="/visual.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-80 rounded-3xl object-cover shadow-xl border-4 border-blue-500/10"
+            style={{ display: 'block', background: '#fff' }}
+          />
+          
+        </div>
+      )
+    },
+    {
+      title: "Strategic Forecasting & Market Insights",
+      content: "Look to the future with confidence. MutSyncHub expertly analyzes temporal patterns, decomposes time series for trends and seasonality, and integrates with cutting-edge tools like Prophet for advanced forecasting. Understand your customers and products like never before. Our platform employs powerful clustering algorithms to segment your market with unparalleled accuracy, providing the insights needed for hyper-targeted strategies.",
+      visual: (
+        <video
+          src="/market2.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-80 rounded-3xl object-cover shadow-xl border-4 border-blue-500/10"
+          style={{ display: 'block', background: '#fff' }}
+        />
+      )
+    },
+    {
+      title: "Your Trusted AI Partner: The Contextual Agent",
+      content: "Imagine having a data analyst on demand, available 24/7. Our groundbreaking contextual-aware agent makes this a reality. Simply query it using natural language, and it delves into the analyzed data, delivering comprehensive reports and answers to your questions instantly. Crucially, in an era where AI adoption can raise concerns about data privacy, we've prioritized your peace of mind. Our agent operates locally, meaning your sensitive enterprise data remains within your secure environment.",
+      visual: (
+        <video
+          src="/agent.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-80 rounded-3xl object-cover shadow-xl border-4 border-blue-500/10"
+          style={{ display: 'block', background: '#fff' }}
+        />
+      )
+    }
+  ];
 
-        {/* CTA Section */}
-        <motion.div
-          variants={item}
-          className="mt-12 flex flex-col items-center justify-center gap-6"
-        >
-          <div className="text-2xl md:text-3xl font-bold text-center" style={{ color: '#1de9b6' }}>
-            Ready to unlock the full power of your data?
-          </div>
-          <a
-            href="/analytics"
-            className="inline-block rounded-full px-10 py-5 text-xl font-bold shadow-xl transition-colors duration-300"
-            style={{ background: 'linear-gradient(90deg, #1de9b6 0%, #00bcd4 100%)', color: '#0a2540', letterSpacing: '0.03em' }}
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  return (
+    <section className="relative bg-[#FFFDF6] py-24 px-0 text-gray-900 overflow-hidden">
+      {/* Top gradient fade for smooth transition from HeroSection */}
+      <div className="pointer-events-none absolute top-0 left-0 w-full h-16 z-10" style={{background: 'linear-gradient(to bottom, rgba(34,211,238,0.12) 0%, #FFFDF6 100%)'}} />
+      {/* Blue shadow at top and bottom for visual transition */}
+      <div className="absolute top-0 left-0 w-full h-6 z-10 shadow-[0_-8px_24px_0_rgba(34,211,238,0.18)]" style={{boxShadow: '0 -8px 24px 0 #22D3EE88'}} />
+      <div className="absolute bottom-0 left-0 w-full h-6 z-10 shadow-[0_8px_24px_0_rgba(34,211,238,0.18)]" style={{boxShadow: '0 8px 24px 0 #22D3EE88'}} />
+      <div className="w-full">
+        {sections.map((section, index) => (
+          <div 
+            key={index} 
+            className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24 ${index % 2 === 0 ? '' : 'lg:grid-flow-col-dense'}`}
           >
-            Launch Analytics Engine
-          </a>
-        </motion.div>
-      </motion.div>
+            {/* Text content - alternates sides */}
+            <div className={`${index % 2 === 0 ? 'lg:order-1' : 'lg:order-2'}`}>
+              <motion.h2 
+                initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+                className="text-3xl font-bold mb-6 text-[#22D3EE]"
+              >
+                {section.title}
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                viewport={{ once: true }}
+                className="text-lg md:text-xl text-gray-700 font-normal leading-relaxed"
+              >
+                {section.content}
+              </motion.p>
+            </div>
+            {/* Visual content - alternates sides */}
+            <motion.div 
+              className={`h-80 ${index % 2 === 0 ? 'lg:order-2' : 'lg:order-1'}`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              viewport={{ once: true }}
+            >
+              {section.visual}
+            </motion.div>
+          </div>
+        ))}
+        {/* Final CTA */}
+        <div className="text-center mt-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="inline-block bg-white/10 px-6 py-2 rounded-full text-xl font-bold text-[#22D3EE] backdrop-blur-md mb-6"
+          >
+            Ready to unlock the full power of your data?
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            <Button
+              className="group bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-8 py-6 text-2xl font-bold rounded-xl shadow-lg text-white"
+              onClick={() => {
+                if (user) {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/signup');
+                }
+              }}
+            >
+              Launch Analytics Engine
+              <span className="ml-2 text-2xl font-bold text-white flex items-center"><ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" /></span>
+            </Button>
+          </motion.div>
+        </div>
+      </div>
+      {/* Bottom gradient fade for smooth transition to next section */}
+      <div className="pointer-events-none absolute bottom-0 left-0 w-full h-16 z-10" style={{background: 'linear-gradient(to top, rgba(34,211,238,0.10) 0%, #FFFDF6 100%)'}} />
     </section>
+    
   );
 };
 

@@ -22,7 +22,7 @@ import {
 // Components
 import SupportTicketCard from '../components/support/SupportTicketCard';
 import SupportChannelCard from '../components/support/SupportChannelCard';
-import KnowledgeBaseSearch from '../components/support/KnowledgeBaseSearch';
+import KnowledgeBaseSearch from '../components/whatwedosupport/KnowledgeBaseSearch';
 import SystemStatusCard from '../components/support/SystemStatusCard';
 import FaqAccordion from '../components/support/FaqAccordion';
 import PriorityIndicator from '../components/support/PriorityIndicator';
@@ -70,7 +70,7 @@ interface Faq {
   answer: string;
 }
 
-const Support = () => {
+const WhatWeDoSupport = () => {
   const [activeTab, setActiveTab] = useState<'tickets' | 'knowledge' | 'community' | 'status'>('tickets');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -311,7 +311,7 @@ const Support = () => {
             </div>
 
             {/* Tab Content */}
-            <div className="bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900 rounded-xl shadow-xl overflow-hidden">
+            <div className="bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900 rounded-xl shadow-xl">
               {activeTab === 'tickets' && (
                 <div>
                   <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -409,4 +409,5 @@ const Support = () => {
   );
 };
 
-export default Support;
+
+export default WhatWeDoSupport;

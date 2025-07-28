@@ -5,6 +5,7 @@ import SolutionsWithSidebar from '../pages/Solutions';
 import Resources from '../pages/Resources';
 import Home from '../pages/Home';
 import Support from '../pages/Support';
+import WhatWeDoSupport from '../pages/WhatWeDoSupport';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AdminLayout from '../components/AdminLayout';
 import Spinner from '../components/ui/Spinner';
@@ -41,6 +42,7 @@ const routes: RouteObject[] = [
       { path: 'solutions', element: <SolutionsWithSidebar /> },
       { path: 'resources', element: <Resources /> },
       { path: 'support', element: <Support /> },
+      { path: 'what-we-do-support', element: <WhatWeDoSupport /> },
       { path: 'signup', element: <SignUpPage /> },
     ],
   },

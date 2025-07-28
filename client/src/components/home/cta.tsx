@@ -21,7 +21,7 @@ export const CTASection: React.FC = () => {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 py-16 px-6 text-white">
+    <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-purple-500 py-16 px-6 text-white">
       {/* Decorative background elements */}
       <div className="absolute inset-0 overflow-hidden z-0">
         <div className="absolute top-0 left-0 h-1/3 w-full bg-gradient-to-b from-white/10 to-transparent" />
@@ -36,22 +36,18 @@ export const CTASection: React.FC = () => {
         viewport={{ once: true }}
         className="relative z-10 mx-auto max-w-6xl text-center"
       >
-        <motion.div variants={item} className="mb-4">
-          <span className="rounded-full bg-white/10 px-4 py-1 text-sm font-medium backdrop-blur-md">
-            Start your journey →
-          </span>
-        </motion.div>
+
 
         <motion.h2
           variants={item}
-          className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight max-w-4xl mx-auto"
+          className="text-3xl font-bold mb-4 text-[#22D3EE] max-w-4xl mx-auto"
         >
-          Ready to <span className="text-blue-300">Transform</span> Your Business?
+          Ready to <span className="text-[#22D3EE]">Transform</span> Your Business?
         </motion.h2>
 
         <motion.p
           variants={item}
-          className="text-lg sm:text-xl text-blue-100 max-w-2xl mx-auto mt-6 leading-relaxed"
+          className="text-lg md:text-xl text-[#E5E7EB] font-normal max-w-2xl mx-auto mt-6 leading-relaxed"
         >
           Join industry leaders who rely on MutSyncHub for intelligent automation, seamless integrations, and powerful insights.
         </motion.p>
@@ -61,34 +57,62 @@ export const CTASection: React.FC = () => {
           className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4"
         >
           <Button
+            asChild
             size="lg"
-            className="group rounded-full bg-white text-blue-900 hover:bg-gray-100 px-8 text-lg font-semibold shadow-lg transition-all duration-300 hover:shadow-xl"
+            className="group rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:from-blue-700 hover:to-purple-700 px-8 text-lg transition-all duration-300 hover:shadow-xl"
           >
-            Get Started
-            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <a href="/signup">
+              Get Started
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </a>
           </Button>
           <Button
-            variant="outline"
             size="lg"
-            className="rounded-full border-2 border-white bg-transparent text-lg font-semibold text-white hover:bg-white/10 hover:text-white"
+            variant="outline"
+            className="rounded-full border-2 border-white bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 text-lg"
+            onClick={() => {
+              if (window && window.dispatchEvent) {
+                window.dispatchEvent(new CustomEvent('openConsultationModal', { detail: { preselect: 'analytics-demo' } }));
+              }
+            }}
           >
             Schedule Demo
           </Button>
         </motion.div>
 
         <motion.div variants={item} className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="rounded-xl bg-white/10 p-6 border border-white/10 text-center">
-            <p className="text-white/70 mb-1">Avg. ROI</p>
-            <p className="text-3xl font-bold text-green-400">+325%</p>
-          </div>
-          <div className="rounded-xl bg-white/10 p-6 border border-white/10 text-center">
-            <p className="text-white/70 mb-1">Client Satisfaction</p>
-            <p className="text-3xl font-bold text-blue-300">98.6%</p>
-          </div>
-          <div className="rounded-xl bg-white/10 p-6 border border-white/10 text-center">
-            <p className="text-white/70 mb-1">Deployment Speed</p>
-            <p className="text-3xl font-bold text-purple-300">2x Faster</p>
-          </div>
+          {[{
+            label: "Avg. ROI",
+            value: "+325%",
+            valueClass: "text-green-400",
+          }, {
+            label: "Client Satisfaction",
+            value: "98.6%",
+            valueClass: "text-blue-300",
+          }, {
+            label: "Deployment Speed",
+            value: "2x Faster",
+            valueClass: "text-purple-500 drop-shadow",
+          }].map((stat, idx) => (
+            <motion.div
+              key={idx}
+              whileHover={{
+                scale: 1.08,
+                rotate: 2,
+                boxShadow: "0 0 24px 0 rgba(100,181,246,0.25)",
+              }}
+              whileTap={{
+                scale: 1.04,
+                rotate: -2,
+                boxShadow: "0 0 12px 0 rgba(100,181,246,0.18)",
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className={`rounded-xl bg-gradient-to-br from-blue-900/60 via-blue-800/60 to-purple-500/60 p-6 border border-white/10 text-center backdrop-blur-md`}
+            >
+              <p className="text-white/70 mb-1">{stat.label}</p>
+              <p className={`text-3xl font-bold ${stat.valueClass}`}>{stat.value}</p>
+            </motion.div>
+          ))}
         </motion.div>
       </motion.div>
     </section>
