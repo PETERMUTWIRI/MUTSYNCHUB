@@ -305,15 +305,9 @@ const Navbar: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={() => {
-              if (user) {
-                navigate('/analytics');
-              } else {
-                setLoginOpen(true);
-              }
-            }}
+            onClick={() => navigate('/admin')}
             className={`px-6 py-2 rounded-full text-lg font-bold transition-all duration-150 border border-transparent shadow-sm
-              ${location.pathname.startsWith("/analytics") 
+              ${location.pathname.startsWith("/admin") 
                 ? "bg-[var(--accent-teal,#1de9b6)] text-white hover:bg-[var(--accent-teal,#1de9b6)] hover:shadow-md"
                 : "bg-[rgba(0,0,0,0.03)] text-gray-700 dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] hover:shadow-md"}
             `}

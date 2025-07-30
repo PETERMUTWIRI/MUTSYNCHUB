@@ -18,12 +18,21 @@ const AIFloatingWidget: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setResponse(null);
-    
-    // Simulate AI processing
-    setTimeout(() => {
-      setResponse("[AI Response] This is where your AI-powered support answer will appear, based on your query and intent.");
-      setLoading(false);
-    }, 1200);
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query })
+      });
+      if (!res.ok) throw new Error('Agent API error');
+      const data = await res.json();
+      setResponse(data.response || '[AI Response] No answer received.');
+    } catch (err: any) {
+      setResponse('[AI Error] Unable to connect to agent backend.');
+    }
+    setLoading(false);
   };
 
   return (

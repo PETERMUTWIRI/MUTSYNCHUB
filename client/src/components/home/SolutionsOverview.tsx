@@ -180,7 +180,7 @@ const SolutionsOverview = () => {
                   className="group bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-700 px-8 py-6 text-xl font-bold text-white rounded-xl shadow-xl hover:shadow-2xl transition-all"
                   onClick={() => navigate('/solutions')}
                 >
-                  Explore Our Capabilities
+                  Explore Our Solutions
                   <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </motion.div>
