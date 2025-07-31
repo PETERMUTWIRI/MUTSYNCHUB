@@ -3,8 +3,7 @@ import axios from 'axios';
 import { supabase } from './supabase';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ||
-    'https://effective-space-goggles-x5465xg9vwrxh9pw7.app.github.dev/api', // <-- add /api
+  baseURL: '/api', // Use Vite proxy for all API calls
   withCredentials: true,
   timeout: 10000,
   headers: {
@@ -14,26 +13,18 @@ const api = axios.create({
   }
 });
 
+
 // Request Interceptor using Supabase session
 api.interceptors.request.use(async (config) => {
-  // Only send Supabase JWT for /auth/exchange
-  if (config.url?.includes('/auth/exchange')) {
+  // Send Supabase JWT for /api/auth/sync
+  if (config.url?.includes('/auth/sync')) {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {
       config.headers['Authorization'] = `Bearer ${session.access_token}`;
     }
-  } else {
-    // For all other requests, use backend JWT from localStorage
-    const backendJwt = localStorage.getItem('backend_jwt');
-    if (backendJwt) {
-      config.headers['Authorization'] = `Bearer ${backendJwt}`;
-    }
   }
 
-  const tenantId = localStorage.getItem('tenant_id');
-  if (tenantId) {
-    config.headers['X-Tenant-ID'] = tenantId;
-  }
+
 
   // Debug
   console.log('🚀 Axios Request Headers:', config.headers);
@@ -47,13 +38,18 @@ api.interceptors.response.use(
   response => response,
   error => {
     if (!error.response) {
+      // Only log network/CORS errors, do not redirect
       console.error('❌ Network or CORS error', error.message);
+      return Promise.reject(error);
     }
 
     if (error.response?.status === 401) {
       supabase.auth.signOut();
-      const redirectUrl = encodeURIComponent(window.location.href);
-      window.location.href = `/login?redirect=${redirectUrl}`;
+      // Prevent redirect loop if already on /login
+      if (!window.location.pathname.startsWith('/login')) {
+        const redirectUrl = encodeURIComponent(window.location.href);
+        window.location.href = `/login?redirect=${redirectUrl}`;
+      }
     }
 
     return Promise.reject(error);

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import api from '@/lib/api';
 import { exchangeSupabaseJwt } from '@/lib/exchange';
 import { decodeJwt } from '@/lib/jwtDecode';
+import { supabase } from '@/lib/supabase';
+import { syncWithBackend } from '@/api/auth';
 
 export interface User {
   id: string;
@@ -38,32 +39,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-
   // Load user data from backend JWT in localStorage
   useEffect(() => {
     setLoading(true);
     (async () => {
-      // Disabled exchangeSupabaseJwt for dashboard dev; fallback to localStorage only
-      const backendJwt = localStorage.getItem('backend_jwt');
-      if (backendJwt) {
-        const decoded = decodeJwt(backendJwt);
-        if (decoded) {
-          setToken(backendJwt);
-          setUser({
-            id: decoded.sub || decoded.id || '',
-            supabaseId: decoded.supabaseId || decoded.sub || '',
-            orgId: decoded.tenant_id || decoded.orgId || decoded.organizationId || '',
-            tenant_id: decoded.tenant_id || '',
-            token: backendJwt,
-            name: decoded.name || '',
-            email: decoded.email || '',
-            role: (decoded.role || 'user').toUpperCase(),
-            plan: decoded.plan || decoded.subscriptionTier || 'basic',
-          });
-          localStorage.setItem('tenant_id', decoded.tenant_id || decoded.orgId || decoded.organizationId || '');
-        } else {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        setToken(session.access_token);
+        try {
+          // Call backend to sync and get user business data (from new Supabase context)
+          const res = await syncWithBackend();
+          if (res?.data?.user) {
+            setUser(res.data.user);
+            if (res.data.user.tenant_id || res.data.user.orgId) {
+              localStorage.setItem('tenant_id', res.data.user.tenant_id || res.data.user.orgId);
+            }
+          } else {
+            setUser(null);
+          }
+        } catch (err) {
           setUser(null);
-          setToken(null);
         }
       } else {
         setUser(null);

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { JwtStrategy } from './modules/auth/strategies/jwt.strategy';
+import { SupabaseJwtStrategy } from './modules/auth/strategies/supabase-jwt.strategy';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { ConfigModule } from '@nestjs/config';
 import jwtConfig from './config/jwt.config';
@@ -50,7 +50,7 @@ import { RateLimitService } from './modules/auth/services/rate-limit.service';
   providers: [
     DataGateway,
     RedisService,
-    JwtStrategy,
+    SupabaseJwtStrategy,
     {
       provide: PrismaClient,
       useClass: NeonService, // Replace default PrismaClient

@@ -65,7 +65,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://ideal-engine-5pqq4g4x54jcvvwx-5000.app.github.dev',
         changeOrigin: true,
         secure: false,
       },

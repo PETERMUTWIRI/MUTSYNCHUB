@@ -7,7 +7,9 @@ import {
   Request,
   Options,
   HttpCode,
+  Req,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { UserService } from '../user/user.service';
@@ -32,51 +34,14 @@ export class AuthController {
   }
 
   /**
-   * Exchange Supabase JWT for backend JWT (with Neon sync)
+   * Sync Supabase user to Neon DB (hybrid signup flow)
    */
-  @Post('exchange')
-  async exchange(@Body('token') supabaseToken: string, @Request() req) {
-    console.log('---[EXCHANGE]---');
-    console.log(`[EXCHANGE] Received Supabase JWT:`, supabaseToken?.slice(0, 32) + '...');
-    console.log(`[EXCHANGE] Request headers:`, req.headers);
-    console.log(`[EXCHANGE] Request body:`, req.body);
-
-    // 1. Parse Supabase token payload
-    let payload: any;
-    try {
-      const jwt = require('jsonwebtoken');
-      const secret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET;
-      payload = jwt.verify(supabaseToken, secret, { algorithms: ['HS256'] });
-    } catch (err) {
-      console.error('[EXCHANGE] Supabase token parse error:', err);
-      return {
-        error: 'Invalid Supabase token',
-        details: err instanceof Error ? err.message : String(err),
-      };
-    }
-
-    // 2. Find or create user in Neon DB
-    let user = await this.userService.findById(payload.sub);
-    if (!user) {
-      user = await this.userService.findOrCreateFromSupabase({
-        id: payload.sub,
-        email: payload.email,
-      });
-    }
-
-    // 3. Issue backend JWT
-    const backendJwt = this.authService.signJwt({
-      sub: user.id,
-      role: user.role,
-      orgId: user.orgId,
-      supabaseId: user.supabaseId || payload.sub,
-      tenant_id: user.orgId,
-    });
-
-    console.log('[EXCHANGE] Backend JWT issued:', backendJwt?.slice(0, 32) + '...');
-    console.log('[EXCHANGE] User object:', user);
-    console.log('---[EXCHANGE END]---');
-    return { token: backendJwt, user };
+  @Post('sync')
+  @UseGuards(AuthGuard('supabase-jwt'))
+  async sync(@Req() req) {
+    const { sub, email } = req.user;
+    let user = await this.userService.findOrCreateFromSupabase({ id: sub, email });
+    return { success: true, user };
   }
 
   /**

@@ -10,6 +10,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import AdminLayout from '../components/AdminLayout';
 import Spinner from '../components/ui/Spinner';
 import SignUpPage from '../pages/SignUpPage';
+import LoginPage from '../pages/LoginPage';
 
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
 const UserManagementPage = lazy(() => import('../pages/admin/UserManagementPage'));
@@ -35,7 +36,7 @@ const Security = lazy(() => import('../pages/Security'));
 const routes: RouteObject[] = [
   {
     path: '/',
-    element: <App />,
+    element: <App />, 
     children: [
       { index: true, element: <Home /> },
       { path: 'home', element: <Home /> },
@@ -44,14 +45,15 @@ const routes: RouteObject[] = [
       { path: 'support', element: <Support /> },
       { path: 'what-we-do-support', element: <WhatWeDoSupport /> },
       { path: 'signup', element: <SignUpPage /> },
+      { path: 'login', element: <LoginPage /> },
     ],
   },
   {
     path: '/analytics',
     element: (
-      <ProtectedRoute requiredRoles={['USER']}>
+      <ProtectedRoute requiredRoles={['ADMIN']}>
         <Suspense fallback={<Spinner />}>
-          <UserDashboard />
+          <Analytics />
         </Suspense>
       </ProtectedRoute>
     ),

@@ -8,18 +8,24 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ✅ CORS setup FIRST with dynamic origin check and debug logging
-  // Update allowedOrigins to match frontend and Codespaces proxy
-  const allowedOrigins = [
-    'https://effective-space-goggles-x5465xg9vwrxh9pw7.app.github.dev',
-    'https://effective-space-goggles-x5465xg9vwrxh9pw7-5000.app.github.dev',
-    'https://effective-space-goggles-x5465xg9vwrxh9pw7-5173.app.github.dev',
+  // Dynamic CORS config for Codespaces, localhost, and Supabase
+  const allowedExact = [
     'http://localhost:5173',
     'https://localhost:5173',
     'https://ufcjnhamtlmpcjzhizsn.supabase.co',
   ];
+  const githubPattern = /^https:\/\/.*\.app\.github\.dev$/;
+  const allowedOrigins = [...allowedExact, 'https://*.app.github.dev'];
+
   app.enableCors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // allow non-browser requests (like curl)
+      if (allowedExact.includes(origin) || githubPattern.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Not allowed by CORS: ${origin}`));
+      }
+    },
     credentials: true,
     allowedHeaders: [
       'Content-Type',
@@ -44,9 +50,6 @@ async function bootstrap() {
 
  
 
-  // Force JwtStrategy to initialize before app.listen
-  const { JwtStrategy } = await import('./modules/auth/strategies/jwt.strategy');
-  app.select(AppModule).get(JwtStrategy);
 
   await app.listen(configService.get('PORT', 5000));
   logger.log(`🚀 Server running on ${await app.getUrl()}`);

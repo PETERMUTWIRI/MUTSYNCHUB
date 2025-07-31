@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { syncWithBackend } from "@/api/auth";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
@@ -49,13 +50,20 @@ const SignUpPage: React.FC = () => {
         }
       }
     });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       setError(error.message);
-    } else {
+      return;
+    }
+    // Call backend sync endpoint
+    try {
+      await syncWithBackend();
       setSuccess('Account created! Please check your email to verify.');
       setTimeout(() => navigate("/login"), 1200);
+    } catch (err: any) {
+      setError('Signup succeeded but failed to sync with backend: ' + (err?.message || err));
     }
+    setLoading(false);
   };
 
   const handleGoogleSignup = async () => {
