@@ -1,13 +1,13 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { OrganizationService } from './organization.service';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 import { OrgStatus } from '@prisma/client';
 import { TenantContextService } from '../../common/services/tenant-context.service';
 
 @ApiTags('Organizations')
 @Controller('organizations')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard('supabase-jwt'))
 @ApiBearerAuth()
 export class OrganizationController {
   constructor(

@@ -1,11 +1,11 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuditLoggerService } from '../../common/services/audit-logger.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Controller('admin/audit-logs')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(AuthGuard('supabase-jwt'), RolesGuard)
 export class AuditLogController {
   constructor(private readonly auditLogger: AuditLoggerService) {}
 

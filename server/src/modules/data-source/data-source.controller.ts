@@ -1,14 +1,14 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { DataSourceService } from './data-source.service';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 import { CreateDataSourceDto, UpdateDataSourceDto, CreateDataStreamDto } from './dto/data-source.dto';
 import { DataGateway } from '../../interfaces/websocket/data.gateway';
 import { DataSourceStatus } from '@prisma/client';
 
 @ApiTags('Data Sources')
 @Controller('data-sources')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard('supabase-jwt'))
 @ApiBearerAuth()
 export class DataSourceController {
   constructor(

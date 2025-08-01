@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { exchangeSupabaseJwt } from '@/lib/exchange';
-import { decodeJwt } from '@/lib/jwtDecode';
+
 import { supabase } from '@/lib/supabase';
 import { syncWithBackend } from '@/api/auth';
 

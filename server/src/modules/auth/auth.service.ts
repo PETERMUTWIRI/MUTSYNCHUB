@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EnterpriseAuthService } from './services/enterprise-auth.service';
-import { RegisterDto } from './dto/auth.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PLANS } from '../../config/plans.config';
 import { UserService } from '../user/user.service';
 import { OrganizationService } from '../organization/organization.service';

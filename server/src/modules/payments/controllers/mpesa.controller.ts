@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Param, UseGuards, HttpStatus, UseInterceptors, UsePipes } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 import { MpesaService } from '../services/mpesa.service';
 import { PaymentSecurityService } from '../services/payment-security.service';
 import { SecurePaymentGuard } from '../guards/secure-payment.guard';
@@ -11,7 +11,7 @@ import { MpesaConfigValidationPipe } from '../pipes/mpesa-config-validation.pipe
 
 @ApiTags('payments')
 @Controller('payments/mpesa')
-@UseGuards(JwtAuthGuard, SecurePaymentGuard)
+@UseGuards(AuthGuard('supabase-jwt'), SecurePaymentGuard)
 @UseInterceptors(SecurePaymentInterceptor)
 @UsePipes(MpesaConfigValidationPipe)
 export class MpesaController {
@@ -21,7 +21,7 @@ export class MpesaController {
   ) {}
 
   @Post('stk-push')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('supabase-jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Initiate M-Pesa STK Push payment' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Payment initiated successfully' })
@@ -42,7 +42,7 @@ export class MpesaController {
   }
 
   @Post(':paymentId/retry')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('supabase-jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Retry failed M-Pesa payment' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Payment retry initiated successfully' })
@@ -54,7 +54,7 @@ export class MpesaController {
   }
 
   @Post('register-urls')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('supabase-jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Register C2B URLs with M-Pesa' })
   @ApiResponse({ status: HttpStatus.OK, description: 'URLs registered successfully' })

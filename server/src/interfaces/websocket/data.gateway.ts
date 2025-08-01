@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { UseGuards, Logger, ValidationPipe } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 import { ConnectionStateService } from './connection-state.service';
 import { JoinOrgDto, LeaveOrgDto, DataUpdateDto, AnalyticsEventDto } from './dto/websocket-events.dto';
 import { validate } from 'class-validator';
@@ -68,7 +68,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('supabase-jwt'))
   @SubscribeMessage('joinOrg')
   async handleJoinOrg(
     @ConnectedSocket() client: Socket,
@@ -92,7 +92,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('supabase-jwt'))
   @SubscribeMessage('leaveOrg')
   async handleLeaveOrg(
     @ConnectedSocket() client: Socket,
@@ -116,7 +116,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('supabase-jwt'))
   @SubscribeMessage('subscribeToStream')
   async handleSubscribeToStream(
     @ConnectedSocket() client: Socket,
@@ -140,7 +140,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('supabase-jwt'))
   @SubscribeMessage('unsubscribeFromStream')
   async handleUnsubscribeFromStream(
     @ConnectedSocket() client: Socket,

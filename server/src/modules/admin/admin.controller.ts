@@ -1,7 +1,7 @@
 
 import { Controller, Get, Put, Param, Body, UseGuards,Delete,Post,Query, Req } from '@nestjs/common';
 import { AdminService } from './admin.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -12,7 +12,7 @@ import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { QueryDto } from './dto/query.dto';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(AuthGuard('supabase-jwt'), RolesGuard)
 export class AdminController {
   // --- Per-User Feature Flags ---
   @Get('users/:id/feature-flags')

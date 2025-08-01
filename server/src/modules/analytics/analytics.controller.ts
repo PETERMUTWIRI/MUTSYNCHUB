@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 import { AnalyticsScheduleService } from './analytics-schedule.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { CreateScheduleDto, UpdateScheduleDto } from './dto/analytics-schedule.dto';
@@ -10,7 +10,7 @@ import { AnalyticsAgentService } from '../../agents/analytics-agent.service';
 
 @ApiTags('analytics')
 @Controller('analytics')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard('supabase-jwt'))
 export class AnalyticsController {
   constructor(
     private readonly analyticsScheduleService: AnalyticsScheduleService,
