@@ -10,7 +10,6 @@ import { MfaService } from './services/mfa.service';
 import { RateLimitService } from './services/rate-limit.service';
 import { AuthController } from './auth.controller';
 import { SupabaseJwtStrategy } from './strategies/supabase-jwt.strategy';
-import { SupabaseJwksService } from './supabase-jwks.service';
 import { UserModule } from '../user/user.module';
 import { OrganizationModule } from '../organization/organization.module';
 import { CommonModule } from '../../common/common.module';
@@ -35,7 +34,6 @@ import { CommonModule } from '../../common/common.module';
   providers: [
     AuthService,
     SupabaseJwtStrategy,
-    SupabaseJwksService,
     EnterpriseAuthService,
     MfaService,
     RateLimitService,
@@ -43,7 +41,6 @@ import { CommonModule } from '../../common/common.module';
   exports: [
     PassportModule,
     SupabaseJwtStrategy,
-    SupabaseJwksService,
   ],
 })
 export class AuthModule {}
