@@ -1,11 +1,12 @@
-import React from 'react';
-import { StackAuthProvider } from '@stack-auth/react';
+import { StackProvider, StackTheme } from '@stackframe/react';
 import { stackAuth } from '@/lib/stack-auth';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <StackAuthProvider client={stackAuth}>
-      {children}
-    </StackAuthProvider>
+    <StackProvider app={stackAuth}>
+      <StackTheme>
+        {children}
+      </StackTheme>
+    </StackProvider>
   );
 };
