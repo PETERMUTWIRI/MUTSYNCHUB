@@ -38,25 +38,12 @@ import { cn } from "@/lib/utils";
 import SSOLogin from "@/components/ui/SSOLogin";
 import HomeSidebar from "@/components/ui/HomeSidebar";
 import { useAuth } from '@/hooks/useAuth';
-import api from '@/lib/api';
-import { supabase } from '@/lib/supabase';
-import { syncWithBackend } from '@/api/auth';
-
-// Google "or" divider component
-const OrDivider = () => (
-  <div className="flex items-center my-2">
-    <div className="flex-1 h-px bg-gray-300" />
-    <span className="mx-2 text-gray-400 text-xs font-semibold">or</span>
-    <div className="flex-1 h-px bg-gray-300" />
-  </div>
-);
 
 const Navbar: React.FC = () => {
   // Dropdown ref and state for What We Do
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [signupOpen, setSignupOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // ✅ Load theme from localStorage on mount
@@ -87,119 +74,8 @@ const Navbar: React.FC = () => {
   };
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, setUser, setToken } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  // Login state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
-
-  // Login handler with role-based redirection
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginLoading(true);
-    setLoginError(null);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: loginPassword,
-      });
-      if (error) {
-        setLoginError(error.message);
-        return;
-      }
-      const token = data.session?.access_token;
-      if (token) {
-        setToken(token);
-        // Sync with backend for RBAC and Neon user
-        try {
-          await syncWithBackend();
-        } catch (err: any) {
-          setLoginError('Login succeeded but failed to sync with backend: ' + (err?.message || err));
-          setLoginLoading(false);
-          return;
-        }
-        const role = (data.user?.user_metadata?.role || 'USER').toUpperCase();
-        setUser({
-          id: data.user?.id || '',
-          orgId: '',
-          token,
-          name: data.user?.user_metadata?.full_name || '',
-          email: data.user?.email || '',
-          role,
-          plan: 'basic',
-        });
-        if (role === 'ADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/dashboard');
-        }
-      } else {
-        setLoginError('No session token received.');
-      }
-    } catch (err: any) {
-      setLoginError(err?.message || 'Login failed');
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-  // Signup state
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupOrg, setSignupOrg] = useState('');
-  const [signupSubdomain, setSignupSubdomain] = useState('');
-  const [signupLoading, setSignupLoading] = useState(false);
-  const [signupError, setSignupError] = useState<string | null>(null);
-  const [signupSuccess, setSignupSuccess] = useState<string | null>(null);
-
-  // Signup handler
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSignupLoading(true);
-    setSignupError(null);
-    setSignupSuccess(null);
-    try {
-      // Split name into first and last
-      const [firstName, ...rest] = signupName.trim().split(' ');
-      const lastName = rest.join(' ');
-      const { data, error } = await supabase.auth.signUp({
-        email: signupEmail,
-        password: signupPassword,
-        options: {
-          data: {
-            firstName: firstName || '',
-            lastName: lastName || '',
-            organizationName: signupOrg,
-            subdomain: signupSubdomain,
-          }
-        }
-      });
-      if (error) {
-        setSignupError(error.message);
-      } else {
-        setSignupSuccess('Account created! Please check your email to verify.');
-        setTimeout(() => {
-          setSignupOpen(false);
-          navigate('/login');
-        }, 1200);
-      }
-    } catch (err: any) {
-      setSignupError(err?.message || 'Signup failed');
-    } finally {
-      setSignupLoading(false);
-    }
-  };
-
-  // Google SSO handler (copied from SignUpPage)
-  const handleGoogleSignup = async () => {
-    setLoginLoading(true);
-    setLoginError(null);
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-    setLoginLoading(false);
-    if (error) setLoginError(error.message);
-  };
 
   const location = useLocation();
 
@@ -350,23 +226,33 @@ const Navbar: React.FC = () => {
 
           {/* Auth buttons (desktop) */}
           <div className="hidden md:flex items-center gap-2">
-            <Button
-              className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
-              style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
-              onClick={() => navigate('/login')}
-            >
-              Login
-            </Button>
-
-            {/* Signup Call-to-Action Button (links to full-page signup) */}
-            <Link to="/signup">
+            {user ? (
               <Button
                 className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
                 style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
+                onClick={() => signOut()}
               >
-                Sign Up
+                Sign Out
               </Button>
-            </Link>
+            ) : (
+              <>
+                <Button
+                  className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
+                  style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
+                  onClick={() => navigate('/login')}
+                >
+                  Login
+                </Button>
+                <Link to="/signup">
+                  <Button
+                    className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
+                    style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
+                  >
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
         {/* HomeSidebar overlay (mobile sidebar) */}

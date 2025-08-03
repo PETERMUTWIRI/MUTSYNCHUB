@@ -1,57 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { syncWithBackend } from '@/api/auth';
 import { useAuth } from '@/hooks/useAuth';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { signIn, user, isLoading, error } = useAuth();
   const navigate = useNavigate();
-  const { setUser, setToken } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      // Assuming the user object has a role property
+      // @ts-ignore
+      if (user.role === 'ADMIN') {
+        navigate('/analytics');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
-      const token = data.session?.access_token;
-      if (token) {
-        setToken(token);
-        try {
-          const res = await syncWithBackend();
-          if (res?.data?.user) {
-            setUser(res.data.user);
-            // Redirect based on role
-            if (res.data.user.role === 'ADMIN') {
-              navigate('/analytics');
-            } else {
-              navigate('/dashboard');
-            }
-            return;
-          }
-        } catch (err) {
-          setError('Login succeeded but failed to sync with backend.');
-        }
-      } else {
-        setError('No session token received.');
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+    await signIn({
+      provider: 'credentials', // Assuming 'credentials' for email/password
+      email,
+      password,
+    });
   };
 
   return (
@@ -78,13 +53,13 @@ const LoginPage: React.FC = () => {
             required
           />
         </div>
-        {error && <div className="mb-4 text-red-500 text-center">{error}</div>}
+        {error && <div className="mb-4 text-red-500 text-center">{error.message}</div>}
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-          disabled={loading}
+          disabled={isLoading}
         >
-          {loading ? 'Logging in...' : 'Login'}
+          {isLoading ? 'Logging in...' : 'Login'}
         </button>
       </form>
     </div>

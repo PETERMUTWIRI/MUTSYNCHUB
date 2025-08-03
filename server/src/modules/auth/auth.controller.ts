@@ -25,24 +25,12 @@ export class AuthController {
 
   /**
   
-  /**
-   * Sync Supabase user to Neon DB (hybrid signup flow)
-   */
-  @Post('sync')
-  @UseGuards(AuthGuard('supabase-jwt'))
-  async sync(@Req() req) {
-    const { sub, email } = req.user;
-    let user = await this.userService.findOrCreateFromSupabase({ id: sub, email });
-    return { success: true, user };
-  }
-
-  // Supabase webhook logic removed. All user creation and updates now rely on JWT-based /api/auth/sync.
 
   /**
    * Get current user profile
    */
   @Get('profile')
-@UseGuards(AuthGuard('supabase-jwt'))
+@UseGuards(AuthGuard('neon-auth'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Profile data' })
@@ -54,7 +42,7 @@ export class AuthController {
    * Get current user usage and plan info
    */
   @Get('usage')
-  @UseGuards(AuthGuard('supabase-jwt'))
+  @UseGuards(AuthGuard('neon-auth'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user usage and plan info' })
   @ApiResponse({ status: 200, description: 'Usage and plan info' })

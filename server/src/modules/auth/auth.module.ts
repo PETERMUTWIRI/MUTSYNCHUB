@@ -9,7 +9,7 @@ import { EnterpriseAuthService } from './services/enterprise-auth.service';
 import { MfaService } from './services/mfa.service';
 import { RateLimitService } from './services/rate-limit.service';
 import { AuthController } from './auth.controller';
-import { SupabaseJwtStrategy } from './strategies/supabase-jwt.strategy';
+import { NeonAuthStrategy } from './strategies/neon-auth.strategy';
 import { UserModule } from '../user/user.module';
 import { OrganizationModule } from '../organization/organization.module';
 import { CommonModule } from '../../common/common.module';
@@ -33,14 +33,14 @@ import { CommonModule } from '../../common/common.module';
   controllers: [AuthController],
   providers: [
     AuthService,
-    SupabaseJwtStrategy,
+    NeonAuthStrategy,
     EnterpriseAuthService,
     MfaService,
     RateLimitService,
   ],
   exports: [
     PassportModule,
-    SupabaseJwtStrategy,
+    NeonAuthStrategy,
   ],
 })
 export class AuthModule {}

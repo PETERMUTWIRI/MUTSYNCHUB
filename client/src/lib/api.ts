@@ -1,6 +1,5 @@
-
 import axios from 'axios';
-import { supabase } from './supabase';
+import { stackAuth } from './stack-auth';
 
 const api = axios.create({
   baseURL: '/api', // Use Vite proxy for all API calls
@@ -13,18 +12,12 @@ const api = axios.create({
   }
 });
 
-
-// Request Interceptor using Supabase session
+// Request Interceptor to add the auth token
 api.interceptors.request.use(async (config) => {
-  // Send Supabase JWT for /api/auth/sync
-  if (config.url?.includes('/auth/sync')) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      config.headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
+  const session = await stackAuth.getSession();
+  if (session?.token) {
+    config.headers['Authorization'] = `Bearer ${session.token}`;
   }
-
-
 
   // Debug
   console.log('🚀 Axios Request Headers:', config.headers);
@@ -33,7 +26,7 @@ api.interceptors.request.use(async (config) => {
 }, error => Promise.reject(error));
 
 
-// Response Interceptor
+// Response Interceptor to handle 401 errors
 api.interceptors.response.use(
   response => response,
   error => {
@@ -44,7 +37,7 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      supabase.auth.signOut();
+      stackAuth.signOut();
       // Prevent redirect loop if already on /login
       if (!window.location.pathname.startsWith('/login')) {
         const redirectUrl = encodeURIComponent(window.location.href);

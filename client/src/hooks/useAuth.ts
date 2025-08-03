@@ -1,5 +1,4 @@
-import { useAuth as useAuthContext, AuthContextType } from '../context/AuthContext';
+import { useStackAuth } from '@stack-auth/react';
 
-export function useAuth(): AuthContextType {
-  return useAuthContext();
-}
+// Re-export useStackAuth as useAuth for backward compatibility in this project
+export const useAuth = useStackAuth;
