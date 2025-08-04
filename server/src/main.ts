@@ -8,11 +8,11 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Dynamic CORS config for Codespaces, localhost, and Supabase
+  // Dynamic CORS config for Codespaces and localhost
   const allowedExact = [
     'http://localhost:5173',
     'https://localhost:5173',
-    'https://ufcjnhamtlmpcjzhizsn.supabase.co',
+    'https://verbose-robot-97475jqg6j9v3xqwr.app.github.dev',
   ];
   const githubPattern = /^https:\/\/.*\.app\.github\.dev$/;
   const allowedOrigins = [...allowedExact, 'https://*.app.github.dev'];

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import { supabase } from "@/lib/supabase";
-import { syncWithBackend } from "@/api/auth";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
 import { X, ChevronRight, Check } from "lucide-react";
+import { stackClientApp } from "@/lib/stack-auth";
 
 const SignUpPage: React.FC = () => {
   const [name, setName] = useState("");
@@ -30,48 +29,15 @@ const SignUpPage: React.FC = () => {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const messageRef = useRef(currentMessageIndex);
 
-  // Handle signup logic
-  const handleSignUp = async (e: React.FormEvent) => {
+  // Redirect to Neon Auth handler route for signup
+  const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    const [firstName, ...rest] = name.trim().split(' ');
-    const lastName = rest.join(' ');
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          firstName: firstName || '',
-          lastName: lastName || '',
-          organizationName: org,
-          subdomain: subdomain,
-        }
-      }
-    });
-    if (error) {
-      setLoading(false);
-      setError(error.message);
-      return;
-    }
-    // Call backend sync endpoint
-    try {
-      await syncWithBackend();
-      setSuccess('Account created! Please check your email to verify.');
-      setTimeout(() => navigate("/login"), 1200);
-    } catch (err: any) {
-      setError('Signup succeeded but failed to sync with backend: ' + (err?.message || err));
-    }
-    setLoading(false);
+    window.location.href = '/handler/sign-up?redirectTo=/dashboard';
   };
 
-  const handleGoogleSignup = async () => {
-    setLoading(true);
-    setError("");
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-    setLoading(false);
-    if (error) setError(error.message);
+  // Redirect to Neon Auth handler route for Google signup
+  const handleGoogleSignup = () => {
+    window.location.href = '/handler/sign-up?provider=google&redirectTo=/dashboard';
   };
 
   // Typing effect for marketing message

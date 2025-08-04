@@ -1,7 +1,6 @@
 // src/components/home/AnalyticsPreview.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 import { motion } from 'framer-motion';
 import { BarChart4, Database, Gauge, ScrollText, ArrowRight } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -31,7 +30,7 @@ const AnalyticsPreview = () => {
   ];
 
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // TODO: Get user info from Neon Auth context or props if needed
 
   return (
     <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-purple-500 text-white py-24 px-6">
@@ -89,13 +88,7 @@ const AnalyticsPreview = () => {
             <Button
               size="lg"
               className="group bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-8 py-6 text-2xl font-bold rounded-xl shadow-lg text-white"
-              onClick={() => {
-                if (user) {
-                  navigate('/dashboard');
-                } else {
-                  navigate('/signup');
-                }
-              }}
+              onClick={() => navigate('/signup')}
             >
               Explore Analytics Engine
               <span className="ml-2 text-2xl font-bold text-white flex items-center"><ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></span>

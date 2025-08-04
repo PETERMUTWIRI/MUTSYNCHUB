@@ -1,11 +1,11 @@
 import React from 'react';
-import { StackAuthProvider } from '@stack-auth/react';
-import { stackAuth } from '@/lib/stack-auth';
+import { StackProvider } from '@stackframe/react';
+import { stackClientApp } from '@/lib/stack-auth';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <StackAuthProvider client={stackAuth}>
+    <StackProvider app={stackClientApp}>
       {children}
-    </StackAuthProvider>
+    </StackProvider>
   );
 };

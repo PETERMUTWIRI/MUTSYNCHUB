@@ -9,8 +9,6 @@ export class NeonAuthStrategy extends PassportStrategy(Strategy, 'neon-auth') {
 
   constructor() {
     const jwksUrl = "https://api.stack-auth.com/api/v1/projects/2625e66d-c556-4919-8aa1-7774c043c0e9/.well-known/jwks.json";
-    this.logger.log(`Using JWKS URL for Neon Auth: ${jwksUrl}`);
-
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKeyProvider: passportJwtSecret({
@@ -19,12 +17,11 @@ export class NeonAuthStrategy extends PassportStrategy(Strategy, 'neon-auth') {
         jwksRequestsPerMinute: 5,
         jwksUri: jwksUrl,
       }),
-      // It's good practice to validate the issuer.
-      // The issuer for Neon Auth is likely the base URL of the API.
       issuer: "https://api.stack-auth.com",
-      algorithms: ['RS256'], // Neon Auth likely uses RS256, but we can adjust if needed
+      algorithms: ['RS256'],
       ignoreExpiration: false,
     });
+    this.logger.log(`Using JWKS URL for Neon Auth: ${jwksUrl}`);
   }
 
   async validate(payload: any) {

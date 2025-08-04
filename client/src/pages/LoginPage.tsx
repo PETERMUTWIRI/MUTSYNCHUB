@@ -1,32 +1,16 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, user, isLoading, error } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) {
-      // Assuming the user object has a role property
-      // @ts-ignore
-      if (user.role === 'ADMIN') {
-        navigate('/analytics');
-      } else {
-        navigate('/dashboard');
-      }
-    }
-  }, [user, navigate]);
-
-  const handleLogin = async (e: React.FormEvent) => {
+  // Redirect to Neon Auth handler route for login
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    await signIn({
-      provider: 'credentials', // Assuming 'credentials' for email/password
-      email,
-      password,
-    });
+    window.location.href = '/handler/sign-in?redirectTo=/dashboard';
   };
 
   return (
@@ -53,13 +37,12 @@ const LoginPage: React.FC = () => {
             required
           />
         </div>
-        {error && <div className="mb-4 text-red-500 text-center">{error.message}</div>}
+        {/* No error display, as auth is handled by Neon Auth handler */}
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-          disabled={isLoading}
         >
-          {isLoading ? 'Logging in...' : 'Login'}
+          Login
         </button>
       </form>
     </div>

@@ -36,8 +36,8 @@ import {
 import logo from "@/assets/images/mutsynchub-logo.png";
 import { cn } from "@/lib/utils";
 import SSOLogin from "@/components/ui/SSOLogin";
+import { stackClientApp } from "@/lib/stack-auth";
 import HomeSidebar from "@/components/ui/HomeSidebar";
-import { useAuth } from '@/hooks/useAuth';
 
 const Navbar: React.FC = () => {
   // Dropdown ref and state for What We Do
@@ -74,7 +74,7 @@ const Navbar: React.FC = () => {
   };
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  // TODO: Get user info from Neon Auth context or props if needed
   const navigate = useNavigate();
 
   const location = useLocation();
@@ -226,33 +226,20 @@ const Navbar: React.FC = () => {
 
           {/* Auth buttons (desktop) */}
           <div className="hidden md:flex items-center gap-2">
-            {user ? (
-              <Button
-                className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
-                style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
-                onClick={() => signOut()}
-              >
-                Sign Out
-              </Button>
-            ) : (
-              <>
-                <Button
-                  className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
-                  style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
-                  onClick={() => navigate('/login')}
-                >
-                  Login
-                </Button>
-                <Link to="/signup">
-                  <Button
-                    className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
-                    style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
-                  >
-                    Sign Up
-                  </Button>
-                </Link>
-              </>
-            )}
+            <a
+              href={stackClientApp.urls.signIn}
+              className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
+              style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
+            >
+              Login
+            </a>
+            <a
+              href={stackClientApp.urls.signUp}
+              className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
+              style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
+            >
+              Sign Up
+            </a>
           </div>
         </div>
         {/* HomeSidebar overlay (mobile sidebar) */}

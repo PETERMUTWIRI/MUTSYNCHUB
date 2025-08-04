@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import mutsynchLogo from '@/assets/images/mutsynchub-logo.png';
 
@@ -20,14 +19,14 @@ const navLinks = [
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
-  const { user, setUser, setToken } = useAuth();
+  // Fallback user object to avoid type errors
+  const user: { name?: string; email?: string } = {};
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = React.useState(false);
 
   const handleLogout = () => {
-    setUser(null);
-    setToken(null);
-    navigate('/');
+    // Redirect to Neon Auth sign-out handler
+    navigate('/handler/sign-out');
   };
 
   return (
@@ -58,13 +57,13 @@ const AdminLayout: React.FC = () => {
             onClick={() => setProfileOpen(v => !v)}
           >
             <Avatar className="h-8 w-8">
-              <AvatarFallback>{user?.name?.[0] || 'A'}</AvatarFallback>
+            <AvatarFallback>{user?.name?.[0] || 'A'}</AvatarFallback>
             </Avatar>
             <span className="truncate max-w-[100px]">{user?.name || user?.email || 'Admin'}</span>
           </button>
           {profileOpen && (
             <div className="absolute bottom-20 left-6 w-48 bg-[#232347] rounded-lg shadow-xl py-2 z-50 border border-[#282A36] animate-fade-in">
-              <div className="px-4 py-2 text-xs text-gray-400 border-b border-[#282A36]">{user?.email}</div>
+              <div className="px-4 py-2 text-xs text-gray-400 border-b border-[#282A36]">{user?.email || ''}</div>
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-2 text-red-400 hover:bg-[#282A36] rounded-b-lg"

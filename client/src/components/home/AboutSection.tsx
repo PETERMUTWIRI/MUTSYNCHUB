@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+
 
 const AboutSection: React.FC = () => {
   const sections = [
@@ -111,7 +111,7 @@ const AboutSection: React.FC = () => {
   ];
 
   const navigate = useNavigate();
-  const { user } = useAuth();
+ 
 
   return (
     <section className="relative bg-[#FFFDF6] py-24 px-0 text-gray-900 overflow-hidden">
@@ -178,13 +178,7 @@ const AboutSection: React.FC = () => {
           >
             <Button
               className="group bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-8 py-6 text-2xl font-bold rounded-xl shadow-lg text-white"
-              onClick={() => {
-                if (user) {
-                  navigate('/dashboard');
-                } else {
-                  navigate('/signup');
-                }
-              }}
+              onClick={() => navigate('/signup')}
             >
               Launch Analytics Engine
               <span className="ml-2 text-2xl font-bold text-white flex items-center"><ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" /></span>

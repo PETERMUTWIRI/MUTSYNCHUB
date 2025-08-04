@@ -1,7 +1,6 @@
 // src/components/home/HeroSection.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "../ui/button";
@@ -28,7 +27,6 @@ const trustLogos = [
 
 const HeroSection: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -301,13 +299,7 @@ const HeroSection: React.FC = () => {
             <Button
               size="lg"
               className="group bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-8 py-6 text-xl font-bold rounded-xl shadow-lg"
-              onClick={() => {
-                if (user) {
-                  navigate('/dashboard');
-                } else {
-                  navigate('/signup');
-                }
-              }}
+              onClick={() => navigate('/signup')}
             >
               Explore Analytics Engine
               <span className="ml-2 text-2xl font-bold text-white flex items-center"><ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></span>
