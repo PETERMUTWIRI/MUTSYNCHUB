@@ -1,15 +1,12 @@
 {
-  "name": "mutsynchub-nextjs",
+  "name": "client-nextjs",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "client-nextjs"
-  ],
   "scripts": {
-    "dev": "npm run dev --workspace=client-nextjs",
-    "build": "npm run build --workspace=client-nextjs",
-    "start": "npm run start --workspace=client-nextjs",
-    "lint": "npm run lint --workspace=client-nextjs"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.2.8",
