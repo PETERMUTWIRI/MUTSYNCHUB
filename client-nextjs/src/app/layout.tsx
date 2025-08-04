@@ -1,5 +1,5 @@
 import './globals.css'
-import { ClerkProvider } from '@clerk/nextjs'
+import { AuthProvider } from '@/context/AuthContext'
 
 export default function RootLayout({
   children,
@@ -7,10 +7,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
+    <AuthProvider>
       <html lang="en">
         <body>{children}</body>
       </html>
-    </ClerkProvider>
+    </AuthProvider>
   )
 }
