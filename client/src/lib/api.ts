@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api', // Use Vite proxy for all API calls
-  withCredentials: true,
+  baseURL: '/api',
+  withCredentials: true, // browser sends cookie
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
