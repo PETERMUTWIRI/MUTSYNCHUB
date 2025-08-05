@@ -7,7 +7,7 @@ import {
   ArrowRight, ChevronRight 
 } from "lucide-react";
 import { Button } from "../ui/button";
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 
 
 const AboutSection: React.FC = () => {
@@ -110,7 +110,7 @@ const AboutSection: React.FC = () => {
     }
   ];
 
-  const navigate = useNavigate();
+  const router = useRouter();
  
 
   return (
@@ -178,7 +178,7 @@ const AboutSection: React.FC = () => {
           >
             <Button
               className="group bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-8 py-6 text-2xl font-bold rounded-xl shadow-lg text-white"
-              onClick={() => navigate('/signup')}
+              onClick={() => router.push('/signup')}
             >
               Launch Analytics Engine
               <span className="ml-2 text-2xl font-bold text-white flex items-center"><ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" /></span>

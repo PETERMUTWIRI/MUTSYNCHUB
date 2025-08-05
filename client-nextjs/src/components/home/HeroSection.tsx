@@ -1,14 +1,15 @@
 // src/components/home/HeroSection.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
-import { Link } from "react-router-dom";
+
+import Link from 'next/link';
 
 // Import logos
-import Aws from "../../assets/logos/aws.svg";
+import Aws from "../assets/logos/aws.svg";
 import Cisco from "../../assets/logos/cisco.svg";
 import GoogleCloud from "../../assets/logos/googlecloud.svg";
 import ISO from "../../assets/logos/iso.svg";
@@ -26,7 +27,7 @@ const trustLogos = [
 ];
 
 const HeroSection: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -299,7 +300,7 @@ const HeroSection: React.FC = () => {
             <Button
               size="lg"
               className="group bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-8 py-6 text-xl font-bold rounded-xl shadow-lg"
-              onClick={() => navigate('/signup')}
+              onClick={() => router.push('/signup')}
             >
               Explore Analytics Engine
               <span className="ml-2 text-2xl font-bold text-white flex items-center"><ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></span>
@@ -308,7 +309,7 @@ const HeroSection: React.FC = () => {
             <Button
               variant="outline"
               className="bg-transparent border-white text-[#22D3EE] hover:bg-white/10 px-8 py-6 text-xl font-bold rounded-xl"
-              onClick={() => navigate('/solutions')}
+              onClick={() => router.push('/solutions')}
             >
               View Enterprise Solutions
             </Button>

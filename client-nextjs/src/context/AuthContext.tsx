@@ -1,7 +1,6 @@
 "use client";
 
-import { StackProvider, StackClientApp } from '@stackframe/react';
-import { useRouter }from 'next/navigation';
+import { StackProvider, StackClientApp } from '@stackframe/stack';
 import React from 'react';
 
 const stackClientApp = new StackClientApp({
@@ -10,10 +9,8 @@ const stackClientApp = new StackClientApp({
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const router = useRouter();
-
   return (
-    <StackProvider app={stackClientApp} router={router}>
+    <StackProvider app={stackClientApp}>
       {children}
     </StackProvider>
   );

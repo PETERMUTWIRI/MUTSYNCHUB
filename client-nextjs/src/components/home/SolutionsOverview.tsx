@@ -2,7 +2,7 @@
 // src/components/home/SolutionsOverview.tsx
 // src/components/home/SolutionsOverview.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Cloud, Bot, Database, Cpu, LayoutGrid, Code, 
@@ -65,7 +65,7 @@ const SolutionsOverview = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState<"up" | "down">("down");
   const [isHovered, setIsHovered] = useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const handleScroll = (e: React.WheelEvent<HTMLDivElement>) => {
@@ -178,7 +178,7 @@ const SolutionsOverview = () => {
                 <Button
                   size="lg"
                   className="group bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-700 px-8 py-6 text-xl font-bold text-white rounded-xl shadow-xl hover:shadow-2xl transition-all"
-                  onClick={() => navigate('/solutions')}
+                  onClick={() => router.push('/solutions')}
                 >
                   Explore Our Solutions
                   <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -250,7 +250,7 @@ const SolutionsOverview = () => {
                   
                   <Button
                     className="group bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 text-white px-8 py-5 text-lg font-semibold rounded-xl shadow-lg transition-all"
-                    onClick={() => navigate(`/solutions?id=${solutions[activeIndex].id}`)}
+                    onClick={() => router.push(`/solutions?id=${solutions[activeIndex].id}`)}
                   >
                     Discover More
                     <ArrowRight className="ml-3 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -261,16 +261,17 @@ const SolutionsOverview = () => {
             
             {/* Floating solution stack preview */}
             <div className="absolute right-8 top-1/2 transform -translate-y-1/2 flex flex-col gap-2 z-20">
-              {solutions.map((_, idx) => (
+              {solutions.map((solution, idx) => (
                 <motion.button
-                  key={idx}
+                  key={solution.id}
                   className={`w-3 h-3 rounded-full transition-all ${activeIndex === idx ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/60'}`}
                   onClick={() => {
                     setDirection(activeIndex < idx ? "down" : "up");
                     setActiveIndex(idx);
+                    router.push(`/solutions?id=${solution.id}`);
                   }}
                   whileHover={{ scale: 1.3 }}
-                  aria-label={`View ${solutions[idx].title}`}
+                  aria-label={`View ${solution.title}`}
                 />
               ))}
             </div>
