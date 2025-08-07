@@ -1,5 +1,6 @@
 "use client";
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   SearchIcon, BookOpenIcon, CodeIcon,
@@ -19,9 +20,16 @@ import Breadcrumb from '@/components/resources/Breadcrumb';
 import { resources } from '@/data/resources';
 
 const Resources = () => {
+  const searchParams = useSearchParams();
+  const initialCategory = searchParams?.get('category') || 'all';
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+
+  // Update activeCategory if the query param changes (e.g., via navigation)
+  useEffect(() => {
+    setActiveCategory(searchParams?.get('category') || 'all');
+  }, [searchParams]);
 
   // Filter resources based on search and category
   const filteredResources = useMemo(() => {

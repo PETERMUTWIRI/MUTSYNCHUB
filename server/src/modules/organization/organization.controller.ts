@@ -7,7 +7,7 @@ import { TenantContextService } from '../../common/services/tenant-context.servi
 
 @ApiTags('Organizations')
 @Controller('organizations')
-@UseGuards(AuthGuard('supabase-jwt'))
+@UseGuards(AuthGuard('neon-auth'))
 @ApiBearerAuth()
 export class OrganizationController {
   constructor(

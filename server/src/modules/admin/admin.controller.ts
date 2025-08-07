@@ -12,7 +12,7 @@ import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { QueryDto } from './dto/query.dto';
 
 @Controller('admin')
-@UseGuards(AuthGuard('supabase-jwt'), RolesGuard)
+@UseGuards(AuthGuard('neon-auth'), RolesGuard)
 export class AdminController {
   // --- Per-User Feature Flags ---
   @Get('users/:id/feature-flags')

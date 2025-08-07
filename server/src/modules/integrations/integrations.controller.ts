@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { IntegrationsService } from './integrations.service';
 
 @Controller('integrations')
-@UseGuards(AuthGuard('supabase-jwt'))
+@UseGuards(AuthGuard('neon-auth'))
 export class IntegrationsController {
   constructor(private readonly integrationsService: IntegrationsService) {}
 

@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiUsageService } from './api-usage.service';
 
 @Controller('api-usage')
-@UseGuards(AuthGuard('supabase-jwt'))
+@UseGuards(AuthGuard('neon-auth'))
 export class ApiUsageController {
   constructor(private readonly apiUsageService: ApiUsageService) {}
 

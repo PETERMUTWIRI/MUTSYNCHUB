@@ -1,6 +1,6 @@
 // src/components/resources/Breadcrumb.tsx
 import { ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 interface BreadcrumbItem {
   name: string;
@@ -25,7 +25,7 @@ const Breadcrumb = ({ items }: BreadcrumbProps) => {
                 </span>
               ) : (
                 <Link
-                  to={item.href}
+                  href={item.href}
                   className="ml-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
                 >
                   {item.name}

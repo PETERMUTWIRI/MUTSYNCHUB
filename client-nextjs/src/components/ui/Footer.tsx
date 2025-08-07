@@ -1,9 +1,10 @@
+"use client";
 // src/components/ui/Footer.tsx
 import { useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Github, Twitter, Linkedin, Mail, Phone, ArrowUp, Send } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 export default function Footer() {
@@ -128,7 +129,7 @@ export default function Footer() {
                   transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
                 >
                   <Link 
-                    to={solution.path} 
+                    href={solution.path} 
                     className="flex items-center gap-2 hover:text-white transition-colors group"
                   >
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -158,7 +159,7 @@ export default function Footer() {
                   transition={{ duration: 0.3, delay: 0.2 + index * 0.05 }}
                 >
                   <Link 
-                    to={resource.path} 
+                    href={resource.path} 
                     className="flex items-center gap-2 hover:text-white transition-colors group"
                   >
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>

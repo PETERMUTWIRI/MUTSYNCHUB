@@ -10,7 +10,7 @@ import { AnalyticsAgentService } from '../../agents/analytics-agent.service';
 
 @ApiTags('analytics')
 @Controller('analytics')
-@UseGuards(AuthGuard('supabase-jwt'))
+@UseGuards(AuthGuard('neon-auth'))
 export class AnalyticsController {
   constructor(
     private readonly analyticsScheduleService: AnalyticsScheduleService,

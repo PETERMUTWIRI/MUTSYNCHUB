@@ -1,10 +1,12 @@
+"use client";
 import React, { useEffect, useState, useRef } from "react";
 declare global {
   interface Window {
     __dropdownTimeout?: ReturnType<typeof setTimeout>;
   }
 }
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Sun, Moon, Menu, X, ChevronDown, Book, LifeBuoy } from "lucide-react";
 import {
   NavigationMenu,
@@ -33,10 +35,11 @@ import {
   DrawerContent,
   DrawerClose,
 } from "@/components/ui/drawer";
-import logo from "@/assets/images/mutsynchub-logo.png";
+// Use public path for logo
 import { cn } from "@/lib/utils";
 import SSOLogin from "@/components/ui/SSOLogin";
-import { stackClientApp } from "@/lib/stack-auth";
+import { stackClientApp } from "@/context/AuthContext";
+import { useNeonUser } from "@/context/useNeonUser";
 import HomeSidebar from "@/components/ui/HomeSidebar";
 
 const Navbar: React.FC = () => {
@@ -74,10 +77,10 @@ const Navbar: React.FC = () => {
   };
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // TODO: Get user info from Neon Auth context or props if needed
-  const navigate = useNavigate();
-
-  const location = useLocation();
+  // Neon Auth user/role context
+  const { isAuthenticated, isAdmin, isLoading } = useNeonUser();
+  const router = useRouter();
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/10 dark:bg-zinc-900/50 border-b border-white/10 dark:border-zinc-800 transition-all duration-300">
@@ -97,8 +100,8 @@ const Navbar: React.FC = () => {
             <Menu className="h-7 w-7 text-gray-700 dark:text-gray-100" />
           </Button>
           {/* Logo & Brand */}
-          <Link to="/" className="flex items-center space-x-2">
-            <img src={logo} alt="MutSyncHub Logo" className="h-8 w-8" />
+          <Link href="/" className="flex items-center space-x-2">
+            <img src="/assets/images/mutsynchub-logo.png" alt="MutSyncHub Logo" className="h-8 w-8" />
             <span className="text-xl font-bold text-gray-900 dark:text-white">
               MutSyncHub
             </span>
@@ -110,7 +113,7 @@ const Navbar: React.FC = () => {
           <div className="relative">
             <button
               className={`px-6 py-2 rounded-full text-lg font-bold transition-all duration-150 border border-transparent shadow-sm flex items-center gap-2
-                ${location.pathname === "/home" || location.pathname === "/solutions" || location.pathname === "/resources" || location.pathname === "/support"
+                ${pathname === "/home" || pathname === "/solutions" || pathname === "/resources" || pathname === "/support"
                   ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg border border-cyan-500"
                   : "bg-[rgba(0,0,0,0.03)] text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-cyan-500 hover:to-blue-600 hover:text-white hover:shadow-lg border border-cyan-500"}
               `}
@@ -153,58 +156,69 @@ const Navbar: React.FC = () => {
                 <div className="flex-1 py-4 px-6 grid grid-cols-3 gap-x-8 gap-y-2">
                   <div>
                     <div className="text-indigo-200 font-bold mb-2 text-sm uppercase tracking-wider">What We Do</div>
-                    <Link to="/solutions#ai-agents" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
+                    <Link href="/solutions#ai-agents" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
                       <span><svg width="20" height="20" fill="none"><path d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2Zm0 2a6 6 0 1 0 0 12A6 6 0 0 0 10 4Z" fill="#38bdf8"/></svg></span>AI Agent Ecosystems
                     </Link>
-                    <Link to="/solutions#cloud-architecture" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
+                    <Link href="/solutions#cloud-architecture" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
                       <span><svg width="20" height="20" fill="none"><path d="M16 10a4 4 0 1 0-8 0H4a6 6 0 1 1 12 0h-2Z" fill="#0ea5e9"/></svg></span>Cloud-Native Architecture
                     </Link>
-                    <Link to="/solutions#data-engineering" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
-                      <span><svg width="20" height="20" fill="none"><rect x="4" y="4" width="12" height="12" rx="3" fill="#6366f1"/></svg></span>Modern Data Engineering
+                    <Link href="/solutions#data-engineering" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
+                      <span><svg width="20" height="20" fill="none"><rect x="4" y="4" width="12" height="12" rx="3" fill="#6366f1"/></svg></span> Data Engineering
                     </Link>
-                    <Link to="/solutions#enterprise-chatbots" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
+                    <Link href="/solutions#enterprise-chatbots" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
                       <span><svg width="20" height="20" fill="none"><circle cx="10" cy="10" r="8" fill="#a78bfa"/><rect x="7" y="7" width="6" height="6" rx="2" fill="#fff"/></svg></span>Enterprise Chatbot Systems
                     </Link>
                   </div>
                   <div>
                     <div className="text-indigo-200 font-bold mb-2 text-sm uppercase tracking-wider">More Services</div>
-                    <Link to="/solutions#fullstack" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
+                    <Link href="/solutions#fullstack" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
                       <span><svg width="20" height="20" fill="none"><rect x="3" y="3" width="14" height="14" rx="4" fill="#22d3ee"/></svg></span>Full-Stack Development
                     </Link>
-                    <Link to="/solutions#api-integrations" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
+                    <Link href="/solutions#api-integrations" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
                       <span><svg width="20" height="20" fill="none"><rect x="5" y="5" width="10" height="10" rx="2" fill="#f59e42"/></svg></span>Enterprise API Integrations
                     </Link>
-                    <Link to="/solutions#iot-cloud" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
+                    <Link href="/solutions#iot-cloud" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
                       <span><svg width="20" height="20" fill="none"><circle cx="10" cy="10" r="8" fill="#06b6d4"/><rect x="8" y="8" width="4" height="4" rx="1" fill="#fff"/></svg></span>IoT Cloud Platforms
                     </Link>
-                    <Link to="/solutions#blockchain" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
+                    <Link href="/solutions#blockchain" className="block text-white hover:text-cyan-300 py-1 font-semibold transition flex items-center gap-2">
                       <span><svg width="20" height="20" fill="none"><rect x="6" y="6" width="8" height="8" rx="2" fill="#f472b6"/></svg></span>Blockchain Integration
                     </Link>
                   </div>
                   <div>
                     <div className="text-indigo-200 font-bold mb-2 text-sm uppercase tracking-wider">Resources</div>
-                    <Link to="/resources#documentation" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Documentation</Link>
-                    <Link to="/resources#api-reference" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">API Reference</Link>
-                    <Link to="/resources#guides" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Guides & Tutorials</Link>
+                    <Link href="/resources?category=documentation" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Documentation</Link>
+                    <Link href="/resources?category=api" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">API Reference</Link>
+                    <Link href="/resources?category=guides" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Guides & Tutorials</Link>
                     <div className="text-indigo-200 font-bold mb-2 text-sm uppercase tracking-wider mt-4">Support</div>
-                    <Link to="/what-we-do-support#support-center" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Support Center</Link>
-                    <Link to="/what-we-do-support#help-center" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Help Center</Link>
-                    <Link to="/what-we-do-support#contact" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Contact Us</Link>
-                    <Link to="/what-we-do-support#community" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Community Forum</Link>
-                    <Link to="/what-we-do-support#system-status" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">System Status</Link>
+                    <Link href="/what-we-do-support" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Support Center</Link>
+                    <Link href="/what-we-do-support" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Help Center</Link>
+                    <Link href="/what-we-do-support" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Contact Us</Link>
+                    <Link href="/what-we-do-support" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">Community Forum</Link>
+                    <Link href="/what-we-do-support" className="block text-white hover:text-yellow-300 py-1 font-semibold transition">System Status</Link>
                   </div>
                 </div>
               </div>
             )}
           </div>
           <button
-            onClick={() => navigate('/admin')}
+            onClick={() => {
+              if (isLoading) return;
+              if (!isAuthenticated) {
+                router.push('/handler/sign-up');
+              } else if (isAdmin) {
+                router.push('/admin');
+              } else {
+                router.push('/dashboard');
+              }
+            }}
             className={`px-6 py-2 rounded-full text-lg font-bold transition-all duration-150 border border-transparent shadow-sm
-              ${location.pathname.startsWith("/admin") 
+              ${pathname.startsWith("/admin") || pathname.startsWith("/dashboard")
                 ? "bg-[var(--accent-teal,#1de9b6)] text-white hover:bg-[var(--accent-teal,#1de9b6)] hover:shadow-md"
                 : "bg-[rgba(0,0,0,0.03)] text-gray-700 dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] hover:shadow-md"}
             `}
             style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)', letterSpacing: '0.01em' }}
+            disabled={isLoading}
+            aria-disabled={isLoading}
           >
             Analytics Engine
           </button>
@@ -227,14 +241,14 @@ const Navbar: React.FC = () => {
           {/* Auth buttons (desktop) */}
           <div className="hidden md:flex items-center gap-2">
             <a
-              href={stackClientApp.urls.signIn}
+              href="/handler/sign-in"
               className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
               style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
             >
               Login
             </a>
             <a
-              href={stackClientApp.urls.signUp}
+              href="/handler/sign-up"
               className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
               style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
             >

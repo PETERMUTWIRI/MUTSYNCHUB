@@ -68,7 +68,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(AuthGuard('supabase-jwt'))
+  @UseGuards(AuthGuard('neon-auth'))
   @SubscribeMessage('joinOrg')
   async handleJoinOrg(
     @ConnectedSocket() client: Socket,
@@ -92,7 +92,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(AuthGuard('supabase-jwt'))
+  @UseGuards(AuthGuard('neon-auth'))
   @SubscribeMessage('leaveOrg')
   async handleLeaveOrg(
     @ConnectedSocket() client: Socket,
@@ -116,7 +116,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(AuthGuard('supabase-jwt'))
+  @UseGuards(AuthGuard('neon-auth'))
   @SubscribeMessage('subscribeToStream')
   async handleSubscribeToStream(
     @ConnectedSocket() client: Socket,
@@ -140,7 +140,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(AuthGuard('supabase-jwt'))
+  @UseGuards(AuthGuard('neon-auth'))
   @SubscribeMessage('unsubscribeFromStream')
   async handleUnsubscribeFromStream(
     @ConnectedSocket() client: Socket,

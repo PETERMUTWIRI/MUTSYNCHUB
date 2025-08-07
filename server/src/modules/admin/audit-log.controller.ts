@@ -5,7 +5,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Controller('admin/audit-logs')
-@UseGuards(AuthGuard('supabase-jwt'), RolesGuard)
+@UseGuards(AuthGuard('neon-auth'), RolesGuard)
 export class AuditLogController {
   constructor(private readonly auditLogger: AuditLoggerService) {}
 

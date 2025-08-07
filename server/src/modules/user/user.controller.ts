@@ -5,11 +5,11 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserRole, UserStatus } from '@prisma/client';
 
 @Controller('users')
-@UseGuards(AuthGuard('supabase-jwt'))
+@UseGuards(AuthGuard('neon-auth'))
 export class UserController {
   constructor(private readonly userService: UserService) {}
   // Supabase sync endpoint
-  @UseGuards(AuthGuard('supabase-jwt'))
+  @UseGuards(AuthGuard('neon-auth'))
   @Get('sync')
   async syncUser(@Request() req) {
     const user = await this.userService.findOrCreateFromSupabase(req.user);

@@ -11,7 +11,7 @@ import { MpesaConfigValidationPipe } from '../pipes/mpesa-config-validation.pipe
 
 @ApiTags('payments')
 @Controller('payments/mpesa')
-@UseGuards(AuthGuard('supabase-jwt'), SecurePaymentGuard)
+@UseGuards(AuthGuard('neon-auth'), SecurePaymentGuard)
 @UseInterceptors(SecurePaymentInterceptor)
 @UsePipes(MpesaConfigValidationPipe)
 export class MpesaController {
@@ -21,7 +21,7 @@ export class MpesaController {
   ) {}
 
   @Post('stk-push')
-  @UseGuards(AuthGuard('supabase-jwt'))
+  @UseGuards(AuthGuard('neon-auth'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Initiate M-Pesa STK Push payment' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Payment initiated successfully' })
@@ -42,7 +42,7 @@ export class MpesaController {
   }
 
   @Post(':paymentId/retry')
-  @UseGuards(AuthGuard('supabase-jwt'))
+  @UseGuards(AuthGuard('neon-auth'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Retry failed M-Pesa payment' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Payment retry initiated successfully' })
@@ -54,7 +54,7 @@ export class MpesaController {
   }
 
   @Post('register-urls')
-  @UseGuards(AuthGuard('supabase-jwt'))
+  @UseGuards(AuthGuard('neon-auth'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Register C2B URLs with M-Pesa' })
   @ApiResponse({ status: HttpStatus.OK, description: 'URLs registered successfully' })

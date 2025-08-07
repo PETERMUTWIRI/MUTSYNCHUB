@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   LifeBuoy,
@@ -71,7 +72,13 @@ interface Faq {
 }
 
 const WhatWeDoSupport = () => {
-  const [activeTab, setActiveTab] = useState<'tickets' | 'knowledge' | 'community' | 'status'>('tickets');
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams?.get('section') as 'tickets' | 'knowledge' | 'community' | 'status') || 'tickets';
+  const [activeTab, setActiveTab] = useState<'tickets' | 'knowledge' | 'community' | 'status'>(initialTab);
+  // Update activeTab if the query param changes (e.g., via navigation)
+  useEffect(() => {
+    setActiveTab((searchParams?.get('section') as 'tickets' | 'knowledge' | 'community' | 'status') || 'tickets');
+  }, [searchParams]);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);

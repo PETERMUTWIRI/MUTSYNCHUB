@@ -5,7 +5,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 
 @Controller('admin/revenue')
-@UseGuards(AuthGuard('supabase-jwt'), RolesGuard)
+@UseGuards(AuthGuard('neon-auth'), RolesGuard)
 export class RevenueController {
   constructor(private readonly prisma: PrismaService) {}
 

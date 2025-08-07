@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { NotificationsService } from './notifications.service';
 
 @Controller('notifications')
-@UseGuards(AuthGuard('supabase-jwt'))
+@UseGuards(AuthGuard('neon-auth'))
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 

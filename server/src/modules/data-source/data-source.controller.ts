@@ -8,7 +8,7 @@ import { DataSourceStatus } from '@prisma/client';
 
 @ApiTags('Data Sources')
 @Controller('data-sources')
-@UseGuards(AuthGuard('supabase-jwt'))
+@UseGuards(AuthGuard('neon-auth'))
 @ApiBearerAuth()
 export class DataSourceController {
   constructor(

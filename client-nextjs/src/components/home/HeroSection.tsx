@@ -1,3 +1,4 @@
+"use client";
 // src/components/home/HeroSection.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,22 +10,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import Link from 'next/link';
 
 // Import logos
-import Aws from "../assets/logos/aws.svg";
-import Cisco from "../../assets/logos/cisco.svg";
-import GoogleCloud from "../../assets/logos/googlecloud.svg";
-import ISO from "../../assets/logos/iso.svg";
-import Microsoft from "../../assets/logos/microsoft.svg";
-import Fortinet from "../../assets/logos/fortinet.svg";
-import Oracle from "../../assets/logos/oracle.svg";
-import IBM from "../../assets/logos/ibm.svg";
-import SAP from "../../assets/logos/sap.svg";
-import GDPR from "../../assets/logos/gdpr.svg";
-import NIST from "../../assets/logos/nist.svg";
 
+// Logo image paths (public/assets/logos)
 const trustLogos = [
-  Aws, Cisco, Fortinet, GDPR, GoogleCloud, 
-  IBM, ISO, Microsoft, NIST, Oracle, SAP
+  "/assets/logos/aws.svg",
+  "/assets/logos/cisco.svg",
+  "/assets/logos/fortinet.svg",
+  "/assets/logos/gdpr.svg",
+  "/assets/logos/googlecloud.svg",
+  "/assets/logos/ibm.svg",
+  "/assets/logos/iso.svg",
+  "/assets/logos/microsoft.svg",
+  "/assets/logos/nist.svg",
+  "/assets/logos/oracle.svg",
+  "/assets/logos/sap.svg"
 ];
+
+// ...existing code...
 
 const HeroSection: React.FC = () => {
   const router = useRouter();
