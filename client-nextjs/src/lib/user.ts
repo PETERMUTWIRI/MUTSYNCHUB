@@ -86,13 +86,13 @@ export const createOrg = (data: any) => api.post('/admin/orgs', data);
 export const updateOrg = (id: string, data: any) => api.put(`/admin/orgs/${id}`, data);
 export const deleteOrg = (id: string) => api.delete(`/admin/orgs/${id}`);
 export const getAnalytics = (params = {}) => api.get('/admin/analytics', { params });
-export const exportAnalytics = (params = {}) => api.get('/admin/analytics/export', { params });
+
 export const getAuditLogs = (params = {}) => api.get('/admin/audit-logs', { params });
 export const getRevenue = (params = {}) => api.get('/admin/revenue', { params });
-export const getInvoices = (params = {}) => api.get('/admin/invoices', { params });
+
 export const updatePlan = (id: string, data: any) => api.put(`/admin/plans/${id}`, data);
 export const getSettings = () => api.get('/admin/settings');
 export const updateSettings = (data: any) => api.put('/admin/settings', data);
-export const getSupportTickets = (params = {}) => api.get('/admin/support-tickets', { params });
+
 export const respondToTicket = (id: string, response: string) => api.post(`/admin/support-tickets/${id}/respond`, { response });
 export const sendNotification = (data: any) => api.post('/admin/notifications', data);

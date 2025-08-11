@@ -1,5 +1,3 @@
-
-'use client';
 // components/ProtectedRoute.tsx
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';

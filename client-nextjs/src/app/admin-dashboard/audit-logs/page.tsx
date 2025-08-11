@@ -1,5 +1,5 @@
 "use client";
-import AuditLogTable from '@/components/admin/components/AuditLogTable';
+import AuditLogTable from '@/components/admin/AuditLogs';
 
 
 const AuditLogsPage: React.FC = () => {

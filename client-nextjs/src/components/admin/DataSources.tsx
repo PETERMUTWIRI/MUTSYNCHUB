@@ -1,22 +1,24 @@
+"use client";
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import api from '@/lib/api';
 
-const DataSources: React.FC = () => {
-  const { user, token } = useAuth();
+
+interface DataSourcesProps {
+  orgId?: string;
+}
+
+const DataSources: React.FC<DataSourcesProps> = ({ orgId }) => {
   const [dataSources, setDataSources] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !token) return;
+    if (!orgId) return;
     setLoading(true);
-    api.get(`/api/data-sources/${user.orgId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => setDataSources(res.data))
+    fetch(`/api/data-sources/${orgId}`)
+      .then(res => res.json())
+      .then(data => setDataSources(data))
       .catch(() => setDataSources([]))
       .finally(() => setLoading(false));
-  }, [user, token]);
+  }, [orgId]);
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center w-full h-full animate-pulse">

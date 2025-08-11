@@ -1,7 +1,20 @@
-// This page handles all /handler/* routes for Neon Stack Auth
 import { StackHandler } from '@stackframe/stack';
-import { stackServerApp } from '@/lib/stack';
+import { stackServerApp } from '@/stack';
 
-export default function HandlerPage(props: any) {
-  return <StackHandler app={stackServerApp} routeProps={props} fullPage />;
+export default function Handler(props: { params: any; searchParams: any }) {
+  return (
+    <StackHandler
+      app={stackServerApp}
+      routeProps={props}
+      fullPage={true}
+      componentProps={{
+        SignIn: {
+          // Optionally: pass custom props to the SignIn component (not required for default UI)
+        },
+        SignUp: {
+          // Optionally: pass custom props to the SignUp component
+        },
+      }}
+    />
+  );
 }

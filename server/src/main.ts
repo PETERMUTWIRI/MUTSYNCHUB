@@ -18,23 +18,8 @@ async function bootstrap() {
   const allowedOrigins = [...allowedExact, 'https://*.app.github.dev'];
 
   app.enableCors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow non-browser requests (like curl)
-      if (allowedExact.includes(origin) || githubPattern.test(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Not allowed by CORS: ${origin}`));
-      }
-    },
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Tenant-ID',
-      'X-Requested-With',
-    ],
-    exposedHeaders: ['Authorization'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   });
 
   app.use(cookieParser());
@@ -46,10 +31,6 @@ async function bootstrap() {
   // Security Middleware
   app.use(helmet());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-
-
- 
-
 
   await app.listen(configService.get('PORT', 5000));
   logger.log(`🚀 Server running on ${await app.getUrl()}`);

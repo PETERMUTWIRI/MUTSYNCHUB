@@ -1,20 +1,24 @@
+"use client";
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { getSchedules } from '@/api/analytics';
 
-const Schedules: React.FC = () => {
-  const { user, token } = useAuth();
+
+interface SchedulesProps {
+  orgId?: string;
+}
+
+const Schedules: React.FC<SchedulesProps> = ({ orgId }) => {
   const [schedules, setSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !token) return;
+    if (!orgId) return;
     setLoading(true);
-    getSchedules(user.orgId, token)
-      .then((res) => setSchedules(res.data))
+    fetch(`/api/analytics/schedules?orgId=${orgId}`)
+      .then(res => res.json())
+      .then(data => setSchedules(data))
       .catch(() => setSchedules([]))
       .finally(() => setLoading(false));
-  }, [user, token]);
+  }, [orgId]);
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center w-full h-full animate-pulse">

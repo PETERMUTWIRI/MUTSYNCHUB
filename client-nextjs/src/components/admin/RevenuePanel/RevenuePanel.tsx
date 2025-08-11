@@ -1,21 +1,33 @@
+"use client";
 import React, { useEffect, useState } from 'react';
-import { getRevenue } from '../../../api/admin';
+// Removed useNeonUser import
 
-const RevenuePanel: React.FC = () => {
+interface RevenuePanelProps {
+  user?: any;
+  isAuthenticated?: boolean;
+  loading?: boolean;
+}
+
+const RevenuePanel: React.FC<RevenuePanelProps> = ({ user, isAuthenticated, loading }) => {
   const [revenue, setRevenue] = useState<any>({ total: 0, byOrg: [] });
 
   useEffect(() => {
+    if (!isAuthenticated || !user) return;
     const fetchRevenue = async () => {
       try {
-        const response = await getRevenue();
-        setRevenue(response.data);
+        // Replace with your Next.js API route for revenue
+        const res = await fetch('/api/admin/revenue');
+        const data = await res.json();
+        setRevenue(data);
       } catch (error) {
         console.error('Error fetching revenue:', error);
       }
     };
-
     fetchRevenue();
-  }, []);
+  }, [isAuthenticated, user]);
+
+  if (loading)
+    return <div className="text-center text-gray-400">Loading...</div>;
 
   return (
     <div

@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { MessageCircle, Send, X, Bot } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";

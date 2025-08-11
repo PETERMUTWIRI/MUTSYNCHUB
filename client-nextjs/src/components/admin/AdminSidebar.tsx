@@ -1,7 +1,9 @@
+"use client";
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { FaHome, FaChartBar, FaUsers, FaFileAlt, FaMoneyBill, FaCog, FaSignOutAlt } from 'react-icons/fa';
-import { useAuth } from '../../hooks/useAuth';
+// Removed useNeonUser import
+import { useRouter } from 'next/navigation';
 
 const navItems = [
   { to: '/admin', icon: <FaHome />, label: 'Dashboard' },
@@ -13,14 +15,20 @@ const navItems = [
 ];
 
 
-const AdminSidebar: React.FC = () => {
-  const { setUser, setToken } = useAuth();
-  const navigate = useNavigate();
+
+interface AdminSidebarProps {
+  user?: any;
+  isAuthenticated?: boolean;
+  loading?: boolean;
+  role?: string;
+}
+
+const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, isAuthenticated, loading, role }) => {
+  const router = useRouter();
 
   const handleLogout = () => {
-    setUser(null);
-    setToken(null);
-    navigate('/');
+    // Implement logout logic using Stack Auth or Next.js
+    router.replace('/');
   };
 
   return (

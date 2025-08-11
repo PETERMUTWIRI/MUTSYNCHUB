@@ -35,7 +35,7 @@ const AdminLayout: React.FC = () => {
       <aside className="fixed left-0 top-0 h-full w-[260px] flex flex-col justify-between bg-[#232347] shadow-lg z-30">
         <div>
           <div className="flex items-center gap-3 px-6 py-8">
-            <img src={mutsynchLogo} alt="MutSyncHub Logo" className="h-10 w-10 rounded-lg shadow-lg" />
+            <img src={mutsynchLogo.src} alt="MutSyncHub Logo" className="h-10 w-10 rounded-lg shadow-lg" />
           </div>
           <nav className="flex flex-col gap-2 mt-6 px-2">
             {navLinks.map(link => (

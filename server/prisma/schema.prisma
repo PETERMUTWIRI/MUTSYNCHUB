@@ -35,7 +35,6 @@ model Organization {
 
 model User {
   id            String       @id @default(uuid())
-  supabaseId    String?      @unique // Supabase user id, optional for legacy users
   email         String       @unique
   password String? // previously: String
   firstName     String?

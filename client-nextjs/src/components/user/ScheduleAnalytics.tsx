@@ -1,39 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getScheduledAnalytics, deleteScheduledAnalytics } from '../../api/user';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Spinner from '../ui/Spinner';
 
 const ScheduleAnalytics: React.FC = () => {
   const [schedules, setSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSchedules();
   }, []);
 
-  const fetchSchedules = () => {
+  const fetchSchedules = async () => {
     setLoading(true);
-    getScheduledAnalytics()
-      .then(response => {
-        setSchedules(response.data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Failed to fetch scheduled analytics:', error);
-        setLoading(false);
-      });
+    setError(null);
+    try {
+      const res = await fetch('/api/analytics/schedules');
+      if (!res.ok) throw new Error('Failed to fetch scheduled analytics');
+      const data = await res.json();
+      setSchedules(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    deleteScheduledAnalytics(id)
-      .then(() => {
-        fetchSchedules();
-      })
-      .catch(error => {
-        console.error('Failed to delete scheduled analytics:', error);
+  const handleDelete = async (id: string) => {
+    setError(null);
+    try {
+      const res = await fetch(`/api/analytics/schedules/${id}`, {
+        method: 'DELETE',
       });
+      if (!res.ok) throw new Error('Failed to delete scheduled analytics');
+      fetchSchedules();
+    } catch (err: any) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -43,9 +48,7 @@ const ScheduleAnalytics: React.FC = () => {
         <Button size="sm">New Schedule</Button>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <Spinner />
-        ) : (
+        {loading ? <Spinner /> : error ? <div className="text-red-400">{error}</div> : (
           <Table>
             <TableHeader>
               <TableRow>

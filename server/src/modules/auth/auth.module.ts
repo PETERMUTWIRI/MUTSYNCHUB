@@ -13,6 +13,8 @@ import { NeonAuthStrategy } from './strategies/neon-auth.strategy';
 import { UserModule } from '../user/user.module';
 import { OrganizationModule } from '../organization/organization.module';
 import { CommonModule } from '../../common/common.module';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/roles.guard';
 
 @Module({
   imports: [
@@ -33,10 +35,12 @@ import { CommonModule } from '../../common/common.module';
   controllers: [AuthController],
   providers: [
     AuthService,
-    NeonAuthStrategy,
     EnterpriseAuthService,
     MfaService,
     RateLimitService,
+    NeonAuthStrategy,
+    JwtAuthGuard,
+    RolesGuard,
   ],
   exports: [
     PassportModule,

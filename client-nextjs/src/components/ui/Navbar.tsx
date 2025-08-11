@@ -37,8 +37,8 @@ import {
 } from "@/components/ui/drawer";
 // Use public path for logo
 import { cn } from "@/lib/utils";
-import SSOLogin from "@/components/ui/SSOLogin";
-import { stackClientApp } from "@/context/AuthContext";
+// import SSOLogin from "@/components/ui/SSOLogin";
+// import { stackClientApp } from "@/context/AuthContext";
 import { useNeonUser } from "@/context/useNeonUser";
 import HomeSidebar from "@/components/ui/HomeSidebar";
 
@@ -78,7 +78,7 @@ const Navbar: React.FC = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Neon Auth user/role context
-  const { isAuthenticated, isAdmin, isLoading } = useNeonUser();
+  const { user, role, loading, isAuthenticated,isAdmin } = useNeonUser();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -113,7 +113,7 @@ const Navbar: React.FC = () => {
           <div className="relative">
             <button
               className={`px-6 py-2 rounded-full text-lg font-bold transition-all duration-150 border border-transparent shadow-sm flex items-center gap-2
-                ${pathname === "/home" || pathname === "/solutions" || pathname === "/resources" || pathname === "/support"
+                ${(pathname === "/" || pathname.startsWith("/solutions"))
                   ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg border border-cyan-500"
                   : "bg-[rgba(0,0,0,0.03)] text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-cyan-500 hover:to-blue-600 hover:text-white hover:shadow-lg border border-cyan-500"}
               `}
@@ -202,23 +202,23 @@ const Navbar: React.FC = () => {
           </div>
           <button
             onClick={() => {
-              if (isLoading) return;
+              if (loading) return;
               if (!isAuthenticated) {
-                router.push('/handler/sign-up');
+                router.push('/handler/sign-up'); // Use catch-all handler for login/signup
               } else if (isAdmin) {
-                router.push('/admin');
+                router.push('/admin-dashboard');
               } else {
-                router.push('/dashboard');
+                router.push('/user-dashboard-main');
               }
             }}
             className={`px-6 py-2 rounded-full text-lg font-bold transition-all duration-150 border border-transparent shadow-sm
-              ${pathname.startsWith("/admin") || pathname.startsWith("/dashboard")
+              ${pathname.startsWith("/admin-dashboard") || pathname.startsWith("/user-dashboard-main")
                 ? "bg-[var(--accent-teal,#1de9b6)] text-white hover:bg-[var(--accent-teal,#1de9b6)] hover:shadow-md"
                 : "bg-[rgba(0,0,0,0.03)] text-gray-700 dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] hover:shadow-md"}
             `}
             style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)', letterSpacing: '0.01em' }}
-            disabled={isLoading}
-            aria-disabled={isLoading}
+            disabled={loading}
+            aria-disabled={loading}
           >
             Analytics Engine
           </button>
@@ -242,14 +242,14 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center gap-2">
             <a
               href="/handler/sign-in"
-              className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
+              className={`rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)] ${pathname === "/handler/sign-in" ? "ring-2 ring-[var(--accent-teal,#1de9b6)]" : ""}`}
               style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
             >
               Login
             </a>
             <a
               href="/handler/sign-up"
-              className="rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[rgba(0,0,0,0.03)] text-gray-700 dark:bg-[rgba(255,255,255,0.07)] dark:text-gray-200 hover:bg-[rgba(0,0,0,0.07)] dark:hover:bg-[rgba(255,255,255,0.15)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-teal,#1de9b6)]"
+              className={`rounded-full px-6 py-2 text-lg font-bold transition-all duration-150 border border-transparent shadow-sm bg-[var(--accent-teal,#1de9b6)] text-white hover:bg-[var(--accent-teal,#1de9b6)] hover:shadow-md focus:outline-none ${pathname === "/handler/sign-up" ? "ring-2 ring-white" : ""}`}
               style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)' }}
             >
               Sign Up
