@@ -1,5 +1,4 @@
 import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { AnalyticsScheduleService } from './analytics-schedule.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { CreateScheduleDto, UpdateScheduleDto } from './dto/analytics-schedule.dto';
@@ -7,10 +6,14 @@ import { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TenantContextService } from '../../common/services/tenant-context.service';
 import { AnalyticsAgentService } from '../../agents/analytics-agent.service';
+import { StackAuthGuard } from '../../common/guards/stack-auth.guard';
+import { TenantContextGuard } from '../../common/guards/tenant-context.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
 
 @ApiTags('analytics')
 @Controller('analytics')
-@UseGuards(AuthGuard('neon-auth'))
+@UseGuards(StackAuthGuard, TenantContextGuard, RolesGuard)
 export class AnalyticsController {
   constructor(
     private readonly analyticsScheduleService: AnalyticsScheduleService,

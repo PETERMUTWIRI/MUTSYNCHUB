@@ -1,19 +1,16 @@
 import { Module } from '@nestjs/common';
-// import { JwtModule } from '@nestjs/jwt';
-// import jwtConfig from '../../config/jwt.config';
-// import { ConfigType } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { AuthService } from './auth.service';
-import { EnterpriseAuthService } from './services/enterprise-auth.service';
 import { MfaService } from './services/mfa.service';
 import { RateLimitService } from './services/rate-limit.service';
+import { StackAuthService } from './stack-auth.service';
+import { StackAuthGuard } from './stack-auth.guard';
 import { AuthController } from './auth.controller';
-import { NeonAuthStrategy } from './strategies/neon-auth.strategy';
 import { UserModule } from '../user/user.module';
 import { OrganizationModule } from '../organization/organization.module';
+import { OrganizationService } from '../organization/organization.service';
 import { CommonModule } from '../../common/common.module';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/roles.guard';
 
 @Module({
@@ -35,16 +32,17 @@ import { RolesGuard } from '../../auth/roles.guard';
   controllers: [AuthController],
   providers: [
     AuthService,
-    EnterpriseAuthService,
+    StackAuthService,
     MfaService,
     RateLimitService,
-    NeonAuthStrategy,
-    JwtAuthGuard,
+    StackAuthGuard,
     RolesGuard,
+    OrganizationService,
   ],
   exports: [
     PassportModule,
-    NeonAuthStrategy,
+    StackAuthService,
+    StackAuthGuard,
   ],
 })
 export class AuthModule {}

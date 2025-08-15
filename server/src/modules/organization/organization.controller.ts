@@ -1,13 +1,16 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { OrganizationService } from './organization.service';
-import { AuthGuard } from '@nestjs/passport';
 import { OrgStatus } from '@prisma/client';
 import { TenantContextService } from '../../common/services/tenant-context.service';
+import { StackAuthGuard } from '../../common/guards/stack-auth.guard';
+import { TenantContextGuard } from '../../common/guards/tenant-context.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Organizations')
 @Controller('organizations')
-@UseGuards(AuthGuard('neon-auth'))
+@UseGuards(StackAuthGuard, TenantContextGuard, RolesGuard)
 @ApiBearerAuth()
 export class OrganizationController {
   constructor(
@@ -16,11 +19,17 @@ export class OrganizationController {
   ) {}
 
   @Get(':id')
+  @Roles('ADMIN', 'USER')
   @ApiOperation({ summary: 'Get organization by ID or current tenant' })
   @ApiResponse({ status: 200, description: 'Organization found' })
   async findById(@Param('id') id?: string) {
-    // If no id provided, use tenant context
-    return this.organizationService.findById(id || this.tenantContext.getTenantId());
+    const orgId = id || this.tenantContext.getTenantId();
+    // Ensure user has access to the requested org
+    const user = this.tenantContext.getUser();
+    if (id && id !== user.orgId && !user.roles.includes('ADMIN')) {
+      throw new Error('Access denied to organization');
+    }
+    return this.organizationService.findById(orgId);
   }
 
   @Get('subdomain/:subdomain')

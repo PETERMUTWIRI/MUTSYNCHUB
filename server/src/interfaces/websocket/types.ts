@@ -1,17 +1,16 @@
 // Extend the Socket.IO types to include our custom properties
+import { StackAuthUser } from '../../common/interfaces/stack-auth.interface';
+
 declare module 'socket.io' {
   interface Handshake {
-    user?: {
-      id: string;
-      tenantId: string;
-      [key: string]: any;
-    };
+    user?: StackAuthUser;
   }
 }
 
 export interface WsClient {
   id: string;
   orgId: string;
-  userId?: string;
+  userId: string;
   connectionTime: Date;
+  stackAuthToken?: string;
 }

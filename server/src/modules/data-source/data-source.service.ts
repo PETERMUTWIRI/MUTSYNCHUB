@@ -26,6 +26,7 @@ export class DataSourceService {
     type: DataSourceType;
     orgId: string;
     config: Record<string, any>;
+    createdBy: string;
   }) {
     this.logger.log(`Creating new data source: ${data.name} for organization: ${data.orgId}`);
 
@@ -56,10 +57,7 @@ export class DataSourceService {
               type: data.type,
               config: this.sanitizeConfig(data.config),
             },
-            user: {
-              // Replace 'userId' with the actual user ID or user object as required by your schema
-              connect: { id: 'REPLACE_WITH_USER_ID' },
-            },
+            userProfileId: data.createdBy,
           },
         });
 

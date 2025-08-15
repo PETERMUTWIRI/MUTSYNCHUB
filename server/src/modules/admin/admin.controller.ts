@@ -1,10 +1,13 @@
 
-import { Controller, Get, Put, Param, Body, UseGuards,Delete,Post,Query, Req } from '@nestjs/common';
+import { Controller, Get, Put, Param, Body, UseGuards, Delete, Post, Query, Req, BadRequestException } from '@nestjs/common';
 import { AdminService } from './admin.service';
-import { AuthGuard } from '@nestjs/passport';
-import { UserRole } from '@prisma/client';
+
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { StackAuthGuard } from '../../common/guards/stack-auth.guard';
+import { TenantContextGuard } from '../../common/guards/tenant-context.guard';
+import { TenantContextService } from '../../common/services/tenant-context.service';
+import { UserRole } from '../../common/enums/user-role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
@@ -12,7 +15,7 @@ import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { QueryDto } from './dto/query.dto';
 
 @Controller('admin')
-@UseGuards(AuthGuard('neon-auth'), RolesGuard)
+@UseGuards(StackAuthGuard, TenantContextGuard, RolesGuard)
 export class AdminController {
   // --- Per-User Feature Flags ---
   @Get('users/:id/feature-flags')
@@ -33,12 +36,16 @@ export class AdminController {
     return this.adminService.getFeatureFlags();
   }
 
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly tenantContext: TenantContextService
+  ) {}
+
   @Put('feature-flags/:key')
   @Roles('ADMIN')
   async updateFeatureFlag(@Param('key') key: string, @Body('value') value: any) {
     return this.adminService.updateFeatureFlag(key, value);
   }
-  constructor(private readonly adminService: AdminService) {}
 
   // --- User Management ---
   @Get('users')
@@ -65,7 +72,7 @@ export class AdminController {
   @Roles('ADMIN')
   async assignRole(@Param('id') id: string, @Body('role') role: string) { 
     if (!Object.values(UserRole).includes(role as UserRole)) {
-      throw new Error('Invalid role');
+      throw new BadRequestException(`Invalid role. Must be one of: ${Object.values(UserRole).join(', ')}`);
     }
     return this.adminService.setUserRole(id, role as UserRole); 
   }

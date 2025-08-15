@@ -36,10 +36,17 @@ export class AuditLoggerService {
     // Use context if not provided
     const resolvedUserId = userId ?? this.tenantContext.getUserId();
     const resolvedOrgId = orgId ?? this.tenantContext.getTenantId();
+    
     try {
+      // Ensure we have valid IDs
+      if (!resolvedUserId || !resolvedOrgId) {
+        throw new Error('Missing user or organization context');
+      }
+
       await this.prisma.auditLog.create({
         data: {
-          userId: resolvedUserId,
+          userProfileId: resolvedUserId,
+          orgId: resolvedOrgId,
           action,
           resource,
           details,
@@ -47,9 +54,15 @@ export class AuditLoggerService {
           userAgent,
         },
       });
-      this.logger.log(`Audit log: ${action} on ${resource} by user=${resolvedUserId} org=${resolvedOrgId}`);
+      
+      this.logger.log(
+        `Audit log: ${action} on ${resource} by user=${resolvedUserId} org=${resolvedOrgId}`
+      );
     } catch (err) {
-      this.logger.error('Failed to log audit event', err);
+      this.logger.error(
+        `Failed to log audit event: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        err instanceof Error ? err.stack : undefined
+      );
     }
   }
 

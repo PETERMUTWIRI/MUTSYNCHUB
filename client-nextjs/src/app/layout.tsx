@@ -1,9 +1,7 @@
 import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackServerApp } from "../stack";
 import "./globals.css";
-// Removed Navbar, FloatingHomeButton, and Footer imports
-// Removed AuthProvider import
-// Removed Navbar import
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <StackTheme>
             
             {children}
+            
           </StackTheme>
         </StackProvider>
       </body>

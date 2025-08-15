@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { UseGuards, Logger, ValidationPipe } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { AuthGuard } from '@nestjs/passport';
+import { StackAuthGuard } from '../../common/guards/stack-auth.guard';
 import { ConnectionStateService } from './connection-state.service';
 import { JoinOrgDto, LeaveOrgDto, DataUpdateDto, AnalyticsEventDto } from './dto/websocket-events.dto';
 import { validate } from 'class-validator';
@@ -38,21 +38,33 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: Socket) {
     try {
       this.logger.log(`Client connected: id=${client.id}, ip=${client.handshake.address}`);
-      // Optionally, enforce JWT on connect (token in query or headers)
-      const token = client.handshake.auth?.token || client.handshake.headers['authorization'];
-      if (!token) {
-        this.logger.warn(`Connection rejected: missing JWT token for client ${client.id}`);
+      // Get Stack Auth token from handshake
+      const stackAuthToken = client.handshake.auth?.token || client.handshake.headers['authorization'];
+      if (!stackAuthToken) {
+        this.logger.warn(`Connection rejected: missing Stack Auth token for client ${client.id}`);
         client.disconnect();
         return;
       }
-      // Optionally, validate token here (for extra security)
-      // If using JwtAuthGuard on all messages, this is optional but recommended for early rejection
-      // await this.jwtService.verifyAsync(token.replace('Bearer ', ''));
+
+      // Get user from Stack Auth context
+      const user = this.tenantContext.getUser();
+      if (!user || !user.orgId) {
+        this.logger.warn(`Connection rejected: invalid Stack Auth context for client ${client.id}`);
+        client.disconnect();
+        return;
+      }
+
       // Register client with tenant context
-      const tenantId = this.tenantContext.getTenantId();
-      await this.connectionState.registerClient(client.id, tenantId || null);
+      await this.connectionState.registerClient(client.id, user.orgId);
+      
+      // Store Stack Auth token for future requests
+      const clientState = this.connectionState.getClientState(client.id);
+      if (clientState) {
+        (clientState as any).stackAuthToken = stackAuthToken;
+      }
+
       // Audit log
-      this.logger.log(`WebSocket connection accepted: client=${client.id}, tenant=${tenantId}`);
+      this.logger.log(`WebSocket connection accepted: client=${client.id}, tenant=${user.orgId}, user=${user.id}`);
     } catch (error) {
       this.logger.error(`Error handling connection: ${(error as any).message}`, (error as any).stack);
       client.disconnect();
@@ -68,7 +80,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(AuthGuard('neon-auth'))
+  @UseGuards(StackAuthGuard)
   @SubscribeMessage('joinOrg')
   async handleJoinOrg(
     @ConnectedSocket() client: Socket,
@@ -92,7 +104,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(AuthGuard('neon-auth'))
+  @UseGuards(StackAuthGuard)
   @SubscribeMessage('leaveOrg')
   async handleLeaveOrg(
     @ConnectedSocket() client: Socket,
@@ -116,7 +128,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(AuthGuard('neon-auth'))
+  @UseGuards(StackAuthGuard)
   @SubscribeMessage('subscribeToStream')
   async handleSubscribeToStream(
     @ConnectedSocket() client: Socket,
@@ -140,7 +152,7 @@ export class DataGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @UseGuards(AuthGuard('neon-auth'))
+  @UseGuards(StackAuthGuard)
   @SubscribeMessage('unsubscribeFromStream')
   async handleUnsubscribeFromStream(
     @ConnectedSocket() client: Socket,

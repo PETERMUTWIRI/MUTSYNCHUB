@@ -50,21 +50,22 @@ export class ApiKeyGuard implements CanActivate {
         throw new UnauthorizedException('API key has expired');
       }
 
-      // Enforce tenant isolation
-      const headerTenantId = request.headers['x-tenant-id'];
-      if (headerTenantId && validatedKey.organization?.subdomain !== headerTenantId) {
+      // If there's a Stack Auth user in the request, validate organization match
+      if (request.user?.orgId && validatedKey.orgId !== request.user.orgId) {
         this.logger.warn(
-          `Tenant isolation violation: requestId=${requestId}, ` +
-          `apiKeyOrg=${validatedKey.organization?.subdomain}, headerTenant=${headerTenantId}`
+          `Organization mismatch: requestId=${requestId}, ` +
+          `apiKeyOrg=${validatedKey.orgId}, userOrg=${request.user.orgId}`
         );
-        throw new UnauthorizedException('Tenant mismatch');
+        throw new UnauthorizedException('API key does not belong to your organization');
       }
 
-      // Attach organization info to request
-      request.organization = validatedKey.organization;
-      request.orgId = validatedKey.orgId;
-      request.apiKeyScopes = validatedKey.scopes;
-      request.apiKeyId = validatedKey.id;
+      // Attach API key info to request
+      request.apiKey = {
+        id: validatedKey.id,
+        orgId: validatedKey.orgId,
+        organization: validatedKey.organization,
+        scopes: validatedKey.scopes
+      };
 
       // Check required scopes
       const requiredScopes = this.getRequiredScopes(context);

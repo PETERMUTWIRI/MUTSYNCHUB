@@ -26,13 +26,21 @@ export class SubscriptionTierGuard implements CanActivate {
     const requiredTier = this.reflector.get<SubscriptionTier>(SUBSCRIPTION_TIER_KEY, context.getHandler());
     if (!requiredTier) return true; // No tier required
 
-    // Use TenantContextService to get tenant/org ID
-    const orgId = this.tenantContext.getTenantId();
-    if (!orgId) throw new ForbiddenException('Tenant/Organization not found');
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
+    
+    if (!user?.orgId) {
+      throw new ForbiddenException('No organization context found');
+    }
 
     // Fetch org from DB
-    const org = await this.prisma.organization.findUnique({ where: { id: orgId } });
-    if (!org) throw new ForbiddenException('Organization not found');
+    const org = await this.prisma.organization.findUnique({
+      where: { id: user.orgId }
+    });
+    
+    if (!org) {
+      throw new ForbiddenException('Organization not found');
+    }
 
     // Use plan IDs from PLANS config for order
     const planOrder = PLANS.map(plan => plan.id);

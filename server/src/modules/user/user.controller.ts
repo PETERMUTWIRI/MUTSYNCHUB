@@ -1,15 +1,17 @@
 
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, Request } from '@nestjs/common';
 import { UserService } from './user.service';
-import { AuthGuard } from '@nestjs/passport';
-import { UserRole, UserStatus } from '@prisma/client';
+import { StackAuthGuard } from '../auth/stack-auth.guard';
+
+// Replace enums with string literals since they're no longer Prisma enums
+type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
 @Controller('users')
-@UseGuards(AuthGuard('neon-auth'))
+@UseGuards(StackAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
-  // Supabase sync endpoint
-  @UseGuards(AuthGuard('neon-auth'))
+  // Stack sync endpoint
   @Get('sync')
   async syncUser(@Request() req) {
     const user = await this.userService.findOrCreateFromSupabase(req.user);

@@ -25,6 +25,11 @@ export class CreateDataSourceDto {
   })
   @IsObject()
   config: Record<string, any>;
+
+  @ApiProperty({ example: 'user123' })
+  @IsString()
+  @IsOptional()
+  createdBy?: string;
 }
 
 export class UpdateDataSourceDto {

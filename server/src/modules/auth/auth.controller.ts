@@ -9,10 +9,10 @@ import {
   HttpCode,
   Req,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { UserService } from '../user/user.service';
+import { StackAuthGuard } from './stack-auth.guard';
 // Removed legacy JwtAuthGuard import
 
 @ApiTags('Authentication')
@@ -30,7 +30,7 @@ export class AuthController {
    * Get current user profile
    */
   @Get('profile')
-@UseGuards(AuthGuard('neon-auth'))
+  @UseGuards(StackAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Profile data' })
@@ -42,7 +42,7 @@ export class AuthController {
    * Get current user usage and plan info
    */
   @Get('usage')
-  @UseGuards(AuthGuard('neon-auth'))
+  @UseGuards(StackAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user usage and plan info' })
   @ApiResponse({ status: 200, description: 'Usage and plan info' })

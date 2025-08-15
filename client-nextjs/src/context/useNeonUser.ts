@@ -1,51 +1,31 @@
 'use client';
 
-import { useUser as useStackUser } from '@stackframe/stack';
-import type { CurrentUser } from '@stackframe/stack'; // optional if available
-
-type AnyStackUser = CurrentUser | Record<string, any> | undefined | null;
-
-function extractClientMetadata(user: AnyStackUser): Record<string, any> | null {
-  if (!user) return null;
-
-  // Preferred (matches SDK types)
-  if ('clientMetadata' in user && typeof (user as any).clientMetadata === 'object') {
-    return (user as any).clientMetadata;
-  }
-
-  // Defensive: in case some service sets snake_case
-  if ('client_metadata' in user && typeof (user as any).client_metadata === 'object') {
-    return (user as any).client_metadata;
-  }
-
-  return null;
-}
+import { useUser } from '@stackframe/stack';
 
 export function useNeonUser() {
-  // stackUser will be `undefined` while loading (per SDK behavior)
-  const stackUser = useStackUser() as AnyStackUser;
+  const user = useUser();
 
-  const loading = stackUser === undefined;
-  const isAuthenticated = !!stackUser && !!(stackUser as any).id;
-  
+  const loading = user === undefined;
+  const isAuthenticated = !!user && !!user.id;
 
-  // 1) Check top-level role claim (if you add it server-side)
-  const topRole = (stackUser as any)?.role ?? (stackUser as any)?.claims?.role ?? null;
+  // Prefer camelCase per official SDK types
+  const clientMetadata = user?.clientMetadata ?? null;
 
-  // 2) Else try clientMetadata (camelCase) OR client_metadata (snake_case)
-  const clientMeta = extractClientMetadata(stackUser);
-  const metaRole =
-    clientMeta?.role ??
-    (Array.isArray(clientMeta?.roles) ? clientMeta.roles[0] : undefined) ??
+  // Example: extract role if you store it in clientMetadata
+  const role =
+    (user as any)?.role ??
+    clientMetadata?.role ??
+    (Array.isArray(clientMetadata?.roles) ? clientMetadata.roles[0] : undefined) ??
     null;
 
-  const role = (topRole as string) ?? (metaRole as string | null);
-  const isAdmin = role?.toLowerCase() === "admin";
+  const isAdmin = typeof role === 'string' && role.toLowerCase() === 'admin';
+
   return {
-    user: stackUser ?? null,
+    user: user ?? null,
     role,
     loading,
     isAuthenticated,
-    isAdmin
+    isAdmin,
+    clientMetadata,
   };
 }
