@@ -1,11 +1,10 @@
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
-import { Organization, User, UserRole } from '@prisma/client';
+import { Organization, UserProfile } from '@prisma/client';
 import { AuditLoggerService } from '../../common/services/audit-logger.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import * as bcrypt from 'bcrypt';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { QueryDto } from './dto/query.dto';
@@ -96,12 +95,12 @@ export class AdminService {
   }
   // --- Analytics Stat Methods for Dashboard/Advanced Analytics ---
   async getUserCount(orgId: string): Promise<{ count: number }> {
-    const count = await this.prisma.user.count({ where: { orgId } });
+    const count = await this.prisma.userProfile.count({ where: { orgId } });
     return { count };
   }
 
   async getActiveUserCount(orgId: string): Promise<{ count: number }> {
-    const count = await this.prisma.user.count({ where: { orgId, status: 'ACTIVE' } });
+    const count = await this.prisma.userProfile.count({ where: { orgId, status: 'ACTIVE' } });
     return { count };
   }
 
@@ -119,7 +118,7 @@ export class AdminService {
 
   // --- Per-User Feature Flags ---
   async getUserFeatureFlags(userId: string): Promise<Record<string, any>> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.userProfile.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
     if (typeof user.featureFlags === 'string') {
       try {
@@ -133,7 +132,7 @@ export class AdminService {
   }
 
   async setUserFeatureFlags(userId: string, flags: Record<string, any>): Promise<Record<string, any>> {
-    const user = await this.prisma.user.update({
+    const user = await this.prisma.userProfile.update({
       where: { id: userId },
       data: { featureFlags: flags },
     });
@@ -149,57 +148,32 @@ export class AdminService {
   }
   private readonly logger = new Logger(AdminService.name);
   // --- User Management ---
-  async getUserById(id: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+  async getUserById(id: string): Promise<UserProfile> {
+    const user = await this.prisma.userProfile.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
-    this.logger.log(`Admin creating user: ${createUserDto.email}`);
-    const { email, password, firstName, lastName, orgId } = createUserDto;
-
-    // Check if user already exists
-    const existingUser = await this.prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      this.logger.warn(`Attempted to create user with existing email: ${email}`);
-      throw new Error('User with this email already exists');
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        orgId,
-      },
-    });
-
-    // Audit log user creation
-    await this.auditLogger.log({
-      userId: 'admin',
-      action: 'admin_create_user',
-      resource: 'user',
-      details: {
-        targetUserId: user.id,
-        email: user.email,
-      },
-     });
-
-    this.logger.log(`Admin successfully created user: ${user.email}`);
-    return user;
+  async createUser(createUserDto: CreateUserDto): Promise<UserProfile> {
+    // Admin-driven creation of auth users is disabled when using a third‑party
+    // authentication provider. Admins should either provision users via the
+    // external auth provider or create local UserProfile records through a
+    // dedicated profile-management flow that does not manage credentials.
+    this.logger.warn('Attempt to create auth user via AdminService blocked');
+    throw new ForbiddenException('Admin creation of auth users is disabled. Provision users through the auth provider or use profile-only endpoints.');
   }
 
-  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<UserProfile> {
     this.logger.log(`Admin updating user: ${id}`);
-    const user = await this.prisma.user.update({
+    // Prevent updates that would affect external credentials. Only allow
+    // profile metadata fields that exist on UserProfile in the Prisma schema.
+    const allowed: Partial<UpdateUserDto> = { ...updateUserDto } as any;
+    delete (allowed as any).email;
+    delete (allowed as any).password;
+
+    const user = await this.prisma.userProfile.update({
       where: { id },
-      data: updateUserDto,
+      data: allowed as any,
     });
 
     await this.auditLogger.log({
@@ -208,7 +182,7 @@ export class AdminService {
       resource: 'user',
       details: {
         targetUserId: id,
-        updatedData: updateUserDto,
+        updatedData: allowed,
       },
     });
 
@@ -216,9 +190,9 @@ export class AdminService {
     return user;
   }
 
-  async deleteUser(id: string): Promise<User> {
+  async deleteUser(id: string): Promise<UserProfile> {
     this.logger.log(`Admin deleting user: ${id}`);
-    const user = await this.prisma.user.delete({ where: { id } });
+    const user = await this.prisma.userProfile.delete({ where: { id } });
 
     await this.auditLogger.log({
       userId: 'admin', // Or get the admin user ID from the request context
@@ -233,8 +207,8 @@ export class AdminService {
     return user;
   }
 
-  async setUserTenant(id: string, tenantId: string): Promise<User> {
-    const user = await this.prisma.user.update({
+  async setUserTenant(id: string, tenantId: string): Promise<UserProfile> {
+    const user = await this.prisma.userProfile.update({
       where: { id },
       data: { orgId: tenantId },
     });
@@ -321,7 +295,7 @@ export class AdminService {
   // --- Analytics & Usage ---
   async getAnalytics(query: any): Promise<any> {
     // TODO: Aggregate analytics from multiple tables, filter by date/org/user
-    const users = await this.prisma.user.count();
+    const users = await this.prisma.userProfile.count();
     const orgs = await this.prisma.organization.count();
     return { users, orgs };
   }
@@ -429,13 +403,13 @@ export class AdminService {
   ) {}
 
   async getAllUsers() {
-    return this.prisma.user.findMany();
+    return this.prisma.userProfile.findMany();
   }
 
-  async setUserRole(userId: string, role: UserRole, context?: { adminId?: string; orgId?: string; ipAddress?: string; userAgent?: string }) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  async setUserRole(userId: string, role: string, context?: { adminId?: string; orgId?: string; ipAddress?: string; userAgent?: string }) {
+    const user = await this.prisma.userProfile.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    const updated = await this.prisma.user.update({
+    const updated = await this.prisma.userProfile.update({
       where: { id: userId },
       data: { role },
     });

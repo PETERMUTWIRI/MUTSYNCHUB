@@ -1,9 +1,9 @@
 import { Controller, Get, UseGuards, Req } from '@nestjs/common';
-import { AuthGuard } from '../auth/auth.guard';
+import { StackAuthGuard } from '../auth/stack-auth.guard';
 import { UserService } from './user.service';
 
 @Controller('users')
-@UseGuards(AuthGuard)
+@UseGuards(StackAuthGuard)
 export class UserController {
   constructor(private userService: UserService) {}
 

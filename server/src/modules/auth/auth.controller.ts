@@ -10,17 +10,18 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { UserService } from '../user/user.service';
+
 import { StackAuthGuard } from './stack-auth.guard';
+import { StackAuthService } from './stack-auth.service';
+import { StackAuthBusinessService } from './stack-auth-business.service';
 // Removed legacy JwtAuthGuard import
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly authService: AuthService,
-    private readonly userService: UserService,
+    private readonly stackAuthService: StackAuthService,
+    private readonly stackAuthBusinessService: StackAuthBusinessService,
   ) {}
 
   /**
@@ -47,7 +48,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user usage and plan info' })
   @ApiResponse({ status: 200, description: 'Usage and plan info' })
   async getUsage(@Request() req) {
-    return this.authService.getUsageAndPlan(req.user.id);
+    return this.stackAuthBusinessService.getUsageAndPlan(req.user.id);
   }
 
   /**
@@ -57,6 +58,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Get all available plans and features' })
   @ApiResponse({ status: 200, description: 'List of plans' })
   async getPlans() {
-    return this.authService.getPlans();
+    return this.stackAuthBusinessService.getPlans();
   }
 }

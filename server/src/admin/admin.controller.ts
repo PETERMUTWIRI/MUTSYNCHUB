@@ -1,10 +1,10 @@
 import { Controller, Get, Req, UseGuards } from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { StackAuthGuard } from "../modules/auth/stack-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 
 @Controller("admin")
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(StackAuthGuard, RolesGuard)
 export class AdminController {
   @Get("stats")
   @Roles("admin", "superadmin")

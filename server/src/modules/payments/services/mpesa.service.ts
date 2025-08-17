@@ -182,7 +182,7 @@ export class MpesaService {
   ): Promise<STKPushResponse & { usage?: { progress: number; limit: number; count: number } }> {
     try {
       // Use tenant context if available
-      const orgId = this.tenantContext.getTenantId() || (await this.prisma.user.findUnique({ where: { id: userId } }))?.orgId;
+      const orgId = this.tenantContext.getTenantId() || (await this.prisma.userProfile.findUnique({ where: { id: userId } }))?.orgId;
       if (!orgId) throw new Error('Organization not found');
       await this.enforcePaymentLimits(orgId); // Enforce plan limits
       const usage = await this.getPaymentUsage(orgId); // Get usage for progress bar
@@ -223,7 +223,7 @@ export class MpesaService {
       }
 
       // Find the user's organization
-      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      const user = await this.prisma.userProfile.findUnique({ where: { id: userId } });
       if (!user || !user.orgId) {
         throw new Error('User or user organization not found');
       }
@@ -233,7 +233,7 @@ export class MpesaService {
       // Check if payment for this user and plan already exists and is not failed/cancelled
       const existingPayment = await this.prisma.payment.findFirst({
         where: {
-          userId: userId,
+          userProfileId: userId,
           status: { notIn: ['FAILED', 'CANCELLED'] },
         },
       });
@@ -244,7 +244,7 @@ export class MpesaService {
 
       await this.prisma.payment.create({
         data: {
-          userId: userId,
+          userProfileId: userId,
           orgId: user.orgId,
           amount: request.amount,
           provider: 'MPESA',
@@ -339,7 +339,7 @@ export class MpesaService {
 
         // Audit log for payment completion
         await this.auditLogger.log({
-          userId: payment?.userId,
+          userId: payment?.userProfileId,
           orgId: payment?.orgId,
           action: 'PAYMENT_COMPLETED',
           resource: 'PAYMENT',
@@ -426,7 +426,7 @@ export class MpesaService {
     }
 
     try {
-      const response = await this.initiateSTKPush(payment.userId, {
+      const response = await this.initiateSTKPush(payment.userProfileId, {
         amount: Number(payment.amount),
         phoneNumber: payment.phoneNumber,
         accountReference: (payment.metadata as { accountReference: string; transactionDesc: string }).accountReference,
@@ -447,7 +447,7 @@ export class MpesaService {
 
       // Audit log for payment retry
       await this.auditLogger.log({
-        userId: payment.userId,
+        userId: payment.userProfileId,
         orgId: payment.orgId,
         action: 'PAYMENT_RETRY',
         resource: 'PAYMENT',
@@ -526,7 +526,7 @@ export class MpesaService {
             InvoiceNumber: payload.InvoiceNumber,
           },
           // Provide dummy or placeholder relations if allowed by your schema
-          user: undefined,
+          userProfile: undefined,
           organization: undefined,
         },
       });

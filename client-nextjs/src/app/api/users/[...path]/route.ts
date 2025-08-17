@@ -17,21 +17,16 @@ const EXCLUDED_HEADERS = new Set([
 
 async function proxyRequest(req: NextRequest, method: string) {
   try {
-    // Get the access token from request headers
-  // Expect the client to send the token in the x-stack-access-token header
-  const accessToken = req.headers.get('x-stack-access-token') || '';
-
-    // keep backend routes aligned with Nest global prefix (/api)
-    const urlPath = req.nextUrl.pathname.replace(/^\/api\/proxy/, '');
+    const accessToken = req.headers.get('x-stack-access-token') || '';
+    const urlPath = req.nextUrl.pathname.replace(/^\/api\/users/, '/users');
     const url = `${BACKEND_BASE_URL}/api${urlPath}${req.nextUrl.search || ''}`;
 
     // Prepare headers
     const headers: Record<string, string> = {
-      'x-stack-access-token': accessToken || '',
+      'x-stack-access-token': accessToken,
       'content-type': req.headers.get('content-type') || 'application/json',
     };
 
-    // Copy other relevant headers
     req.headers.forEach((value, key) => {
       const lowercaseKey = key.toLowerCase();
       if (!EXCLUDED_HEADERS.has(lowercaseKey)) {
@@ -56,14 +51,8 @@ async function proxyRequest(req: NextRequest, method: string) {
       }
     }
 
-    // Forward the request to the backend
-    const response = await fetch(url, {
-      method,
-      headers,
-      body,
-    });
+    const response = await fetch(url, { method, headers, body });
 
-    // Prepare response headers
     const responseHeaders: Record<string, string> = {};
     response.headers.forEach((value, key) => {
       if (!EXCLUDED_HEADERS.has(key.toLowerCase())) {
@@ -71,32 +60,32 @@ async function proxyRequest(req: NextRequest, method: string) {
       }
     });
 
-    // Handle the response based on content type
     const contentType = response.headers.get('content-type');
     if (contentType?.includes('application/json')) {
       const jsonData = await response.json();
-      return NextResponse.json(jsonData, {
-        status: response.status,
-        headers: responseHeaders,
-      });
+      return NextResponse.json(jsonData, { status: response.status, headers: responseHeaders });
     } else {
       const arrayBuffer = await response.arrayBuffer();
-      return new NextResponse(arrayBuffer, {
-        status: response.status,
-        headers: responseHeaders,
-      });
+      return new NextResponse(arrayBuffer, { status: response.status, headers: responseHeaders });
     }
   } catch (error) {
-    console.error('Proxy request error:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    console.error('Users proxy request error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-export async function GET(req: NextRequest) { return proxyRequest(req, 'GET'); }
-export async function POST(req: NextRequest) { return proxyRequest(req, 'POST'); }
-export async function PUT(req: NextRequest) { return proxyRequest(req, 'PUT'); }
-export async function PATCH(req: NextRequest) { return proxyRequest(req, 'PATCH'); }
-export async function DELETE(req: NextRequest) { return proxyRequest(req, 'DELETE'); }
+export async function GET(req: NextRequest) {
+  return proxyRequest(req, 'GET');
+}
+export async function POST(req: NextRequest) {
+  return proxyRequest(req, 'POST');
+}
+export async function PUT(req: NextRequest) {
+  return proxyRequest(req, 'PUT');
+}
+export async function PATCH(req: NextRequest) {
+  return proxyRequest(req, 'PATCH');
+}
+export async function DELETE(req: NextRequest) {
+  return proxyRequest(req, 'DELETE');
+}

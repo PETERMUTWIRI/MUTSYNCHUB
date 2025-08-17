@@ -6,6 +6,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ApiKeyService } from './api-key.service';
 import { TenantContextService } from '../../common/services/tenant-context.service';
+import { CreateApiKeyDto } from './dto/create-api-key.dto';
 
 @ApiTags('api-keys')
 @Controller('api-keys')
@@ -21,15 +22,11 @@ export class ApiKeyController {
   @ApiOperation({ summary: 'Create a new API key' })
   @ApiResponse({ status: 201, description: 'API key created successfully' })
   async createApiKey(
-    @Body() data: { name: string; scopes: string[] }
+    @Body() data: CreateApiKeyDto
   ) {
     const orgId = this.tenantContext.getTenantId();
     const userId = this.tenantContext.getUserId();
-    return this.apiKeyService.createApiKey({
-      ...data,
-      orgId,
-      createdBy: userId,
-    });
+  return this.apiKeyService.createApiKey(orgId, data);
   }
 
   @Get()
@@ -43,29 +40,14 @@ export class ApiKeyController {
 
   @Delete(':id')
   @Roles('ADMIN', 'DEVELOPER')
-  @ApiOperation({ summary: 'Delete an API key' })
-  @ApiResponse({ status: 200, description: 'API key deleted successfully' })
-  async deleteApiKey(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Revoke an API key' })
+  @ApiResponse({ status: 200, description: 'API key revoked successfully' })
+  async revokeApiKey(@Param('id') id: string) {
     const orgId = this.tenantContext.getTenantId();
-    return this.apiKeyService.deleteApiKey(id, orgId);
+    return this.apiKeyService.revokeApiKey(id, orgId);
   }
 
-  @Get(':id')
-  @Roles('ADMIN', 'DEVELOPER')
-  @ApiOperation({ summary: 'Get API key details' })
-  @ApiResponse({ status: 200, description: 'API key details' })
-  async getApiKey(@Param('id') id: string) {
-    const orgId = this.tenantContext.getTenantId();
-    return this.apiKeyService.getApiKey(id, orgId);
-  }
 
-  @Post(':id/rotate')
-  @Roles('ADMIN', 'DEVELOPER')
-  @ApiOperation({ summary: 'Rotate an API key' })
-  @ApiResponse({ status: 200, description: 'API key rotated successfully' })
-  async rotateApiKey(@Param('id') id: string) {
-    const orgId = this.tenantContext.getTenantId();
-    const userId = this.tenantContext.getUserId();
-    return this.apiKeyService.rotateApiKey(id, orgId, userId);
-  }
+
+
 }

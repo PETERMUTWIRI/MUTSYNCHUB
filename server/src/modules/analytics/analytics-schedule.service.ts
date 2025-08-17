@@ -215,9 +215,8 @@ export class AnalyticsScheduleService {
           type: 'SCHEDULED_ANALYSIS_COMPLETED',
           title: 'Scheduled Analytics Report Ready',
           message: `A scheduled analytics report for dataset ${dataset.name} is ready to view or query.`,
-          scheduleId: schedule.id,
-          datasetId: dataset.id,
-          status: 'UNREAD',
+          metadata: { datasetId: dataset.id },
+          createdBy: 'system',
         });
         await this.auditLogger.log({
           userId: 'system',

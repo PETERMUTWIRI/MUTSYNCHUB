@@ -1,5 +1,6 @@
 "use client";
 import HeroSection from "@/components/home/HeroSection";
+import CallBackendOnAuth from '@/components/auth/CallBackendOnAuth';
 import AboutSection from "@/components/home/AboutSection";
 import { FAQSection } from "@/components/home/faq";
 import { CTASection } from "@/components/home/cta";
@@ -14,6 +15,7 @@ export default function Home() {
       <main className="w-full">
         {/* Consistent blue gradient background for all sections */}
         <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-purple-500 min-h-screen">
+          <CallBackendOnAuth endpoint="/api/users/me" />
           <HeroSection />
           <AboutSection />
           <EnterpriseTrust />

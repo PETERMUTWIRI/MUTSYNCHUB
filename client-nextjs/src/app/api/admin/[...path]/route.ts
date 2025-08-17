@@ -17,11 +17,11 @@ const EXCLUDED_HEADERS = new Set([
 
 async function proxyRequest(req: NextRequest, method: string) {
   try {
-    // Get the access token from request headers
-    const accessToken = req.headers.get('x-stack-access-token') || '';
-    
+  // Expect the client to send the token in the x-stack-access-token header
+  const accessToken = req.headers.get('x-stack-access-token') || '';
+
     const urlPath = req.nextUrl.pathname.replace(/^\/api\/admin/, '/admin');
-    const url = `${BACKEND_BASE_URL}${urlPath}${req.nextUrl.search || ''}`;
+    const url = `${BACKEND_BASE_URL}/api${urlPath}${req.nextUrl.search || ''}`;
 
     // Prepare headers
     const headers: Record<string, string> = {

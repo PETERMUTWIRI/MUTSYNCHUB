@@ -38,7 +38,7 @@ export class OrganizationService {
     const org = await this.prisma.organization.findUnique({
       where: { id: orgId },
       include: {
-        users: true,
+  userProfiles: true,
         dataSources: true,
         subscription: true,
       },

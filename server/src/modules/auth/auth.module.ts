@@ -1,48 +1,32 @@
-import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { ConfigModule } from '@nestjs/config';
-import { AuthService } from './auth.service';
-import { MfaService } from './services/mfa.service';
-import { RateLimitService } from './services/rate-limit.service';
+// ...existing code...
+import { Module, forwardRef } from '@nestjs/common';
 import { StackAuthService } from './stack-auth.service';
 import { StackAuthGuard } from './stack-auth.guard';
 import { AuthController } from './auth.controller';
-import { UserModule } from '../user/user.module';
+import { UserModule } from '../users/user.module';
 import { OrganizationModule } from '../organization/organization.module';
 import { OrganizationService } from '../organization/organization.service';
 import { CommonModule } from '../../common/common.module';
 import { RolesGuard } from '../../auth/roles.guard';
+import { StackAuthBusinessService } from './stack-auth-business.service';
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    // JwtModule.registerAsync({
-    //   inject: [jwtConfig.KEY],
-    //   useFactory: (jwtSettings: ConfigType<typeof jwtConfig>) => ({
-    //     secret: jwtSettings.secret,
-    //     signOptions: {
-    //       expiresIn: jwtSettings.expiresIn,
-    //     },
-    //   }),
-    // }),
-    UserModule, // <-- ensure UserModule is imported
+    forwardRef(() => UserModule),
     OrganizationModule,
     CommonModule,
   ],
   controllers: [AuthController],
   providers: [
-    AuthService,
     StackAuthService,
-    MfaService,
-    RateLimitService,
     StackAuthGuard,
+    StackAuthBusinessService,
     RolesGuard,
-    OrganizationService,
   ],
   exports: [
-    PassportModule,
     StackAuthService,
     StackAuthGuard,
+    StackAuthBusinessService,
   ],
 })
 export class AuthModule {}

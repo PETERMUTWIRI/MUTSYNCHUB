@@ -102,9 +102,8 @@ export class AutomatedAnalysisService {
             type: 'ANALYSIS_COMPLETED',
             title: 'Analytics Report Ready',
             message: `Your analytics report for dataset ${dataset.name} is ready to view or download.`,
-            analysisId: analysis.id,
-            datasetId: dataset.id,
-            status: 'UNREAD',
+            metadata: { analysisId: analysis.id, datasetId: dataset.id },
+            createdBy: resolvedUserId,
           });
         }
       } catch (error) {

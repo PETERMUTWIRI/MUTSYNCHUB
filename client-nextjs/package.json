@@ -48,6 +48,7 @@
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.488.0",
     "next": "14.2.5",
+    "next-http-proxy-middleware": "^1.2.7",
     "next-themes": "^0.4.6",
     "react": "18.2.0",
     "react-dom": "18.2.0",

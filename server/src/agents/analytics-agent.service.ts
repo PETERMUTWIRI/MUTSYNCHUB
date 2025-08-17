@@ -105,7 +105,7 @@ export class AnalyticsAgentService {
       throw new UnauthorizedException('Agent query limit reached for your plan. Please upgrade to continue.');
     }
     // Fetch analytics data for the tenant from the analytics API (Codespace URL)
-    const apiUrl = `https://sturdy-space-telegram-xqww959vxr72pw4j.github.dev/api/analytics/active-users?tenantId=${input.tenantId}`;
+    const apiUrl = `https://fluffy-bassoon-g4wrqgxqjvvv3wv5.github.dev/api/analytics/active-users?tenantId=${input.tenantId}`;
     let analyticsData;
     try {
       const resp = await axios.get(apiUrl, {
@@ -137,7 +137,7 @@ Here is the analytics data: ${JSON.stringify(analyticsData)}
     await this.prisma.auditLog.create({
       data: {
         orgId: input.tenantId,
-        userId: input.userId,
+  userProfileId: input.userId,
         action: 'AGENT_QUERY',
         resource: 'AGENT',
         details: { question: input.question },
