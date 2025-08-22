@@ -1,8 +1,9 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
 import { UserService } from '../../modules/users/user.service';
 import { StackAuthService } from './stack-auth.service';
-import { RequestWithUser } from '../../types/user.types';
 import { OrganizationService } from '../../modules/organization/organization.service';
+import { RequestWithUser } from '../../types/user.types';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class StackAuthGuard implements CanActivate {
@@ -10,15 +11,14 @@ export class StackAuthGuard implements CanActivate {
   constructor(
     private stackAuthService: StackAuthService,
     private userService: UserService,
-    private organizationService: OrganizationService
+    private organizationService: OrganizationService,
+    private prisma: PrismaService 
   ) {}
 
-  private async createOrganizationForUser(email: string, name: string): Promise<string> {
-    // Generate a unique subdomain from the email
-    const subdomain = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') + 
-                     Math.random().toString(36).substring(2, 7);
-    
-    // Create the organization
+  private async createOrganizationForUser(name: string, userId: string): Promise<string> {
+    const subdomainBase = userId.slice(0, 8);
+    const subdomain = `${subdomainBase}-${Math.random().toString(36).substring(2, 7)}`;
+
     const org = await this.organizationService.create({
       name: `${name}'s Organization`,
       subdomain,
@@ -42,33 +42,50 @@ export class StackAuthGuard implements CanActivate {
     try {
       // Verify token with Stack Auth
       const authUser = await this.stackAuthService.verifyToken(token);
-      
       if (!authUser) {
         throw new UnauthorizedException('Invalid token');
       }
 
-      // Get or create user profile
-      let userProfile = await this.userService.getEnrichedUserProfile(authUser.userId);
-      
-      if (!userProfile) {
-        // Create new organization for the user
-        const orgId = await this.createOrganizationForUser(
-          authUser.email,
-          authUser.name || 'New User'
-        );
 
-        // Create new user profile if it doesn't exist
-        await this.userService.createUserProfile(authUser.userId, {
-          userId: authUser.userId,
-          role: 'USER', // Make them admin of their own org
-          status: 'ACTIVE',
-          organization: {
-            connect: {
-              id: orgId
-            }
-          }
+      // Check if user profile exists
+      let userProfile = await this.userService.getEnrichedUserProfile(authUser.userId);
+
+      if (!userProfile) {
+        // Check if user exists in neon_auth.users_sync
+        const authUserRecord = await this.prisma.$queryRaw`
+          SELECT id FROM neon_auth.users_sync 
+          WHERE id = ${authUser.userId} AND deleted_at IS NULL
+        `;
+        if (!authUserRecord?.[0]) {
+          throw new UnauthorizedException('User not found in auth system');
+        }
+
+        // Check for existing UserProfile to avoid duplicate
+        const existingProfile = await this.prisma.userProfile.findUnique({
+          where: { userId: authUser.userId }
         });
-        
+
+        if (!existingProfile) {
+          // Create new organization
+          const orgId = await this.createOrganizationForUser(
+            authUser.name || `User-${authUser.userId.slice(0, 8)}`,
+            authUser.userId
+          );
+
+          // Create new user profile
+          await this.userService.createUserProfile(authUser.userId, {
+            userId: authUser.userId,
+            role: 'USER',
+            status: 'ACTIVE',
+            organization: {
+              connect: {
+                id: orgId
+              }
+            }
+          });
+        }
+
+        // Fetch the user profile again
         userProfile = await this.userService.getEnrichedUserProfile(authUser.userId);
       }
 
@@ -78,20 +95,18 @@ export class StackAuthGuard implements CanActivate {
 
       // Add the user profile to the request
       request.user = userProfile;
-      
+
       return true;
     } catch (error) {
       this.logger.error(`Auth failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException(`Auth failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    // First try x-stack-access-token header
     const stackToken = request.headers['x-stack-access-token'];
     if (stackToken) return stackToken as string;
 
-    // Fallback to Authorization header if needed
     const [type, token] = request.headers['authorization']?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
   }

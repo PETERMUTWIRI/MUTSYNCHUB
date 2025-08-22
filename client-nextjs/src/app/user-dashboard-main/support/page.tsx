@@ -1,6 +1,6 @@
-"use client";
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import {
   LifeBuoy,
   MessageSquare,
@@ -15,11 +15,9 @@ import {
   Wrench,
   CheckCircle2,
   XCircle,
-  ChevronDown,
-  ChevronUp
 } from 'lucide-react';
 
-// Components
+// Components (assuming these are implemented or will be adjusted)
 import SupportTicketCard from '@/components/support/SupportTicketCard';
 import SupportChannelCard from '@/components/support/SupportChannelCard';
 import KnowledgeBaseSearch from '@/components/support/KnowledgeBaseSearch';
@@ -30,6 +28,7 @@ import StatusBadge from '@/components/support/StatusBadge';
 import Breadcrumb from '@/components/resources/Breadcrumb';
 import ContactOption from '@/components/support/ContactOption';
 import LiveChatWidget from '@/components/support/LiveChatWidget';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface Ticket {
   id: string;
@@ -76,9 +75,7 @@ const Support = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - in a real app this would come from an API
   useEffect(() => {
-    // Simulate API call
     setTimeout(() => {
       setTickets([
         {
@@ -88,7 +85,7 @@ const Support = () => {
           status: 'open',
           priority: 'high',
           date: '2025-07-20',
-          assignee: 'Sarah Johnson'
+          assignee: 'Sarah Johnson',
         },
         {
           id: 'TKT-002',
@@ -97,7 +94,7 @@ const Support = () => {
           status: 'pending',
           priority: 'medium',
           date: '2025-07-18',
-          assignee: 'Michael Chen'
+          assignee: 'Michael Chen',
         },
         {
           id: 'TKT-003',
@@ -106,8 +103,8 @@ const Support = () => {
           status: 'resolved',
           priority: 'low',
           date: '2025-07-15',
-          assignee: 'Emma Rodriguez'
-        }
+          assignee: 'Emma Rodriguez',
+        },
       ]);
       setIsLoading(false);
     }, 800);
@@ -120,7 +117,7 @@ const Support = () => {
       description: 'Get immediate assistance from our support team',
       actionText: 'Start Chat',
       onClick: () => setIsChatOpen(true),
-      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+      color: 'bg-[#2E7D7D]/10 text-[#2E7D7D]',
     },
     {
       icon: <LifeBuoy size={24} />,
@@ -128,7 +125,7 @@ const Support = () => {
       description: 'Submit a ticket for non-urgent issues',
       actionText: 'Create Ticket',
       onClick: () => console.log('Create Ticket'),
-      color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+      color: 'bg-[#2E7D7D]/10 text-[#2E7D7D]',
     },
     {
       icon: <BookOpen size={24} />,
@@ -136,7 +133,7 @@ const Support = () => {
       description: 'Find answers in our documentation',
       actionText: 'Browse Articles',
       onClick: () => setActiveTab('knowledge'),
-      color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+      color: 'bg-[#2E7D7D]/10 text-[#2E7D7D]',
     },
     {
       icon: <Users size={24} />,
@@ -144,8 +141,8 @@ const Support = () => {
       description: 'Ask the community for help',
       actionText: 'Visit Forum',
       onClick: () => console.log('Visit Forum'),
-      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-    }
+      color: 'bg-[#2E7D7D]/10 text-[#2E7D7D]',
+    },
   ];
 
   const contactOptions = [
@@ -154,14 +151,14 @@ const Support = () => {
       title: 'Email Support',
       details: 'support@mutsynhub.com',
       actionText: 'Send Email',
-      href: 'mailto:support@mutsynhub.com'
+      href: 'mailto:support@mutsynhub.com',
     },
     {
       icon: <Phone size={20} />,
       title: 'Phone Support',
       details: '+1 (800) 123-4567',
       actionText: 'Call Now',
-      href: 'tel:+18001234567'
+      href: 'tel:+18001234567',
     },
     {
       icon: <MessageSquare size={20} />,
@@ -169,8 +166,8 @@ const Support = () => {
       details: 'Available around the clock',
       actionText: 'Start Chat',
       href: '#',
-      onClick: () => setIsChatOpen(true)
-    }
+      onClick: () => setIsChatOpen(true),
+    },
   ];
 
   const systemStatus = [
@@ -179,233 +176,221 @@ const Support = () => {
     { service: 'Dashboard & Analytics', status: 'degraded', lastUpdated: '2025-07-24T11:15:00Z' },
     { service: 'Authentication', status: 'operational', lastUpdated: '2025-07-24T08:20:00Z' },
     { service: 'Integration Connectors', status: 'maintenance', lastUpdated: '2025-07-24T07:00:00Z' },
-    { service: 'Notification System', status: 'outage', lastUpdated: '2025-07-24T12:05:00Z' }
+    { service: 'Notification System', status: 'outage', lastUpdated: '2025-07-24T12:05:00Z' },
   ];
 
   const faqs = [
     {
       question: 'How do I reset my password?',
-      answer: 'You can reset your password by clicking the "Forgot Password" link on the login page. You will receive an email with instructions to reset your password.'
+      answer: 'You can reset your password by clicking the "Forgot Password" link on the login page. You will receive an email with instructions to reset your password.',
     },
     {
       question: 'What data sources do you support?',
-      answer: 'We support a wide range of data sources including SQL databases, NoSQL databases, cloud storage services, and popular SaaS applications. Check our integrations page for a complete list.'
+      answer: 'We support a wide range of data sources including SQL databases, NoSQL databases, cloud storage services, and popular SaaS applications. Check our integrations page for a complete list.',
     },
     {
       question: 'How often is data synced?',
-      answer: 'Data sync frequency depends on your subscription plan. Free plans sync every 24 hours, while paid plans can sync as frequently as every 15 minutes.'
+      answer: 'Data sync frequency depends on your subscription plan. Free plans sync every 24 hours, while paid plans can sync as frequently as every 15 minutes.',
     },
     {
       question: 'Can I use MUTSYNCHUB with my custom API?',
-      answer: 'Yes, we provide a flexible API integration framework that allows you to connect to any REST or GraphQL API. Our documentation includes detailed guides for custom integrations.'
+      answer: 'Yes, we provide a flexible API integration framework that allows you to connect to any REST or GraphQL API. Our documentation includes detailed guides for custom integrations.',
     },
     {
       question: 'How secure is my data?',
-      answer: 'We take security seriously. All data is encrypted in transit and at rest, and we comply with industry-standard security certifications including SOC 2 and ISO 27001.'
-    }
+      answer: 'We take security seriously. All data is encrypted in transit and at rest, and we comply with industry-standard security certifications including SOC 2 and ISO 27001.',
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900">
-      <div className="container mx-auto px-4 py-12">
-        <Breadcrumb items={[
-          { name: 'Home', href: '/' },
-          { name: 'Support', href: '/support' }
-        ]} />
+    <ProtectedRoute requiredRole="user">
+      <div className="min-h-screen bg-[#1E2A44] text-white font-inter">
+        <div className="max-w-7xl mx-auto px-6 py-10">
+          <Breadcrumb items={[{ name: 'Home', href: '/' }, { name: 'Support', href: '/support' }]} />
 
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 mb-4"
-          >
-             Support Center
-          </motion.h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
-            Premium support services for your business-critical operations. Our experts are here to help 24/7.
-          </p>
-        </div>
-
-        {/* Support Channels */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {supportChannels.map((channel, index) => (
-            <SupportChannelCard key={index} {...channel} />
-          ))}
-        </div>
-
-        {/* Main Content Area */}
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Column - Contact and Status */}
-          <div className="lg:w-1/3">
-            {/* Contact Options */}
-            <div className="bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900 rounded-xl shadow-xl p-6 mb-8">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Contact Support</h2>
-              <div className="space-y-4">
-                {contactOptions.map((option, index) => (
-                  <ContactOption key={index} {...option} />
-                ))}
-              </div>
-            </div>
-
-            {/* System Status */}
-            <div className="bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900 rounded-xl shadow-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">System Status</h2>
-              <div className="space-y-4">
-                {systemStatus.map((system, index) => (
-                  <SystemStatusCard
-                    key={index}
-                    service={system.service}
-                    status={system.status as 'operational' | 'degraded' | 'maintenance' | 'outage'}
-                    lastUpdated={system.lastUpdated}
-                  />
-                ))}
-              </div>
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Status Legend:</span>{' '}
-                  <span className="inline-flex items-center gap-1"><CheckCircle2 size={14} className="text-green-500" /> Operational</span>{' '}
-                  <span className="inline-flex items-center gap-1"><AlertCircle size={14} className="text-yellow-500" /> Degraded</span>{' '}
-                  <span className="inline-flex items-center gap-1"><Wrench size={14} className="text-blue-500" /> Maintenance</span>{' '}
-                  <span className="inline-flex items-center gap-1"><XCircle size={14} className="text-red-500" /> Outage</span>
-                </p>
-              </div>
-            </div>
+          {/* Hero Section */}
+          <div className="text-center mb-12">
+            <h1 className="text-3xl font-bold mb-4">Support Center</h1>
+            <p className="text-base text-gray-400 max-w-3xl mx-auto mb-8">
+              Premium support services for your business-critical operations. Our experts are here to help 24/7.
+            </p>
           </div>
 
-          {/* Right Column - Tickets/Knowledge Base */}
-          <div className="lg:w-2/3">
-            {/* Tab Navigation */}
-            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-              <button
-                className={`py-3 px-4 font-medium text-sm border-b-2 ${
-                  activeTab === 'tickets'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-                onClick={() => setActiveTab('tickets')}
-              >
-                My Support Tickets
-              </button>
-              <button
-                className={`py-3 px-4 font-medium text-sm border-b-2 ${
-                  activeTab === 'knowledge'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-                onClick={() => setActiveTab('knowledge')}
-              >
-                Knowledge Base
-              </button>
-              <button
-                className={`py-3 px-4 font-medium text-sm border-b-2 ${
-                  activeTab === 'status'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-                onClick={() => setActiveTab('status')}
-              >
-                System Status
-              </button>
+          {/* Support Channels */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {supportChannels.map((channel, index) => (
+              <SupportChannelCard key={index} {...channel} />
+            ))}
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Left Column - Contact and Status */}
+            <div className="lg:w-1/3">
+              {/* Contact Options */}
+              <div className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 mb-8">
+                <h2 className="text-xl font-semibold text-[#2E7D7D] mb-4">Contact Support</h2>
+                <div className="space-y-4">
+                  {contactOptions.map((option, index) => (
+                    <ContactOption key={index} {...option} />
+                  ))}
+                </div>
+              </div>
+
+              {/* System Status */}
+              <div className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-semibold text-[#2E7D7D] mb-4">System Status</h2>
+                <div className="space-y-4">
+                  {systemStatus.map((system, index) => (
+                    <SystemStatusCard
+                      key={index}
+                      service={system.service}
+                      status={system.status as 'operational' | 'degraded' | 'maintenance' | 'outage'}
+                      lastUpdated={system.lastUpdated}
+                    />
+                  ))}
+                </div>
+                <div className="mt-6 pt-4 border-t border-gray-600">
+                  <p className="text-sm text-gray-500">
+                    <span className="font-medium">Status Legend:</span>{' '}
+                    <span className="inline-flex items-center gap-1"><CheckCircle2 size={14} className="text-green-500" /> Operational</span>{' '}
+                    <span className="inline-flex items-center gap-1"><AlertCircle size={14} className="text-yellow-500" /> Degraded</span>{' '}
+                    <span className="inline-flex items-center gap-1"><Wrench size={14} className="text-blue-500" /> Maintenance</span>{' '}
+                    <span className="inline-flex items-center gap-1"><XCircle size={14} className="text-red-500" /> Outage</span>
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* Tab Content */}
-            <div className="bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900 rounded-xl shadow-xl overflow-hidden">
-              {activeTab === 'tickets' && (
-                <div>
-                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">My Support Tickets</h3>
-                    <button className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                      <Plus size={16} /> New Ticket
-                    </button>
-                  </div>
+            {/* Right Column - Tickets/Knowledge Base */}
+            <div className="lg:w-2/3">
+              {/* Tab Navigation */}
+              <div className="flex border-b border-gray-600 mb-6">
+                <button
+                  className={`py-3 px-4 font-medium text-sm border-b-2 ${
+                    activeTab === 'tickets'
+                      ? 'border-[#2E7D7D] text-[#2E7D7D]'
+                      : 'border-transparent text-gray-400 hover:text-gray-300'
+                  }`}
+                  onClick={() => setActiveTab('tickets')}
+                >
+                  My Support Tickets
+                </button>
+                <button
+                  className={`py-3 px-4 font-medium text-sm border-b-2 ${
+                    activeTab === 'knowledge'
+                      ? 'border-[#2E7D7D] text-[#2E7D7D]'
+                      : 'border-transparent text-gray-400 hover:text-gray-300'
+                  }`}
+                  onClick={() => setActiveTab('knowledge')}
+                >
+                  Knowledge Base
+                </button>
+                <button
+                  className={`py-3 px-4 font-medium text-sm border-b-2 ${
+                    activeTab === 'status'
+                      ? 'border-[#2E7D7D] text-[#2E7D7D]'
+                      : 'border-transparent text-gray-400 hover:text-gray-300'
+                  }`}
+                  onClick={() => setActiveTab('status')}
+                >
+                  System Status
+                </button>
+              </div>
 
-                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {isLoading ? (
-                      <div className="p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                        <p className="mt-4 text-gray-500 dark:text-gray-400">Loading your support tickets...</p>
-                      </div>
-                    ) : tickets.length === 0 ? (
-                      <div className="p-12 text-center">
-                        <p className="text-gray-500 dark:text-gray-400">No support tickets found.</p>
-                        <button className="mt-4 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
-                          Create your first ticket
-                        </button>
-                      </div>
-                    ) : (
-                      tickets.map(ticket => (
-                        <SupportTicketCard key={ticket.id} ticket={ticket} />
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'knowledge' && <KnowledgeBaseSearch />}
-
-              {activeTab === 'status' && (
-                <div className="p-6">
-                  <div className="mb-6">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-green-100 dark:bg-green-900/30 rounded-lg p-2 text-green-600 dark:text-green-300">
-                        <CheckCircle2 size={24} />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">All Systems Operational</h3>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">Last updated on July 24, 2025</p>
-                      </div>
+              {/* Tab Content */}
+              <div className="bg-[#2E7D7D]/10 rounded-xl shadow-lg overflow-hidden">
+                {activeTab === 'tickets' && (
+                  <div>
+                    <div className="px-6 py-4 border-b border-gray-600 flex justify-between items-center">
+                      <h3 className="text-lg font-medium text-white">My Support Tickets</h3>
+                      <button className="flex items-center gap-1 bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        <Plus size={16} /> New Ticket
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-3">Component Status</h3>
-                    <div className="space-y-3">
-                      {systemStatus.map((system, index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            {system.status === 'operational' && <CheckCircle2 size={16} className="text-green-500" />}
-                            {system.status === 'degraded' && <AlertCircle size={16} className="text-yellow-500" />}
-                            {system.status === 'maintenance' && <Wrench size={16} className="text-blue-500" />}
-                            {system.status === 'outage' && <XCircle size={16} className="text-red-500" />}
-                            <span className="text-gray-700 dark:text-gray-300">{system.service}</span>
-                          </div>
-                          <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
-                            system.status === 'operational'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                              : system.status === 'degraded'
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                : system.status === 'maintenance'
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                          }`}>
-                            {system.status.charAt(0).toUpperCase() + system.status.slice(1)}
-                          </span>
+                    <div className="divide-y divide-gray-600">
+                      {isLoading ? (
+                        <div className="p-12 text-center">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E7D7D] mx-auto"></div>
+                          <p className="mt-4 text-gray-500">Loading your support tickets...</p>
                         </div>
-                      ))}
+                      ) : tickets.length === 0 ? (
+                        <div className="p-12 text-center">
+                          <p className="text-gray-500">No support tickets found.</p>
+                          <button className="mt-4 text-[#2E7D7D] hover:text-[#2E7D7D]/80 font-medium">
+                            Create your first ticket
+                          </button>
+                        </div>
+                      ) : (
+                        tickets.map((ticket) => <SupportTicketCard key={ticket.id} ticket={ticket} />)
+                      )}
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
 
-            {/* FAQ Section */}
-            <div className="mt-8">
-              <div className="bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900 rounded-xl shadow-xl">
-                <div className="p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Frequently Asked Questions</h2>
-                  <FaqAccordion faqs={faqs} />
+                {activeTab === 'knowledge' && <KnowledgeBaseSearch />}
+
+                {activeTab === 'status' && (
+                  <div className="p-6">
+                    <div className="mb-6">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="bg-[#2E7D7D]/20 rounded-lg p-2 text-[#2E7D7D]">
+                          <CheckCircle2 size={24} />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-white">All Systems Operational</h3>
+                          <p className="text-gray-500 text-sm">Last updated on July 24, 2025</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t border-gray-600 pt-4">
+                      <h3 className="font-medium text-white mb-3">Component Status</h3>
+                      <div className="space-y-3">
+                        {systemStatus.map((system, index) => (
+                          <div key={index} className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              {system.status === 'operational' && <CheckCircle2 size={16} className="text-green-500" />}
+                              {system.status === 'degraded' && <AlertCircle size={16} className="text-yellow-500" />}
+                              {system.status === 'maintenance' && <Wrench size={16} className="text-blue-500" />}
+                              {system.status === 'outage' && <XCircle size={16} className="text-red-500" />}
+                              <span className="text-gray-300">{system.service}</span>
+                            </div>
+                            <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
+                              system.status === 'operational'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                : system.status === 'degraded'
+                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                  : system.status === 'maintenance'
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                    : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                            }`}>
+                              {system.status.charAt(0).toUpperCase() + system.status.slice(1)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* FAQ Section */}
+              <div className="mt-8">
+                <div className="bg-[#2E7D7D]/10 rounded-xl shadow-lg">
+                  <div className="p-6">
+                    <h2 className="text-xl font-bold text-[#2E7D7D] mb-6">Frequently Asked Questions</h2>
+                    <FaqAccordion faqs={faqs} />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Live Chat Widget */}
-      <LiveChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-    </div>
+        {/* Live Chat Widget */}
+        <LiveChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      </div>
+    </ProtectedRoute>
   );
 };
 

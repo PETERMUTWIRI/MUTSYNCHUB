@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/Switch';
+import Switch from '@/components/ui/Switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getProfile, updateProfile, getTeamMembers, removeTeamMember, getNotificationSettings, updateNotificationSettings } from '@/lib/user';
 import Spinner from '@/components/ui/Spinner';
@@ -214,7 +214,7 @@ const Profile: React.FC = () => {
             <Switch
               id="product-updates"
               checked={notificationSettings?.['product-updates'] || false}
-              onCheckedChange={checked => handleNotificationChange('product-updates', checked)}
+              onCheckedChange={(checked: boolean) => handleNotificationChange('product-updates', checked)}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -222,7 +222,7 @@ const Profile: React.FC = () => {
             <Switch
               id="billing-updates"
               checked={notificationSettings?.['billing-updates'] || false}
-              onCheckedChange={checked => handleNotificationChange('billing-updates', checked)}
+              onCheckedChange={(checked: boolean) => handleNotificationChange('billing-updates', checked)}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -230,7 +230,7 @@ const Profile: React.FC = () => {
             <Switch
               id="support-updates"
               checked={notificationSettings?.['support-updates'] || false}
-              onCheckedChange={checked => handleNotificationChange('support-updates', checked)}
+              onCheckedChange={(checked: boolean) => handleNotificationChange('support-updates', checked)}
             />
           </div>
         </CardContent>

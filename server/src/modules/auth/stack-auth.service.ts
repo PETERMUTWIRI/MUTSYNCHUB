@@ -1,56 +1,46 @@
-import jose from 'jose';
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-
-export interface StackAuthUser {
-  userId: string;
-  email: string;
-  name: string;
-}
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import * as jose from 'jose';
 
 @Injectable()
 export class StackAuthService {
   private readonly logger = new Logger(StackAuthService.name);
-  private jwks: ReturnType<typeof jose.createRemoteJWKSet>;
+  private readonly jwks;
 
-  constructor(private configService: ConfigService) {
-    const projectId = this.configService.get<string>('NEXT_PUBLIC_STACK_PROJECT_ID');
-    if (!projectId) {
-      this.logger.error('Stack Auth project ID not configured');
-      throw new Error('Stack Auth project ID not configured');
-    }
-
-    try {
-      this.jwks = jose.createRemoteJWKSet(
-        new URL(`https://api.stack-auth.com/api/v1/projects/${projectId}/.well-known/jwks.json`)
-      );
-      this.logger.log('Stack Auth service initialized successfully');
-    } catch (error) {
-      this.logger.error('Failed to initialize Stack Auth service', error);
-      throw error;
-    }
+  constructor() {
+    // Use project-specific JWKS endpoint for Stack Auth
+    this.jwks = jose.createRemoteJWKSet(
+      new URL('https://api.stack-auth.com/api/v1/projects/2625e66d-c556-4919-8aa1-7774c043c0e9/.well-known/jwks.json')
+    );
   }
 
   async verifyToken(token: string): Promise<StackAuthUser> {
     try {
+      // Only verify the JWT signature and decode payload
       const { payload } = await jose.jwtVerify(token, this.jwks);
-      
-      if (!payload.sub || !payload.email) {
-        this.logger.warn('Token payload missing required fields');
+      console.log('JWT Payload:', payload);
+
+      if (!payload.sub) {
+        this.logger.warn('Token payload missing sub field');
         throw new UnauthorizedException('Invalid token payload');
       }
 
       const user: StackAuthUser = {
         userId: payload.sub,
-        email: payload.email as string,
-        name: payload.name as string || '',
+        email: payload.email as string | undefined, // Optional
+        name: payload.name as string | undefined,  // Optional
       };
 
-      this.logger.debug(`Token verified for user: ${user.email}`);
+      this.logger.debug(`Token verified for user: ${user.userId}`);
       return user;
     } catch (error) {
       this.logger.error('Token verification failed', error instanceof Error ? error.message : 'Unknown error');
       throw new UnauthorizedException('Invalid token');
     }
   }
+}
+
+export interface StackAuthUser {
+  userId: string;
+  email?: string;
+  name?: string;
 }

@@ -1,31 +1,35 @@
+// src/app/sign-in/page.tsx
 'use client';
 
-import { CredentialSignUp, OAuthButton } from '@stackframe/stack';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { CredentialSignIn, OAuthButton } from '@stackframe/stack';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PostLoginRedirect } from '@/components/PostLoginRedirect';
 import { useUser } from '@stackframe/stack';
 
-export default function SignUpPage() {
-  const router = useRouter();
+export default function SignInPage() {
   const user = useUser();
 
   if (user) {
     return <PostLoginRedirect />;
   }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F7FAFC] dark:bg-[#1E2A44]">
       <Card className="w-full max-w-md border-[#E2E8F0] dark:border-[#2E7D7D]/20 shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-[#1E2A44] dark:text-[#E2E8F0] text-center">
-            Sign Up for MutSyncHub
+            Sign In to MutSyncHub
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Google OAuth Sign-up Button */}
-          <OAuthButton provider="google" type="sign-up" />
-          {/* Divider */}
+          <OAuthButton provider="google" type='sign-in'/>
+            
+          <span className="bg-[#F7FAFC] dark:bg-[#1E2A44] px-2 text-gray-500">
+                 Sign in with Google
+          </span>
+           
+         
+
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-[#E2E8F0] dark:border-[#2E7D7D]/20" />
@@ -37,17 +41,9 @@ export default function SignUpPage() {
             </div>
           </div>
 
-          {/* Credential Sign-up Form */}
-          <CredentialSignUp
-            noPasswordRepeat
+          <CredentialSignIn
             
           />
-          <span
-                className="underline text-blue-600 cursor-pointer"
-                onClick={() => router.replace('/sign-in')}
-              >
-                Go to Sign In
-          </span>
         </CardContent>
       </Card>
     </div>

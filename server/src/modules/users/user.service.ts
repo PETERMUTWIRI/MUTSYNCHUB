@@ -22,7 +22,6 @@ export type EnrichedUserProfile = {
   lastLoginAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  // Auth sync fields
   auth_user_id: string;
   auth_user_name: string | null;
   auth_user_email: string | null;
@@ -40,7 +39,7 @@ export class UserService {
         us.name as auth_user_name,
         us.email as auth_user_email
       FROM 
-        "public"."user_profiles" up
+        "public"."UserProfile" up
       LEFT JOIN 
         neon_auth.users_sync us ON up."userId" = us.id
       WHERE 
@@ -57,8 +56,6 @@ export class UserService {
     orderBy?: Prisma.UserProfileOrderByWithRelationInput;
   }): Promise<EnrichedUserProfile[]> {
     const { skip, take, where, orderBy } = params || {};
-    
-    // Convert Prisma where conditions to SQL
     let whereClause = 'WHERE us.deleted_at IS NULL';
     if (where?.orgId) {
       whereClause += ` AND up."orgId" = '${where.orgId}'`;
@@ -67,7 +64,6 @@ export class UserService {
       whereClause += ` AND up.status = '${where.status}'`;
     }
 
-    // Handle ordering
     let orderByClause = 'ORDER BY up."createdAt" DESC';
     if (orderBy) {
       const field = Object.keys(orderBy)[0];
@@ -75,7 +71,6 @@ export class UserService {
       orderByClause = `ORDER BY up."${field}" ${direction}`;
     }
 
-    // Add pagination
     let limitOffset = '';
     if (take !== undefined) {
       limitOffset = `LIMIT ${take}`;
@@ -91,7 +86,7 @@ export class UserService {
         us.name as auth_user_name,
         us.email as auth_user_email
       FROM 
-        "public"."user_profiles" up
+        "public"."UserProfile" up
       LEFT JOIN 
         neon_auth.users_sync us ON up."userId" = us.id
       ${Prisma.raw(whereClause)}
@@ -103,7 +98,6 @@ export class UserService {
   }
 
   async createUserProfile(userId: string, data: Prisma.UserProfileCreateInput) {
-    // First verify the user exists in users_sync
     const authUser = await this.prisma.$queryRaw`
       SELECT id, email FROM neon_auth.users_sync 
       WHERE id = ${userId} AND deleted_at IS NULL
@@ -113,7 +107,6 @@ export class UserService {
       throw new Error('User not found in auth system');
     }
 
-    // Create the user profile
     return this.prisma.userProfile.create({
       data: {
         ...data,
@@ -129,7 +122,6 @@ export class UserService {
     });
   }
 
-  // Helper method to get user with organization data
   async getUserWithOrganization(userId: string) {
     const result = await this.prisma.$queryRaw`
       SELECT 
@@ -140,7 +132,7 @@ export class UserService {
         org.name as org_name,
         org.subdomain as org_subdomain
       FROM 
-        "public"."user_profiles" up
+        "public"."UserProfile" up
       LEFT JOIN 
         neon_auth.users_sync us ON up."userId" = us.id
       LEFT JOIN

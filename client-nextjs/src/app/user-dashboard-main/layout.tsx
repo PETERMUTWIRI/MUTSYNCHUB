@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import React from 'react';
 import DashboardSidebar from '@/components/user/DashboardSidebar';
-import ProtectedRoute from './ProtectedRoute';
-import { useNeonUser } from '@/context/useNeonUser';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import UserLayout from '@/components/UserLayout';
 
 export default function UserDashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, loading } = useNeonUser();
   return (
-    <ProtectedRoute>
-      <UserLayout user={user}>
-        {children}
+    <ProtectedRoute requiredRole="user">
+      <UserLayout>
+        <div className="flex min-h-screen w-full bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800">
+          <DashboardSidebar />
+          <main className="flex-1 p-8">{children}</main>
+        </div>
       </UserLayout>
     </ProtectedRoute>
   );
