@@ -1,8 +1,11 @@
+
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@stackframe/stack';
+import { motion } from 'framer-motion';
+import { ensureAndFetchUserProfile } from '@/app/api/get-user-role/action';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,97 +13,93 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const user = useUser({ or: 'redirect' } as any);
+  const user = useUser({ or: 'redirect' });
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check cached user data with expiration
   useEffect(() => {
-    const cachedUserData = localStorage.getItem('userSession');
-    if (cachedUserData) {
-      const parsedData = JSON.parse(cachedUserData);
-      // Check if cache is still valid
-      if (parsedData.expiresAt && parsedData.expiresAt > Date.now()) {
-        setRole(parsedData.role?.toLowerCase());
-        setLoading(false);
-      } else {
-        // Clear expired cache
-        localStorage.removeItem('userSession');
-      }
-    }
-  }, []);
-
-  // Fetch user role from backend
-  useEffect(() => {
-    let mounted = true;
-
-    async function fetchUserData() {
-      if (!user || !mounted) return;
-
+    const fetchRole = async () => {
+      if (!user) return;
       try {
-        console.log('ProtectedRoute: Attempting to get accessToken');
-        const { accessToken } = await user.getAuthJson();
-        console.log('ProtectedRoute: Access token retrieved:', accessToken ? 'Present' : 'Missing');
-        const fetchUrl = '/api/users/me';
-        const res = await fetch(fetchUrl, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'x-stack-access-token': accessToken ?? '',
-            'Authorization': `Bearer ${accessToken ?? ''}`,
-            'Accept': 'application/json',
-          },
-        });
-        const responseText = await res.text();
-        console.debug('ProtectedRoute:', fetchUrl, 'status=', res.status, 'response=', responseText);
-        if (!mounted) return;
-        if (!res.ok) {
-          throw new Error(`Backend error ${res.status}: ${responseText}`);
+        const cachedSession = localStorage.getItem('userSession');
+        if (cachedSession) {
+          const parsed = JSON.parse(cachedSession);
+          if (parsed.expiresAt && parsed.expiresAt > Date.now()) {
+            setRole(parsed.role?.toLowerCase() || 'user');
+            setLoading(false);
+            return;
+          }
+          localStorage.removeItem('userSession');
         }
-        const ct = res.headers.get('content-type') || '';
-        const json = ct.includes('application/json') ? JSON.parse(responseText) : responseText;
 
-        const fetchedRole = json?.role?.toLowerCase();
-        if (mounted) {
-          setRole(fetchedRole);
-          // Cache user data with expiration
-          localStorage.setItem('userSession', JSON.stringify({
-            role: fetchedRole,
-            expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour
-          }));
-        }
-      } catch (err: any) {
-        console.error('ProtectedRoute Error:', err.message, err.stack);
-        if (mounted) setError(err.message || String(err));
-        localStorage.removeItem('userSession');
+        const { role, orgId } = await ensureAndFetchUserProfile();
+        const fetchedRole = role.toLowerCase() || 'user';
+        setRole(fetchedRole);
+        localStorage.setItem('userSession', JSON.stringify({
+          role: fetchedRole,
+          orgId,
+          expiresAt: Date.now() + 60 * 60 * 1000,
+        }));
+      } catch (err) {
+        console.error('ProtectedRoute: Failed to fetch role', err);
+        setError('Failed to authenticate');
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
-    }
-
-    if (user && !role) {
-      fetchUserData();
-    }
-
-    return () => {
-      mounted = false;
     };
-  }, [user, role]);
 
-  // Role-based access control
+    fetchRole();
+  }, [user]);
+
   useEffect(() => {
     if (loading || !user || !role) return;
     if (requiredRole && role !== requiredRole) {
-      if (role === 'admin') router.replace('/admin-dashboard');
-      else if (role === 'user') router.replace('/user-dashboard-main');
-      else router.replace('/');
+      if (role === 'admin') {
+        router.replace('/admin-dashboard');
+      } else if (role === 'user') {
+        router.replace('/resources');
+      } else {
+        router.replace('/');
+      }
     }
   }, [user, loading, role, requiredRole, router]);
 
-  if (loading) return <div className="text-center text-gray-400">Loading...</div>;
-  if (error) return <div className="text-center text-red-400">{error}</div>;
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-slate-950 flex items-center justify-center"
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto"></div>
+          <p className="mt-4 text-gray-300 font-sans text-lg">Authenticating...</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-slate-950 flex items-center justify-center"
+      >
+        <div className="text-center bg-gray-800 rounded-lg p-8 border border-gray-700">
+          <p className="text-red-400 font-sans text-lg">{error}</p>
+          <button
+            onClick={() => router.push('/')}
+            className="mt-4 bg-cyan-600 text-white hover:bg-cyan-700 px-6 py-2 rounded-lg font-sans"
+          >
+            Return to Home
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
 
   return <>{children}</>;
 }

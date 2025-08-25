@@ -1,0 +1,46 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public"]
+}
+
+model UserProfile {
+  id                  String         @id @default(uuid())
+  userId              String         @unique
+  orgId               String
+  role                String         @default("USER")
+  status              String         @default("ACTIVE")
+  firstName           String?
+  lastName            String?
+  mfaEnabled          Boolean        @default(false)
+  mfaSecret           String?
+  mfaPendingSecret    String?
+  mfaBackupCodes      String?
+  failedLoginAttempts Int            @default(0)
+  refreshTokenHash    String?
+  resetTokenHash      String?
+  resetTokenExpiresAt DateTime?
+  featureFlags        Json?
+  lastLoginAt         DateTime?
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+  organization        Organization   @relation(fields: [orgId], references: [id])
+
+  @@schema("public")
+}
+
+model Organization {
+  id        String    @id @default(uuid())
+  name      String
+  subdomain String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  userProfiles UserProfile[]
+
+  @@schema("public")
+}

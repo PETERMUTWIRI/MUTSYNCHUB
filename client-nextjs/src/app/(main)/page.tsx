@@ -9,38 +9,59 @@ import AnalyticsPreview from '@/components/home/AnalyticsPreview';
 import SolutionsOverview from '@/components/home/SolutionsOverview';
 import EnterpriseTrust from '@/components/home/EnterpriseTrust';
 import IndustryImpact from '@/components/home/IndustryImpact';
-
-import { PostLoginRedirect } from '@/components/PostLoginRedirect';
-import { useRoleRedirect } from '@/context/useRoleRedirect';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function Home() {
-  const { loading } = useRoleRedirect();
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#1E2A44]">
-
-      {loading ? (
-        <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E7D7D] mx-auto"></div>
-            <p className="mt-2 text-[#2E7D7D] text-lg font-semibold">Loading...</p>
-          </div>
+      <main className="w-full">
+        <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-purple-500 min-h-screen">
+          <HeroSection />
+          <AboutSection />
+          <EnterpriseTrust />
+          <AnalyticsPreview />
+          <SolutionsOverview />
+          {/* New Explore More Section */}
+          <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-[#1E2A44] dark:text-[#E2E8F0] text-center mb-8">
+              Explore More
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white dark:bg-[#2E3A59] p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold text-[#2E7D7D] mb-4">Solutions</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Discover our full range of AI, cloud, and data solutions tailored for your business.
+                </p>
+                <Button asChild className="bg-[#2E7D7D] text-white hover:bg-[#256363]">
+                  <Link href="/solutions">View All Solutions</Link>
+                </Button>
+              </div>
+              <div className="bg-white dark:bg-[#2E3A59] p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold text-[#2E7D7D] mb-4">Resources</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Access documentation, guides, and tutorials to get started with MutSyncHub.
+                </p>
+                <Button asChild className="bg-[#2E7D7D] text-white hover:bg-[#256363]">
+                  <Link href="/resources">Explore Resources</Link>
+                </Button>
+              </div>
+              <div className="bg-white dark:bg-[#2E3A59] p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold text-[#2E7D7D] mb-4">Support</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Get help from our support team or check our community forums.
+                </p>
+                <Button asChild className="bg-[#2E7D7D] text-white hover:bg-[#256363]">
+                  <Link href="/what-we-do-support">Visit Support Center</Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+          <IndustryImpact />
+          <FAQSection />
+          <CTASection />
         </div>
-      ) : (
-        <main className="w-full">
-          <PostLoginRedirect />
-          <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-purple-500 min-h-screen">
-            <HeroSection />
-            <AboutSection />
-            <EnterpriseTrust />
-            <AnalyticsPreview />
-            <SolutionsOverview />
-            <IndustryImpact />
-            <FAQSection />
-            <CTASection />
-          </div>
-        </main>
-      )}
+      </main>
     </div>
   );
 }

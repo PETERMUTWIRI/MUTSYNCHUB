@@ -1,25 +1,28 @@
-"use client";
-import React, { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import emailjs from 'emailjs-com';
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { X, Calendar, Check, ChevronDown, ChevronUp, ArrowRight, Star, Briefcase, Cpu, Cloud, Database, Bot, Globe, Code2, LayoutGrid } from "lucide-react";
-import { DatePicker } from "@/components/ui/datepicker";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { X, Calendar, Check, ChevronDown, ChevronUp, ArrowRight, Star, Briefcase, Cpu, Cloud, Database, Bot, Globe, Code2, LayoutGrid } from 'lucide-react';
+import { DatePicker } from '@/components/ui/datepicker';
+import Link from 'next/link';
+import Image from 'next/image';
 
-
-// Service categories for easy navigation
+// Service categories
 const SERVICE_CATEGORIES = [
-  { id: "ai", name: "AI & Automation", icon: <Cpu size={20} /> },
-  { id: "cloud", name: "Cloud Solutions", icon: <Cloud size={20} /> },
-  { id: "data", name: "Data Engineering", icon: <Database size={20} /> },
-  { id: "chatbots", name: "Chatbots", icon: <Bot size={20} /> },
-  { id: "web", name: "Web Development", icon: <Globe size={20} /> },
-  { id: "integrations", name: "Integrations", icon: <Code2 size={20} /> },
-  { id: "all", name: "All Services", icon: <LayoutGrid size={20} /> },
+  { id: 'ai', name: 'AI & Automation', icon: <Cpu size={20} /> },
+  { id: 'cloud', name: 'Cloud Solutions', icon: <Cloud size={20} /> },
+  { id: 'data', name: 'Data Engineering', icon: <Database size={20} /> },
+  { id: 'chatbots', name: 'Chatbots', icon: <Bot size={20} /> },
+  { id: 'web', name: 'Web Development', icon: <Globe size={20} /> },
+  { id: 'integrations', name: 'Integrations', icon: <Code2 size={20} /> },
+  { id: 'all', name: 'All Services', icon: <LayoutGrid size={20} /> },
 ];
 
-// Enhanced solutions data with 2025-focused services
+// Solutions data (unchanged for brevity)
 const SOLUTIONS = [
   {
     id: "analytics-demo",
@@ -433,50 +436,43 @@ const CONSULTATION_TIMES = [
   "9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"
 ];
 
-export default function SolutionsPage() {
+export default function ResourcesPage() {
   const searchParams = useSearchParams();
   const [selectedCaseStudy, setSelectedCaseStudy] = useState<any>(null);
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [visibleSolutions, setVisibleSolutions] = useState(6);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [formStep, setFormStep] = useState(1);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [consultationDate, setConsultationDate] = useState<Date | null>(null);
-  const [consultationTime, setConsultationTime] = useState("");
+  const [consultationTime, setConsultationTime] = useState('');
   const [userDetails, setUserDetails] = useState({
-    name: "",
-    email: "",
-    company: "",
-    phone: "",
-    message: ""
+    name: '', email: '', company: '', phone: '', message: '',
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [expandedSolution, setExpandedSolution] = useState<string | null>(null);
   const solutionsRef = useRef<HTMLDivElement>(null);
 
-  // Auto-expand solution if ?id=solutionId is present
+  // Auto-expand solution
   useEffect(() => {
-    const solutionId = searchParams.get("id");
+    const solutionId = searchParams.get('id');
     if (solutionId) {
       setExpandedSolution(solutionId);
       setTimeout(() => {
-        solutionsRef.current?.scrollIntoView({ behavior: "smooth" });
+        solutionsRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 200);
     }
   }, [searchParams]);
 
-  // Filter solutions by category
-  const filteredSolutions = selectedCategory === "all"
+  // Filter solutions
+  const filteredSolutions = selectedCategory === 'all'
     ? SOLUTIONS
     : SOLUTIONS.filter(s => s.category === selectedCategory);
-
   const visibleSolutionsData = filteredSolutions.slice(0, visibleSolutions);
 
-
-  // Listen for CTA event to preselect Analytics Demo
+  // Handle CTA preselect
   useEffect(() => {
     window.scrollTo(0, 0);
-
     const handler = (e: any) => {
       if (e?.detail?.preselect === 'analytics-demo') {
         setIsFormVisible(true);
@@ -520,40 +516,35 @@ export default function SolutionsPage() {
   };
 
   const validateEmail = (email: string) => {
-    // Simple email regex
     return /^\S+@\S+\.\S+$/.test(email);
   };
 
   const validatePhone = (phone: string) => {
-    // Accepts numbers, spaces, dashes, parentheses, and plus
     return /^([+]?\d{1,3})?[-. (]*\d{3}[-. )]*\d{3}[-. ]*\d{4,}$/.test(phone.trim());
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Only submit if on contact info step
     if (formStep !== 3) return;
 
-    // Validate email
     if (!validateEmail(userDetails.email)) {
       alert('Please enter a valid email address.');
       return;
     }
-    // Validate phone (optional, only if provided)
     if (userDetails.phone && !validatePhone(userDetails.phone)) {
       alert('Please enter a valid phone number.');
       return;
     }
 
     const templateParams = {
-      services: selectedServices.map(id => SOLUTIONS.find(s => s.id === id)?.title).join(", "),
-      consultation_date: consultationDate ? consultationDate.toLocaleDateString() : "",
+      services: selectedServices.map(id => SOLUTIONS.find(s => s.id === id)?.title).join(', '),
+      consultation_date: consultationDate ? consultationDate.toLocaleDateString() : '',
       consultation_time: consultationTime,
       name: userDetails.name,
       email: userDetails.email,
       company: userDetails.company,
       phone: userDetails.phone,
-      message: userDetails.message
+      message: userDetails.message,
     };
 
     try {
@@ -579,81 +570,128 @@ export default function SolutionsPage() {
     setFormStep(1);
     setSelectedServices([]);
     setConsultationDate(null);
-    setConsultationTime("");
-    setUserDetails({
-      name: "",
-      email: "",
-      company: "",
-      phone: "",
-      message: ""
-    });
+    setConsultationTime('');
+    setUserDetails({ name: '', email: '', company: '', phone: '', message: '' });
     setFormSubmitted(false);
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 text-white min-h-screen">
+    <div className="min-h-screen bg-slate-950 text-gray-100 font-sans">
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center opacity-10"></div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="relative z-10"
-        >
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300">
-            Mutsynchub Solutions
-          </h1>
-          <p className="text-xl text-blue-200 max-w-3xl mx-auto mb-8">
-            Transform your business with cutting-edge technology solutions ,you imagine we  create
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-8 py-6 text-lg font-semibold rounded-xl shadow-lg border border-cyan-500 text-white"
-              onClick={() => setIsFormVisible(true)}
-            >
-              Request Custom Solution
-            </Button>
-            <Button
-              variant="outline"
-              className="border-cyan-500 text-cyan-400 bg-gray-800 hover:bg-cyan-500/10 hover:text-cyan-300 px-8 py-6 text-lg font-semibold rounded-xl"
-              onClick={scrollToSolutions}
-            >
-              Explore Our Solutions
-            </Button>
+      <section className="relative pt-24 pb-16 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+              MutSyncHub Resources
+            </h1>
+            <p className="mt-4 text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
+              Explore our cutting-edge solutions, case studies, and tools to transform your business with AI, cloud, and data innovation.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+              <Button
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg"
+                onClick={() => setIsFormVisible(true)}
+              >
+                Schedule a Consultation
+              </Button>
+              <Button
+                variant="outline"
+                className="border-gray-600 text-gray-200 hover:bg-gray-800 hover:text-white px-8 py-3 rounded-lg"
+                onClick={scrollToSolutions}
+              >
+                Discover Solutions
+              </Button>
+            </div>
+          </motion.div>
+          {/* Navigation Links */}
+          <div className="mt-8 flex justify-center gap-6 text-sm font-medium text-gray-400">
+            <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+            <Link href="/solutions" className="hover:text-cyan-400 transition-colors">Solutions</Link>
+            <Link href="/what-we-do-support" className="hover:text-cyan-400 transition-colors">Support</Link>
           </div>
-        </motion.div>
+        </div>
+      </section>
 
-        {/* Floating Tech Elements */}
-        <motion.div
-          className="absolute top-20 left-10 w-16 h-16 rounded-full bg-blue-500/20 blur-xl"
-          animate={{ y: [0, 15, 0] }}
-          transition={{ duration: 4, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute top-1/3 right-20 w-12 h-12 rounded-full bg-purple-500/20 blur-xl"
-          animate={{ y: [0, -15, 0] }}
-          transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
-        />
-        <motion.div
-          className="absolute bottom-20 left-1/4 w-14 h-14 rounded-full bg-cyan-500/20 blur-xl"
-          animate={{ x: [0, -20, 0] }}
-          transition={{ duration: 6, repeat: Infinity, delay: 1 }}
-        />
-      </div>
+      {/* Featured Resources Section */}
+      <section className="py-16 bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl font-bold text-gray-100 mb-8 text-center"
+          >
+            Featured Resources
+          </motion.h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-gray-800 rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow"
+            >
+              <h3 className="text-xl font-semibold text-cyan-400 mb-2">AI Transformation Guide</h3>
+              <p className="text-gray-300 mb-4">Learn how AI agents can reduce costs by 40-60% and drive innovation.</p>
+              <Button
+                variant="link"
+                className="text-cyan-400 hover:text-cyan-300 p-0"
+                asChild
+              >
+                <Link href="/resources/whitepaper-ai">Download Whitepaper</Link>
+              </Button>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-gray-800 rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow"
+            >
+              <h3 className="text-xl font-semibold text-cyan-400 mb-2">Cloud ROI Calculator</h3>
+              <p className="text-gray-300 mb-4">Estimate your savings with our cloud migration strategies.</p>
+              <Button
+                variant="link"
+                className="text-cyan-400 hover:text-cyan-300 p-0"
+                asChild
+              >
+                <Link href="/resources/roi-calculator">Try Now</Link>
+              </Button>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-gray-800 rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow"
+            >
+              <h3 className="text-xl font-semibold text-cyan-400 mb-2">Video Demo</h3>
+              <p className="text-gray-300 mb-4">Watch our analytics engine in action.</p>
+              <Button
+                variant="link"
+                className="text-cyan-400 hover:text-cyan-300 p-0"
+                asChild
+              >
+                <Link href="/resources/video-demo">Watch Video</Link>
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </section>
 
       {/* Service Categories Navigation */}
-      <div className="py-8 bg-white/5 backdrop-blur-sm sticky top-0 z-20">
+      <section className="py-8 bg-gray-900 sticky top-0 z-20 border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center gap-2 md:gap-4">
-            {SERVICE_CATEGORIES.map((category) => (
+          <div className="flex flex-wrap justify-center gap-3">
+            {SERVICE_CATEGORIES.map(category => (
               <Button
                 key={category.id}
-                variant={selectedCategory === category.id ? "default" : "ghost"}
-                className={`flex items-center gap-2 rounded-full px-4 py-3 transition-all ${
+                variant={selectedCategory === category.id ? 'default' : 'outline'}
+                className={`flex items-center gap-2 rounded-full px-4 py-2 font-medium ${
                   selectedCategory === category.id
-                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 shadow-lg"
-                    : "text-white hover:bg-white/10"
+                    ? 'bg-cyan-600 text-white'
+                    : 'border-gray-600 text-gray-200 hover:bg-gray-800'
                 }`}
                 onClick={() => {
                   setSelectedCategory(category.id);
@@ -666,103 +704,89 @@ export default function SolutionsPage() {
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Solutions Grid */}
-      <div
-        id="solutions"
-        ref={solutionsRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16"
-      >
-        <div className="text-center mb-12">
+      <section id="solutions" ref={solutionsRef} className="py-16 bg-slate-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold mb-4"
+            className="text-3xl font-bold text-gray-100 mb-4 text-center"
           >
-            {selectedCategory === "all" ? "Our Comprehensive Solutions" : `${SERVICE_CATEGORIES.find(c => c.id === selectedCategory)?.name}`}
+            {selectedCategory === 'all' ? 'Our Solutions' : SERVICE_CATEGORIES.find(c => c.id === selectedCategory)?.name}
           </motion.h2>
-          <p className="text-blue-200 max-w-2xl mx-auto">
-            Cutting-edge services designed to propel your business into the future
+          <p className="text-gray-300 text-center max-w-2xl mx-auto mb-12">
+            Discover enterprise-grade solutions designed to drive innovation and efficiency.
           </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {visibleSolutionsData.map((solution, idx) => (
-            <motion.div
-              key={`solution-${solution.id}`}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: idx * 0.1 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-b from-gray-800/50 to-gray-900/80 border border-cyan-700 rounded-2xl overflow-hidden shadow-xl"
-            >
-              <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleSolutionsData.map((solution, idx) => (
+              <motion.div
+                key={`solution-${solution.id}`}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: idx * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-gray-800 rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow border border-gray-700"
+              >
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-bold text-white">{solution.title}</h3>
-                    </div>
-                    <p className="text-blue-200 text-sm mt-1">{solution.description}</p>
+                    <h3 className="text-xl font-semibold text-gray-100">{solution.title}</h3>
+                    <p className="text-gray-300 text-sm mt-1">{solution.description}</p>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`text-cyan-400 hover:bg-cyan-500/10 border border-cyan-500 rounded-full`}
-                    onClick={() => setExpandedSolution(expandedSolution === solution.id ? null : solution.id)}
+                    className="text-gray-400 hover:text-cyan-400"
+                    onClick={() => toggleSolutionExpand(solution.id)}
                   >
                     {expandedSolution === solution.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </Button>
                 </div>
-
-                <div className={`overflow-hidden transition-all duration-500 ${expandedSolution === solution.id ? "max-h-[1000px]" : "max-h-0"}`}>
+                <div className={`overflow-hidden transition-all duration-500 ${expandedSolution === solution.id ? 'max-h-[1000px]' : 'max-h-0'}`}>
                   <div className="mt-4 pt-4 border-t border-gray-700">
-                    <h4 className="text-sm font-semibold text-blue-400 mb-2 flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-cyan-400 mb-2 flex items-center gap-2">
                       <Briefcase size={16} /> Key Services
                     </h4>
                     <ul className="text-sm text-gray-300 space-y-1">
                       {solution.services.map((service, i) => (
                         <li key={`service-${i}`} className="flex items-start">
-                          <Check size={14} className="text-green-400 mt-1 mr-2 flex-shrink-0" />
+                          <Check size={14} className="text-cyan-400 mt-1 mr-2" />
                           <span>{service}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-
                   <div className="mt-4">
-                    <h4 className="text-sm font-semibold text-blue-400 mb-2 flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-cyan-400 mb-2 flex items-center gap-2">
                       <Check size={16} /> Deliverables
                     </h4>
                     <ul className="text-sm text-gray-300 space-y-1">
                       {solution.deliverables.map((item, i) => (
                         <li key={`deliverable-${i}`} className="flex items-start">
-                          <Check size={14} className="text-green-400 mt-1 mr-2 flex-shrink-0" />
+                          <Check size={14} className="text-cyan-400 mt-1 mr-2" />
                           <span>{item}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-
                   <div className="mt-4">
-                    <h4 className="text-sm font-semibold text-blue-400 mb-2 flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-cyan-400 mb-2 flex items-center gap-2">
                       <ArrowRight size={16} /> Business Benefits
                     </h4>
                     <ul className="text-sm text-gray-300 space-y-1">
                       {solution.benefits.map((benefit, i) => (
                         <li key={`benefit-${i}`} className="flex items-start">
-                          <Check size={14} className="text-green-400 mt-1 mr-2 flex-shrink-0" />
+                          <Check size={14} className="text-cyan-400 mt-1 mr-2" />
                           <span>{benefit}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                 </div>
-
                 <Button
-                  variant="outline"
-                  className="w-full mt-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold border-none shadow-lg hover:from-cyan-600 hover:to-blue-700"
+                  className="w-full mt-6 bg-cyan-600 text-white hover:bg-cyan-700"
                   onClick={() => {
                     setIsFormVisible(true);
                     setSelectedServices([solution.id]);
@@ -770,43 +794,38 @@ export default function SolutionsPage() {
                 >
                   Request This Solution
                 </Button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Load More Solutions Button */}
-        {visibleSolutions < filteredSolutions.length && (
-          <div className="text-center mt-12">
-            <Button
-              onClick={loadMoreSolutions}
-              variant="outline"
-              className="border-cyan-500 text-cyan-400 bg-gray-800 hover:bg-cyan-500/10 hover:text-cyan-300 px-8 py-6 text-lg font-semibold rounded-xl"
-            >
-              View More Solutions
-            </Button>
+              </motion.div>
+            ))}
           </div>
-        )}
-      </div>
+          {visibleSolutions < filteredSolutions.length && (
+            <div className="text-center mt-12">
+              <Button
+                onClick={loadMoreSolutions}
+                variant="outline"
+                className="border-gray-600 text-gray-200 hover:bg-gray-800 hover:text-white px-8 py-3 rounded-lg"
+              >
+                View More Solutions
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Case Studies Section */}
-      <div className="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 py-16">
+      <section className="py-16 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-3xl md:text-4xl font-bold mb-4"
-            >
-              Success Stories
-            </motion.h2>
-            <p className="text-blue-200 max-w-2xl mx-auto">
-              Discover how we've transformed businesses with our technology solutions
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl font-bold text-gray-100 mb-4 text-center"
+          >
+            Success Stories
+          </motion.h2>
+          <p className="text-gray-300 text-center max-w-2xl mx-auto mb-12">
+            See how MutSyncHub has empowered businesses with transformative technology.
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {CASE_STUDIES.map((study, idx) => (
               <motion.div
                 key={`study-${study.id}`}
@@ -814,34 +833,30 @@ export default function SolutionsPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-gradient-to-br from-gray-800/50 to-blue-900/50 border border-gray-700 rounded-xl p-6 hover:border-cyan-500 transition-all cursor-pointer group"
+                className="bg-gray-800 rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow border border-gray-700 hover:border-cyan-600 cursor-pointer"
                 onClick={() => openCaseStudy(study)}
               >
-                <div className="h-full flex flex-col">
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-cyan-300 transition-colors">{study.title}</h3>
-                  <p className="text-blue-300 mb-4">{study.client}</p>
-                  <p className="text-gray-300 mb-4 line-clamp-3">{study.challenge}</p>
-                  <div className="mt-4">
-                    <div className="flex flex-wrap gap-2">
-                      {study.results.slice(0, 3).map((result, i) => (
-                        <span key={i} className="text-xs bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full">
-                          {result}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <Button
-                    variant="link"
-                    className="mt-auto text-cyan-400 hover:text-cyan-300 p-0 hover:underline justify-start pl-0"
-                  >
-                    Read Full Case Study →
-                  </Button>
+                <h3 className="text-xl font-semibold text-gray-100 mb-2">{study.title}</h3>
+                <p className="text-cyan-400 mb-4">{study.client}</p>
+                <p className="text-gray-300 mb-4 line-clamp-3">{study.challenge}</p>
+                <div className="flex flex-wrap gap-2">
+                  {study.results.slice(0, 3).map((result, i) => (
+                    <span key={i} className="text-xs bg-cyan-600 text-white px-3 py-1 rounded-full">
+                      {result}
+                    </span>
+                  ))}
                 </div>
+                <Button
+                  variant="link"
+                  className="mt-4 text-cyan-400 hover:text-cyan-300 p-0"
+                >
+                  Read Full Case Study →
+                </Button>
               </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Consultation Form Overlay */}
       <AnimatePresence>
@@ -857,61 +872,51 @@ export default function SolutionsPage() {
               initial={{ scale: 0.9, y: 50 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 50 }}
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative border border-gray-700"
-              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700"
+              onClick={e => e.stopPropagation()}
             >
               <button
                 onClick={() => !formSubmitted && setIsFormVisible(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
               >
                 <X size={24} />
               </button>
-
               <div className="p-8">
-                {(!formSubmitted && formStep <= 3) ? (
+                {!formSubmitted ? (
                   <>
-                    <div className="mb-8">
-                      <h2 className="text-2xl font-bold mb-2">
-                        {formStep === 1 ? "Select Services" :
-                         formStep === 2 ? "Schedule Consultation" :
-                         "Contact Information"}
-                      </h2>
-                      <p className="text-blue-300">
-                        {formStep === 1 ? "Choose the solutions you're interested in" :
-                         formStep === 2 ? "Pick a convenient time for your free consultation" :
-                         "Tell us how to reach you"}
-                      </p>
-                    </div>
-
+                    <h2 className="text-2xl font-bold text-gray-100 mb-2">
+                      {formStep === 1 ? 'Select Services' : formStep === 2 ? 'Schedule Consultation' : 'Contact Information'}
+                    </h2>
+                    <p className="text-gray-300 mb-6">
+                      {formStep === 1 ? 'Choose the solutions you’re interested in.' : formStep === 2 ? 'Pick a convenient time for your free consultation.' : 'Tell us how to reach you.'}
+                    </p>
                     <form onSubmit={handleFormSubmit}>
-                      {/* Step 1: Service Selection */}
                       {formStep === 1 && (
                         <div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                             {SOLUTIONS.slice(0, 6).map(solution => (
                               <div
                                 key={solution.id}
-                                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                                className={`p-4 rounded-lg border cursor-pointer ${
                                   selectedServices.includes(solution.id)
-                                    ? "border-cyan-500 bg-cyan-500/10"
-                                    : "border-gray-700 hover:border-cyan-400"
+                                    ? 'border-cyan-600 bg-cyan-600/10'
+                                    : 'border-gray-700 hover:border-cyan-600'
                                 }`}
                                 onClick={() => toggleServiceSelection(solution.id)}
                               >
                                 <div className="flex items-center gap-3">
                                   <div className={`p-2 rounded-lg ${
                                     selectedServices.includes(solution.id)
-                                      ? "bg-cyan-500 text-white"
-                                      : "bg-gray-700 text-gray-300"
+                                      ? 'bg-cyan-600 text-white'
+                                      : 'bg-gray-700 text-gray-300'
                                   }`}>
                                     {SERVICE_CATEGORIES.find(c => c.id === solution.category)?.icon}
                                   </div>
-                                  <h3 className="font-medium">{solution.title}</h3>
+                                  <h3 className="font-medium text-gray-100">{solution.title}</h3>
                                 </div>
                               </div>
                             ))}
                           </div>
-
                           <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-400 mb-2">
                               Additional Service Requests
@@ -920,23 +925,22 @@ export default function SolutionsPage() {
                               name="message"
                               value={userDetails.message}
                               onChange={handleInputChange}
-                              className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-600"
                               placeholder="Describe any other services you need..."
                               rows={3}
                             />
                           </div>
-
                           <div className="flex justify-between">
                             <Button
                               variant="outline"
                               onClick={() => setIsFormVisible(false)}
-                              className="border-cyan-500 text-cyan-400 bg-gray-800 hover:bg-cyan-500/10 hover:text-cyan-300 font-semibold px-6 py-3 rounded-lg"
+                              className="border-gray-600 text-gray-200 hover:bg-gray-800"
                             >
                               Cancel
                             </Button>
                             <Button
                               onClick={() => setFormStep(2)}
-                              className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:from-cyan-600 hover:to-blue-700"
+                              className="bg-cyan-600 text-white hover:bg-cyan-700"
                               disabled={selectedServices.length === 0 && !userDetails.message}
                             >
                               Continue to Schedule
@@ -944,8 +948,6 @@ export default function SolutionsPage() {
                           </div>
                         </div>
                       )}
-
-                      {/* Step 2: Schedule Consultation */}
                       {formStep === 2 && (
                         <div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -953,7 +955,7 @@ export default function SolutionsPage() {
                               <label className="block text-sm font-medium text-gray-400 mb-2">
                                 Consultation Date
                               </label>
-                              <div className="bg-gray-700/50 border border-gray-600 rounded-lg">
+                              <div className="bg-gray-700 border border-gray-600 rounded-lg">
                                 <DatePicker
                                   date={consultationDate || undefined}
                                   onDateChange={(date: Date | undefined) => setConsultationDate(date || null)}
@@ -961,7 +963,6 @@ export default function SolutionsPage() {
                                 />
                               </div>
                             </div>
-
                             <div>
                               <label className="block text-sm font-medium text-gray-400 mb-2">
                                 Consultation Time
@@ -970,11 +971,11 @@ export default function SolutionsPage() {
                                 {CONSULTATION_TIMES.map(time => (
                                   <Button
                                     key={time}
-                                    variant={consultationTime === time ? "default" : "outline"}
+                                    variant={consultationTime === time ? 'default' : 'outline'}
                                     className={`${
                                       consultationTime === time
-                                        ? "bg-cyan-600"
-                                        : "bg-gray-700/50 border-gray-600 text-white hover:bg-gray-600"
+                                        ? 'bg-cyan-600 text-white'
+                                        : 'border-gray-600 text-gray-200 hover:bg-gray-800'
                                     }`}
                                     onClick={() => setConsultationTime(time)}
                                   >
@@ -984,18 +985,17 @@ export default function SolutionsPage() {
                               </div>
                             </div>
                           </div>
-
-                          <div className="flex justify-between mt-8">
+                          <div className="flex justify-between">
                             <Button
                               variant="outline"
                               onClick={() => setFormStep(1)}
-                              className="border-cyan-500 text-cyan-400 bg-gray-800 hover:bg-cyan-500/10 hover:text-cyan-300 font-semibold px-6 py-3 rounded-lg"
+                              className="border-gray-600 text-gray-200 hover:bg-gray-800"
                             >
                               Back
                             </Button>
                             <Button
                               onClick={() => setFormStep(3)}
-                              className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:from-cyan-600 hover:to-blue-700"
+                              className="bg-cyan-600 text-white hover:bg-cyan-700"
                               disabled={!consultationDate || !consultationTime}
                             >
                               Continue to Contact
@@ -1003,8 +1003,6 @@ export default function SolutionsPage() {
                           </div>
                         </div>
                       )}
-
-                      {/* Step 3: Contact Information */}
                       {formStep === 3 && (
                         <div>
                           <div className="space-y-4 mb-8">
@@ -1017,12 +1015,11 @@ export default function SolutionsPage() {
                                 name="name"
                                 value={userDetails.name}
                                 onChange={handleInputChange}
-                                className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-600"
                                 placeholder="Your name"
                                 required
                               />
                             </div>
-
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-2">
@@ -1033,12 +1030,11 @@ export default function SolutionsPage() {
                                   name="email"
                                   value={userDetails.email}
                                   onChange={handleInputChange}
-                                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-600"
                                   placeholder="your.email@example.com"
                                   required
                                 />
                               </div>
-
                               <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-2">
                                   Phone Number
@@ -1048,12 +1044,11 @@ export default function SolutionsPage() {
                                   name="phone"
                                   value={userDetails.phone}
                                   onChange={handleInputChange}
-                                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-600"
                                   placeholder="(123) 456-7890"
                                 />
                               </div>
                             </div>
-
                             <div>
                               <label className="block text-sm font-medium text-gray-400 mb-2">
                                 Company
@@ -1063,23 +1058,22 @@ export default function SolutionsPage() {
                                 name="company"
                                 value={userDetails.company}
                                 onChange={handleInputChange}
-                                className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-600"
                                 placeholder="Company name"
                               />
                             </div>
                           </div>
-
                           <div className="flex justify-between">
                             <Button
                               variant="outline"
                               onClick={() => setFormStep(2)}
-                              className="border-cyan-500 text-cyan-400 bg-gray-800 hover:bg-cyan-500/10 hover:text-cyan-300 font-semibold px-6 py-3 rounded-lg"
+                              className="border-gray-600 text-gray-200 hover:bg-gray-800"
                             >
                               Back
                             </Button>
                             <Button
                               type="submit"
-                              className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:from-cyan-600 hover:to-blue-700"
+                              className="bg-cyan-600 text-white hover:bg-cyan-700"
                             >
                               Submit Request
                             </Button>
@@ -1090,24 +1084,24 @@ export default function SolutionsPage() {
                   </>
                 ) : (
                   <div className="text-center py-12">
-                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="bg-cyan-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                       <Check size={32} className="text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold mb-4">Request Submitted Successfully!</h3>
-                    <p className="text-blue-200 mb-8">
-                      Thank you for your interest. Our solutions team will contact you within 24 hours to discuss your requirements.
+                    <h3 className="text-2xl font-bold text-gray-100 mb-4">Request Submitted!</h3>
+                    <p className="text-gray-300 mb-8">
+                      Our team will contact you within 24 hours to discuss your needs.
                     </p>
-                    <div className="bg-gray-700/50 rounded-xl p-4 text-left mb-8">
-                      <h4 className="font-medium mb-2">Request Summary:</h4>
+                    <div className="bg-gray-700 rounded-lg p-4 text-left mb-8">
+                      <h4 className="font-medium text-gray-100 mb-2">Request Summary:</h4>
                       {selectedServices.length > 0 && (
                         <p className="text-sm text-gray-300">
-                          <span className="text-gray-400">Services:</span>{" "}
-                          {selectedServices.map(id => SOLUTIONS.find(s => s.id === id)?.title).join(", ")}
+                          <span className="text-gray-400">Services:</span>{' '}
+                          {selectedServices.map(id => SOLUTIONS.find(s => s.id === id)?.title).join(', ')}
                         </p>
                       )}
                       {consultationDate && consultationTime && (
                         <p className="text-sm text-gray-300">
-                          <span className="text-gray-400">Consultation:</span>{" "}
+                          <span className="text-gray-400">Consultation:</span>{' '}
                           {consultationDate.toLocaleDateString()} at {consultationTime}
                         </p>
                       )}
@@ -1115,7 +1109,7 @@ export default function SolutionsPage() {
                     <Button
                       onClick={resetForm}
                       variant="outline"
-                      className="border-cyan-500 text-cyan-400 bg-gray-800 hover:bg-cyan-500/10 hover:text-cyan-300 font-semibold px-6 py-3 rounded-lg"
+                      className="border-gray-600 text-gray-200 hover:bg-gray-800"
                     >
                       Close
                     </Button>
@@ -1141,66 +1135,57 @@ export default function SolutionsPage() {
               initial={{ scale: 0.9, y: 50 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 50 }}
-              className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative"
-              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-700"
+              onClick={e => e.stopPropagation()}
             >
               <button
                 onClick={closeCaseStudy}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
               >
                 <X size={24} />
               </button>
-
               <div className="p-8">
-                <div className="mb-8">
-                  <h2 className="text-3xl font-bold mb-2">{selectedCaseStudy.title}</h2>
-                  <p className="text-cyan-300 text-lg">{selectedCaseStudy.client}</p>
-                </div>
-
+                <h2 className="text-3xl font-bold text-gray-100 mb-2">{selectedCaseStudy.title}</h2>
+                <p className="text-cyan-400 text-lg mb-6">{selectedCaseStudy.client}</p>
                 <div className="space-y-8">
                   <div>
-                    <h3 className="text-xl font-semibold mb-3 text-cyan-400">The Challenge</h3>
+                    <h3 className="text-xl font-semibold text-cyan-400 mb-3">The Challenge</h3>
                     <p className="text-gray-300">{selectedCaseStudy.challenge}</p>
                   </div>
-
                   <div>
-                    <h3 className="text-xl font-semibold mb-3 text-cyan-400">Our Solution</h3>
+                    <h3 className="text-xl font-semibold text-cyan-400 mb-3">Our Solution</h3>
                     <p className="text-gray-300">{selectedCaseStudy.solution}</p>
                   </div>
-
                   <div>
-                    <h3 className="text-xl font-semibold mb-3 text-cyan-400">Key Results</h3>
+                    <h3 className="text-xl font-semibold text-cyan-400 mb-3">Key Results</h3>
                     <ul className="space-y-3">
                       {selectedCaseStudy.results.map((result: string, i: number) => (
                         <li key={i} className="flex items-start">
-                          <Check size={18} className="text-green-400 mt-1 mr-3 flex-shrink-0" />
+                          <Check size={18} className="text-cyan-400 mt-1 mr-3" />
                           <span className="text-gray-300">{result}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-
                   <div>
-                    <h3 className="text-xl font-semibold mb-3 text-cyan-400">Technologies Used</h3>
+                    <h3 className="text-xl font-semibold text-cyan-400 mb-3">Technologies Used</h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedCaseStudy.technologies.map((tech: string, i: number) => (
-                        <span key={i} className="bg-gray-700 px-3 py-1 rounded-full text-sm">
+                        <span key={i} className="bg-gray-700 px-3 py-1 rounded-full text-sm text-gray-300">
                           {tech}
                         </span>
                       ))}
                     </div>
                   </div>
-
-                  <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                  <div className="bg-gray-700 p-4 rounded-lg">
                     <p className="italic text-gray-300 mb-2">"{selectedCaseStudy.testimonial}"</p>
                     <p className="text-cyan-400 font-medium">— Client Representative</p>
                   </div>
                 </div>
-
                 <div className="mt-8 flex justify-end">
                   <Button
                     onClick={closeCaseStudy}
-                    className="bg-gradient-to-r from-cyan-500 to-blue-600"
+                    className="bg-cyan-600 text-white hover:bg-cyan-700"
                   >
                     Close Case Study
                   </Button>
@@ -1211,33 +1196,47 @@ export default function SolutionsPage() {
         )}
       </AnimatePresence>
 
-      {/* Final CTA */}
-      <div className="py-16">
-        <div className="max-w-4xl mx-auto px-4 text-center">
+      {/* Footer CTA with Navigation */}
+      <section className="py-16 bg-gray-900 border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="bg-gradient-to-r from-blue-800/30 to-cyan-500/20 backdrop-blur-sm rounded-2xl p-8 border border-gray-700"
+            className="rounded-lg p-8"
           >
-            <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Business?</h2>
-            <p className="text-blue-200 mb-8 max-w-2xl mx-auto">
-              Schedule a free consultation with our experts to explore how our solutions can drive your success
+            <h2 className="text-3xl font-bold text-gray-100 mb-4">Ready to Transform Your Business?</h2>
+            <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+              Join leading enterprises leveraging MutSyncHub’s AI and cloud solutions for unparalleled growth.
             </p>
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-8 py-6 text-lg font-semibold rounded-xl shadow-lg"
-              onClick={() => {
-                setIsFormVisible(true);
-                setFormStep(2);
-              }}
-            >
-              <Calendar className="mr-2" /> Schedule Free Consultation
-            </Button>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Button
+                size="lg"
+                className="bg-cyan-600 text-white hover:bg-cyan-700 px-8 py-3 rounded-lg"
+                onClick={() => {
+                  setIsFormVisible(true);
+                  setFormStep(2);
+                }}
+              >
+                <Calendar className="mr-2" /> Schedule Free Consultation
+              </Button>
+              <Button
+                variant="outline"
+                className="border-gray-600 text-gray-200 hover:bg-gray-800 px-8 py-3 rounded-lg"
+                asChild
+              >
+                <Link href="/solutions">Explore All Solutions</Link>
+              </Button>
+            </div>
+            <div className="mt-8 flex justify-center gap-6 text-sm font-medium text-gray-400">
+              <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+              <Link href="/solutions" className="hover:text-cyan-400 transition-colors">Solutions</Link>
+              <Link href="/what-we-do-support" className="hover:text-cyan-400 transition-colors">Support</Link>
+              <Link href="/resources" className="hover:text-cyan-400 transition-colors">Resources</Link>
+            </div>
           </motion.div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
