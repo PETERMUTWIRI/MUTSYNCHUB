@@ -1,21 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
-import KPICard from '@/components/analytics/KPICard';
-import TimeSeriesChart from '@/components/analytics/TimeSeriesChart';
-import TopNBarChart from '@/components/analytics/TopNBarChart';
-import ForecastChart from '@/components/analytics/ForecastChart';
-import DonutChart from '@/components/analytics/DonutChart';
-import EDASummary from '@/components/analytics/EDASummary';
-import SankeyDiagram from '@/components/analytics/SankeyDiagram';
-import TradingChart from '@/components/analytics/TradingChart';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/stack';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { motion } from 'framer-motion';
+
+// Dynamic imports for chart components
+const KPICard = dynamic(() => import('@/components/analytics/KPICard'), { ssr: false });
+const TimeSeriesChart = dynamic(() => import('@/components/analytics/TimeSeriesChart'), { ssr: false });
+const TopNBarChart = dynamic(() => import('@/components/analytics/TopNBarChart'), { ssr: false });
+const ForecastChart = dynamic(() => import('@/components/analytics/ForecastChart'), { ssr: false });
+const DonutChart = dynamic(() => import('@/components/analytics/DonutChart'), { ssr: false });
+const EDASummary = dynamic(() => import('@/components/analytics/EDASummary'), { ssr: false });
+const SankeyDiagram = dynamic(() => import('@/components/analytics/SankeyDiagram'), { ssr: false });
+const TradingChart = dynamic(() => import('@/components/analytics/TradingChart'), { ssr: false });
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#1E2A44] flex items-center justify-center text-white">
+          <div className="text-center bg-[#2E7D7D]/10 rounded-xl p-8 border border-[#2E7D7D]/30">
+            <p className="text-red-400 font-inter text-lg">Failed to load analytics</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 bg-[#2E7D7D] text-white px-6 py-2 rounded-lg hover:bg-[#2E7D7D]/80"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function AnalyticsPage() {
-  // Synthetic demo data
-  const kpi = { daily: 5.2, monthly: 12.8, yoy: 22.4 };
+  const user = useUser({ or: 'redirect' });
+  const router = useRouter();
+  const [query, setQuery] = useState('');
+  const [userPlan] = useState<'Free' | 'Pro' | 'Enterprise'>('Free');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Time Series Data
+  // Synthetic demo data (unchanged)
+  const kpi = { daily: 5.2, monthly: 12.8, yoy: 22.4 };
   const trendData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
     datasets: [
@@ -33,8 +71,6 @@ export default function AnalyticsPage() {
       },
     ],
   };
-
-  // Top Products Data
   const topNData = {
     labels: ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'],
     datasets: [
@@ -45,8 +81,6 @@ export default function AnalyticsPage() {
       },
     ],
   };
-
-  // Forecast Data
   const forecastData = {
     labels: ['Jul', 'Aug', 'Sep', 'Oct'],
     datasets: [
@@ -69,8 +103,6 @@ export default function AnalyticsPage() {
       },
     ],
   };
-
-  // Donut Chart Data
   const donutData = {
     labels: ['Card', 'Cash', 'Mpesa', 'Bank Transfer'],
     datasets: [
@@ -81,11 +113,7 @@ export default function AnalyticsPage() {
       },
     ],
   };
-
-  // EDA Summary
   const edaStats = { count: 12000, mean: 14000, std: 1800, nulls: 2 };
-
-  // Sankey Data
   const sankeyData = {
     nodes: [
       { id: 'Start', name: 'Start' },
@@ -101,10 +129,6 @@ export default function AnalyticsPage() {
       { source: 'Checkout', target: 'Purchase', value: 400 },
     ],
   };
-
-  const [query, setQuery] = useState('');
-  const [userPlan] = useState<'Free' | 'Pro' | 'Enterprise'>('Free'); // Static for now
-
   const candleData = [
     { time: 1752960000, open: 5000, high: 5200, low: 4800, close: 5100, volume: 120 },
     { time: 1753046400, open: 5100, high: 5300, low: 5050, close: 5250, volume: 140 },
@@ -115,8 +139,48 @@ export default function AnalyticsPage() {
     { time: 1753478400, open: 5650, high: 5800, low: 5600, close: 5750, volume: 170 },
   ];
 
+  useEffect(() => {
+    // Simulate data fetching or validation
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-[#1E2A44] flex items-center justify-center w-full"
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E7D7D] mx-auto"></div>
+          <p className="mt-4 text-gray-300 font-inter text-lg">Loading Analytics...</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-[#1E2A44] flex items-center justify-center w-full"
+      >
+        <div className="text-center bg-[#2E7D7D]/10 rounded-xl p-8 border border-[#2E7D7D]/30">
+          <p className="text-red-400 font-inter text-lg">{error}</p>
+          <button
+            onClick={() => router.push('/')}
+            className="mt-4 bg-[#2E7D7D] text-white px-6 py-2 rounded-lg hover:bg-[#2E7D7D]/80"
+          >
+            Return to Home
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
-    <ProtectedRoute requiredRole="user">
+    <ErrorBoundary>
       <div className="min-h-screen w-full bg-[#1E2A44] p-6 font-inter text-white">
         {/* Profit Candlestick Chart Card */}
         <section className="mb-8 w-full">
@@ -141,17 +205,17 @@ export default function AnalyticsPage() {
             <h3 className="text-lg font-semibold mb-4">Sales & Profit Trends</h3>
             <TimeSeriesChart data={trendData} />
           </div>
-            <div className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold mb-4">Sales Forecast</h3>
-              <ForecastChart data={forecastData} title="Sales Forecast" />
-            </div>
+          <div className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">Sales Forecast</h3>
+            <ForecastChart data={forecastData} title="Sales Forecast" />
+          </div>
           <div className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-semibold mb-4">Top Products</h3>
-              <TopNBarChart data={topNData} title="Top Products" />
+            <TopNBarChart data={topNData} title="Top Products" />
           </div>
           <div className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-semibold mb-4">Sales Breakdown</h3>
-              <DonutChart data={donutData} title="Sales Breakdown" />
+            <DonutChart data={donutData} title="Sales Breakdown" />
           </div>
         </section>
 
@@ -163,7 +227,7 @@ export default function AnalyticsPage() {
           </div>
           <div className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-semibold mb-4">Customer Funnel</h3>
-              <SankeyDiagram data={sankeyData} title="Customer Funnel" />
+            <SankeyDiagram data={sankeyData} title="Customer Funnel" />
           </div>
         </section>
 
@@ -199,6 +263,6 @@ export default function AnalyticsPage() {
           </div>
         </section>
       </div>
-    </ProtectedRoute>
+    </ErrorBoundary>
   );
 }

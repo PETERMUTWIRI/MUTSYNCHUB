@@ -1,255 +1,380 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import React, { useEffect, useState } from 'react';
+import { useUser } from '@stackframe/stack';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { motion } from 'framer-motion';
+import { Toaster, toast } from 'react-hot-toast';
+import { Tooltip } from 'react-tooltip';
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '@/lib/user';
 
-const dataSourceTypes = [
-  { id: 'POS_SYSTEM', name: 'POS System', description: 'Connect your Point-of-Sale system for real-time sales data.', icon: '🛒' },
-  { id: 'ERP', name: 'ERP', description: 'Integrate with your ERP for business process automation.', icon: '🏢' },
-  { id: 'DATABASE', name: 'Database', description: 'Link any SQL/NoSQL database for analytics.', icon: '🗄️' },
-  { id: 'API', name: 'API', description: 'Pull data from any RESTful API.', icon: '🔗' },
-  { id: 'FILE_IMPORT', name: 'File Import', description: 'Upload CSV, Excel, or other files.', icon: '📄' },
-  { id: 'CUSTOM', name: 'Custom', description: 'Custom integrations for unique needs.', icon: '⚙️' },
-];
+// Dynamic imports
+const Card = dynamic(() => import('@/components/ui/card').then((mod) => mod.Card), { ssr: false });
+const CardHeader = dynamic(() => import('@/components/ui/card').then((mod) => mod.CardHeader), { ssr: false });
+const CardTitle = dynamic(() => import('@/components/ui/card').then((mod) => mod.CardTitle), { ssr: false });
+const CardContent = dynamic(() => import('@/components/ui/card').then((mod) => mod.CardContent), { ssr: false });
+const Button = dynamic(() => import('@/components/ui/button').then((mod) => mod.Button), { ssr: false });
+const Spinner = dynamic(() => import('@/components/ui/Spinner'), { ssr: false });
 
-const scheduleFeatures = [
-  { plan: 'Free', frequencies: ['weekly'], limit: 2 },
-  { plan: 'Pro', frequencies: ['daily', 'weekly'], limit: 20 },
-  { plan: 'Enterprise', frequencies: ['hourly', 'daily', 'weekly', 'monthly', 'custom'], limit: 100 },
-];
+// Error Boundary
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
 
-type ScheduleFeature = {
-  plan: string;
-  frequencies: string[];
-  limit: number;
-};
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
 
-const DataSource: React.FC = () => {
-  const [showModal, setShowModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<ScheduleFeature | null>(null);
-  const [selectedFrequency, setSelectedFrequency] = useState<string>('');
-  const [interval, setInterval] = useState<string>('');
-
-  const [modalType, setModalType] = useState<string | null>(null);
-  const [apiUrl, setApiUrl] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [dbHost, setDbHost] = useState('');
-  const [dbPort, setDbPort] = useState('');
-  const [dbUser, setDbUser] = useState('');
-  const [dbPass, setDbPass] = useState('');
-  const [dbName, setDbName] = useState('');
-  const [importSource, setImportSource] = useState('local');
-  const [importFile, setImportFile] = useState<File | null>(null);
-
-  const handleScheduleClick = (plan: ScheduleFeature) => {
-    setSelectedPlan(plan);
-    setSelectedFrequency('');
-    setInterval('');
-    setShowModal(true);
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!selectedPlan) return;
-    // TODO: Call backend API to schedule analysis
-    setShowModal(false);
-    alert(`Scheduled analysis for ${selectedPlan.plan} plan with frequency ${selectedFrequency}${selectedFrequency === 'custom' ? ` (interval: ${interval} min)` : ''}`);
-  };
-
-  const handleConnect = async (e: React.FormEvent) => {
-    e.preventDefault();
-    let payload = {};
-    let url = '';
-    if (modalType === 'API') {
-      url = '/api/data-sources/api';
-      payload = { url: apiUrl, apiKey };
-    } else if (modalType === 'DATABASE') {
-      url = '/api/data-sources/database';
-      payload = { host: dbHost, port: dbPort, user: dbUser, pass: dbPass, dbName };
-    } else if (modalType === 'FILE_IMPORT') {
-      url = '/api/data-sources/import';
-      payload = { source: importSource };
-      if (importSource === 'local' && importFile) {
-        const formData = new FormData();
-        formData.append('file', importFile);
-        formData.append('source', importSource);
-        await fetch(url, { method: 'POST', body: formData });
-        setModalType(null);
-        alert('File imported!');
-        return;
-      }
-    }
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    setModalType(null);
-    alert('Connection/Import submitted!');
-  };
-
-  const renderModal = () => {
-    if (!modalType) return null;
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-        <div className="bg-[#1E2A44] rounded-xl p-6 w-full max-w-md shadow-lg border border-[#2E7D7D]/30">
-          <button className="absolute top-3 right-4 text-white text-xl" onClick={() => setModalType(null)}>&times;</button>
-          {modalType === 'API' && (
-            <form onSubmit={handleConnect}>
-              <h2 className="text-xl font-semibold text-white mb-4">Connect API</h2>
-              <label className="block text-gray-500 mb-2">API URL</label>
-              <input type="text" className="mb-3 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]" value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} required />
-              <label className="block text-gray-500 mb-2">API Key (optional)</label>
-              <input type="text" className="mb-6 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
-              <Button type="submit" className="w-full bg-[#2E7D7D] text-white font-medium py-2 rounded-lg hover:bg-[#2E7D7D]/80 transition-colors">
-                Connect
-              </Button>
-            </form>
-          )}
-          {modalType === 'DATABASE' && (
-            <form onSubmit={handleConnect}>
-              <h2 className="text-xl font-semibold text-white mb-4">Connect Database</h2>
-              <label className="block text-gray-500 mb-2">Host</label>
-              <input type="text" className="mb-2 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]" value={dbHost} onChange={(e) => setDbHost(e.target.value)} required />
-              <label className="block text-gray-500 mb-2">Port</label>
-              <input type="text" className="mb-2 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]" value={dbPort} onChange={(e) => setDbPort(e.target.value)} required />
-              <label className="block text-gray-500 mb-2">Username</label>
-              <input type="text" className="mb-2 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]" value={dbUser} onChange={(e) => setDbUser(e.target.value)} required />
-              <label className="block text-gray-500 mb-2">Password</label>
-              <input type="password" className="mb-2 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]" value={dbPass} onChange={(e) => setDbPass(e.target.value)} required />
-              <label className="block text-gray-500 mb-2">Database Name</label>
-              <input type="text" className="mb-6 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]" value={dbName} onChange={(e) => setDbName(e.target.value)} required />
-              <Button type="submit" className="w-full bg-[#2E7D7D] text-white font-medium py-2 rounded-lg hover:bg-[#2E7D7D]/80 transition-colors">
-                Connect
-              </Button>
-            </form>
-          )}
-          {modalType === 'FILE_IMPORT' && (
-            <form onSubmit={handleConnect}>
-              <h2 className="text-xl font-semibold text-white mb-4">Import Data</h2>
-              <label className="block text-gray-500 mb-2">Import Source</label>
-              <select className="mb-4 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]" value={importSource} onChange={(e) => setImportSource(e.target.value)}>
-                <option value="local">Local Storage</option>
-                <option value="gdrive">Google Drive</option>
-                <option value="onedrive">OneDrive</option>
-                <option value="dropbox">Dropbox</option>
-              </select>
-              {importSource === 'local' && (
-                <input type="file" className="mb-6 w-full text-white" onChange={(e) => setImportFile(e.target.files?.[0] || null)} required />
-              )}
-              <Button type="submit" className="w-full bg-[#2E7D7D] text-white font-medium py-2 rounded-lg hover:bg-[#2E7D7D]/80 transition-colors">
-                Import
-              </Button>
-            </form>
-          )}
-          {modalType !== 'API' && modalType !== 'DATABASE' && modalType !== 'FILE_IMPORT' && (
-            <div className="text-gray-400">Coming soon...</div>
-          )}
-        </div>
-      </div>
+  render() {
+    if (this.state.hasError) {
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="min-h-screen bg-[#1E2A44] flex items-center justify-center text-white"
+        >
+          <div className="text-center bg-[#2E7D7D]/10 rounded-xl p-8 border border-[#2E7D7D]/30">
+            <p className="text-red-400 font-inter text-lg">Failed to load notifications</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 bg-[#2E7D7D] text-white px-6 py-2 rounded-lg hover:bg-[#2E7D7D]/80"
+            >
+              Retry
+            </button>
+          </div>
+        </motion.div>
       );
-    };
+    }
+    return this.props.children;
+  }
+}
+
+const Notifications: React.FC = () => {
+  const user = useUser({ or: 'redirect' });
+  const router = useRouter();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const response = await getNotifications();
+      setNotifications(response.data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+      setError('Failed to fetch notifications');
+      toast.error('Failed to fetch notifications');
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await markNotificationAsRead(id);
+      setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)));
+      toast.success('Notification marked as read');
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+      toast.error('Failed to mark notification as read');
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsRead();
+      setNotifications(notifications.map((n) => ({ ...n, read: true })));
+      toast.success('All notifications marked as read');
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
+      toast.error('Failed to mark all notifications as read');
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    try {
+      if (window.confirm('Are you sure you want to delete all notifications? This cannot be undone.')) {
+        // await deleteAllNotifications(); // Uncomment when backend is ready
+        setNotifications([]);
+        toast.success('All notifications deleted');
+      }
+    } catch (err) {
+      console.error('Failed to delete all notifications:', err);
+      toast.error('Failed to delete all notifications');
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchNotifications();
+  };
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-[#1E2A44] flex items-center justify-center w-full"
+      >
+        <div className="text-center">
+          <Spinner />
+          <p className="mt-4 text-gray-300 font-inter text-lg">Loading Notifications...</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-[#1E2A44] flex items-center justify-center w-full"
+      >
+        <div className="text-center bg-[#2E7D7D]/10 rounded-xl p-8 border border-[#2E7D7D]/30">
+          <p className="text-red-400 font-inter text-lg">{error}</p>
+          <button
+            onClick={() => router.push('/')}
+            className="mt-4 bg-[#2E7D7D] text-white px-6 py-2 rounded-lg hover:bg-[#2E7D7D]/80"
+          >
+            Return to Home
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
-    <ProtectedRoute requiredRole="user">
-      <div className="max-w-7xl mx-auto py-10 px-6 bg-[#1E2A44] text-white font-inter">
-        <h1 className="text-3xl font-bold mb-6">Data Sources & Analytics Scheduling</h1>
-        <p className="text-base text-gray-400 mb-12 max-w-3xl">Connect your data and automate analytics with flexible scheduling. Supported integrations and scheduling options are shown below.</p>
-
-        {/* Data Source Types */}
-        <div className="mb-12">
-          <h2 className="text-xl font-semibold text-[#2E7D7D] mb-6">Supported Data Source Types</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {dataSourceTypes.map((type) => (
-              <Card key={type.id} className="bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl p-6 hover:bg-[#2E7D7D]/20 transition-colors duration-300">
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold flex items-center gap-2">{type.icon} {type.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300 text-base mb-4">{type.description}</p>
-                  {(type.id === 'API' || type.id === 'DATABASE' || type.id === 'FILE_IMPORT') && (
-                    <Button className="w-full bg-[#2E7D7D] text-white font-medium mt-2 hover:bg-[#2E7D7D]/80 transition-colors" onClick={() => setModalType(type.id)}>
-                      {type.id === 'FILE_IMPORT' ? 'Import' : 'Connect'}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Schedule Analytics Features */}
-        <div>
-          <h2 className="text-xl font-semibold text-[#2E7D7D] mb-6">Schedule Analytics Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {scheduleFeatures.map((f) => (
-              <Card key={f.plan} className="bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl p-6 hover:bg-[#2E7D7D]/20 transition-colors duration-300">
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold">{f.plan} Plan</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300 mb-2">Allowed Frequencies:</p>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {f.frequencies.map((freq) => (
-                      <span key={freq} className="inline-block bg-[#2E7D7D]/40 text-white text-xs px-2 py-1 rounded-full">{freq}</span>
-                    ))}
-                  </div>
-                  <p className="text-gray-300">Max Schedules: <span className="font-medium text-white">{f.limit}</span></p>
-                  <Button className="mt-4 w-full bg-[#2E7D7D] text-white font-medium hover:bg-[#2E7D7D]/80 transition-colors" onClick={() => handleScheduleClick(f)}>
-                    Schedule Analysis
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Schedule Modal */}
-        {showModal && selectedPlan && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-            <div className="bg-[#1E2A44] rounded-xl p-6 w-full max-w-md shadow-lg border border-[#2E7D7D]/30">
-              <h2 className="text-xl font-semibold text-white mb-4">Schedule Analysis ({selectedPlan.plan} Plan)</h2>
-              <form onSubmit={handleSubmit}>
-                <label className="block text-gray-500 mb-2">Frequency</label>
-                <select
-                  className="mb-4 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]"
-                  value={selectedFrequency}
-                  onChange={(e) => setSelectedFrequency(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>Select frequency</option>
-                  {selectedPlan.frequencies.map((freq: string) => (
-                    <option key={freq} value={freq}>{freq}</option>
-                  ))}
-                </select>
-                {selectedFrequency === 'custom' && (
-                  <>
-                    <label className="block text-gray-500 mb-2">Interval (minutes)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="mb-4 w-full p-3 rounded-lg bg-[#2E7D7D]/10 text-white border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]"
-                      value={interval}
-                      onChange={(e) => setInterval(e.target.value)}
-                      required
-                    />
-                  </>
-                )}
-                <Button type="submit" className="w-full mb-2 bg-[#2E7D7D] text-white font-medium py-2 rounded-lg hover:bg-[#2E7D7D]/80 transition-colors">
-                  Confirm Schedule
-                </Button>
-                <Button variant="outline" className="w-full" onClick={() => setShowModal(false)} type="button">
-                  Cancel
-                </Button>
-              </form>
+    <ErrorBoundary>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="max-w-7xl mx-auto py-10 px-6 bg-[#1E2A44] text-white font-inter w-full"
+      >
+        {/* Sticky Header */}
+        <header className="sticky top-0 z-20 bg-[#1E2A44]/95 backdrop-blur-md border-b border-[#2E7D7D]/30 py-4 px-6">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <h1 className="text-2xl font-bold">Notifications</h1>
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="Search notifications..."
+                className="bg-[#2E7D7D]/20 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E7D7D]"
+                aria-label="Search notifications"
+              />
+              <Button
+                className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80"
+                aria-label="Search notifications"
+                data-tooltip-id="search-notifications"
+                data-tooltip-content="Search notifications"
+              >
+                Search
+              </Button>
+              <Tooltip id="search-notifications" />
             </div>
           </div>
-        )}
-      </div>
-    </ProtectedRoute>
+        </header>
+
+        <h1 className="text-3xl font-bold mb-6 mt-8">Notifications</h1>
+
+        {/* Notification Preferences */}
+        <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
+          <Card className="mb-8 bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-[#2E7D7D]">Notification Preferences</CardTitle>
+              <p className="text-sm text-gray-400 mt-2">
+                Choose which notifications you want to receive and how you want to receive them.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                <div className="space-y-2">
+                  <label className="text-[#2E7D7D] font-medium">Product Updates</label>
+                  <select
+                    className="bg-[#2E7D7D]/20 text-white rounded-lg p-2 w-full border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]"
+                    aria-label="Product Updates notification preference"
+                  >
+                    <option>Email</option>
+                    <option>In-App</option>
+                    <option>SMS</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[#2E7D7D] font-medium">Billing Alerts</label>
+                  <select
+                    className="bg-[#2E7D7D]/20 text-white rounded-lg p-2 w-full border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]"
+                    aria-label="Billing Alerts notification preference"
+                  >
+                    <option>Email</option>
+                    <option>In-App</option>
+                    <option>SMS</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[#2E7D7D] font-medium">Support Messages</label>
+                  <select
+                    className="bg-[#2E7D7D]/20 text-white rounded-lg p-2 w-full border border-[#2E7D7D]/30 focus:ring-2 focus:ring-[#2E7D7D]"
+                    aria-label="Support Messages notification preference"
+                  >
+                    <option>Email</option>
+                    <option>In-App</option>
+                    <option>SMS</option>
+                  </select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* All Notifications */}
+        <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
+          <Card className="bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl">
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-xl font-semibold text-[#2E7D7D]">All Notifications</CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80 transition-colors"
+                  onClick={handleMarkAllAsRead}
+                  aria-label="Mark all notifications as read"
+                  data-tooltip-id="mark-all-read"
+                  data-tooltip-content="Mark all notifications as read"
+                >
+                  Mark all as read
+                </Button>
+                <Button
+                  className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80 transition-colors"
+                  onClick={handleDeleteAll}
+                  aria-label="Delete all notifications"
+                  data-tooltip-id="delete-all"
+                  data-tooltip-content="Delete all notifications"
+                >
+                  Delete all
+                </Button>
+                <Button
+                  className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80 transition-colors"
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  aria-label="Refresh notifications"
+                  data-tooltip-id="refresh-notifications"
+                  data-tooltip-content="Refresh notifications"
+                >
+                  {loading ? 'Refreshing...' : 'Refresh'}
+                </Button>
+                <Tooltip id="mark-all-read" />
+                <Tooltip id="delete-all" />
+                <Tooltip id="refresh-notifications" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {notifications.length === 0 ? (
+                <p className="text-gray-400">No notifications available.</p>
+              ) : (
+                <div className="space-y-4">
+                  {notifications.map((notification) => (
+                    <motion.div
+                      key={notification.id}
+                      className={`flex items-start p-4 rounded-lg ${notification.read ? 'bg-[#2E7D7D]/5' : 'bg-[#2E7D7D]/10'}`}
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div className="flex-1">
+                        <p className="font-semibold text-white">{notification.title}</p>
+                        <p className="text-gray-300">{notification.message}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      {!notification.read && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-[#2E7D7D] hover:text-white"
+                          onClick={() => handleMarkAsRead(notification.id)}
+                          aria-label={`Mark notification "${notification.title}" as read`}
+                          data-tooltip-id={`mark-read-${notification.id}`}
+                          data-tooltip-content="Mark as read"
+                        >
+                          Mark as read
+                        </Button>
+                      )}
+                      <Tooltip id={`mark-read-${notification.id}`} />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Integrations */}
+        <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
+          <Card className="mt-8 bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-[#2E7D7D]">Integrations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-400 mb-2">Forward notifications to your favorite apps:</p>
+              <div className="flex gap-4">
+                <Button
+                  className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80 transition-colors"
+                  size="sm"
+                  onClick={() => toast('Slack integration coming soon!')}
+                  aria-label="Connect Slack"
+                  data-tooltip-id="connect-slack"
+                  data-tooltip-content="Connect Slack"
+                >
+                  Connect Slack
+                </Button>
+                <Button
+                  className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80 transition-colors"
+                  size="sm"
+                  onClick={() => toast('Teams integration coming soon!')}
+                  aria-label="Connect Teams"
+                  data-tooltip-id="connect-teams"
+                  data-tooltip-content="Connect Teams"
+                >
+                  Connect Teams
+                </Button>
+                <Button
+                  className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80 transition-colors"
+                  size="sm"
+                  onClick={() => toast('Email integration coming soon!')}
+                  aria-label="Connect Email"
+                  data-tooltip-id="connect-email"
+                  data-tooltip-content="Connect Email"
+                >
+                  Connect Email
+                </Button>
+                <Tooltip id="connect-slack" />
+                <Tooltip id="connect-teams" />
+                <Tooltip id="connect-email" />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* About Notifications */}
+        <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
+          <Card className="mt-8 bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-[#2E7D7D]">About Notifications</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-400">
+                Notifications keep you updated on important events, product changes, billing alerts, and support messages. You can customize your preferences and delivery channels above. All notifications are stored here for your reference.
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <Toaster position="top-right" />
+      </motion.div>
+    </ErrorBoundary>
   );
 };
 
-export default DataSource;
+export default Notifications;

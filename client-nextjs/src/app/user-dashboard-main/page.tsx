@@ -1,31 +1,31 @@
+'use client';
 
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@stackframe/stack';
 import { HiChartPie, HiClipboardList, HiCreditCard, HiBell } from 'react-icons/hi';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import UsageCard from '@/components/user/cards/UsageCard';
-import RecentActivityCard from '@/components/user/cards/RecentActivityCard';
-import PlanCard from '@/components/user/cards/PlanCard';
-import BillingCard from '@/components/user/cards/BillingCard';
-import NotificationsCard from '@/components/user/cards/NotificationsCard';
-import SupportCard from '@/components/user/cards/SupportCard';
-import SecurityCard from '@/components/user/cards/SecurityCard';
-import TeamCard from '@/components/user/cards/TeamCard';
-import AnnouncementsCard from '@/components/user/cards/AnnouncementsCard';
-import UsageTrendsCard from '@/components/user/cards/UsageTrendsCard';
-import AnomalyDetectionCard from '@/components/user/cards/AnomalyDetectionCard';
-import ForecastCard from '@/components/user/cards/ForecastCard';
-import UserInsightsCard from '@/components/user/cards/UserInsightsCard';
-import AIChatButton from '@/components/user/AIChatButton';
 import { ensureAndFetchUserProfile } from '@/app/api/get-user-role/action';
 
-export const dynamic = 'force-static';
+// Dynamically import large components
+const UsageCard = dynamic(() => import('@/components/user/cards/UsageCard'), { ssr: false });
+const RecentActivityCard = dynamic(() => import('@/components/user/cards/RecentActivityCard'), { ssr: false });
+const PlanCard = dynamic(() => import('@/components/user/cards/PlanCard'), { ssr: false });
+const BillingCard = dynamic(() => import('@/components/user/cards/BillingCard'), { ssr: false });
+const NotificationsCard = dynamic(() => import('@/components/user/cards/NotificationsCard'), { ssr: false });
+const SupportCard = dynamic(() => import('@/components/user/cards/SupportCard'), { ssr: false });
+const SecurityCard = dynamic(() => import('@/components/user/cards/SecurityCard'), { ssr: false });
+const TeamCard = dynamic(() => import('@/components/user/cards/TeamCard'), { ssr: false });
+const AnnouncementsCard = dynamic(() => import('@/components/user/cards/AnnouncementsCard'), { ssr: false });
+const UsageTrendsCard = dynamic(() => import('@/components/user/cards/UsageTrendsCard'), { ssr: false });
+const AnomalyDetectionCard = dynamic(() => import('@/components/user/cards/AnomalyDetectionCard'), { ssr: false });
+const ForecastCard = dynamic(() => import('@/components/user/cards/ForecastCard'), { ssr: false });
+const UserInsightsCard = dynamic(() => import('@/components/user/cards/UserInsightsCard'), { ssr: false });
+const AIChatButton = dynamic(() => import('@/components/user/AIChatButton'), { ssr: false });
 
 export default function UserDashboard() {
-  const user = useUser({ or: 'redirect' });
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
@@ -40,7 +40,6 @@ export default function UserDashboard() {
 
   useEffect(() => {
     const fetchRole = async () => {
-      if (!user) return;
       try {
         const cachedSession = localStorage.getItem('userSession');
         if (cachedSession) {
@@ -72,7 +71,7 @@ export default function UserDashboard() {
     };
 
     fetchRole();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (!loading && role && role !== 'user' && role !== 'admin') {
@@ -91,7 +90,7 @@ export default function UserDashboard() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen bg-slate-950 flex items-center justify-center"
+        className="min-h-screen bg-slate-950 flex items-center justify-center w-full"
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto"></div>
@@ -106,7 +105,7 @@ export default function UserDashboard() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen bg-slate-950 flex items-center justify-center"
+        className="min-h-screen bg-slate-950 flex items-center justify-center w-full"
       >
         <div className="text-center bg-gray-800 rounded-lg p-8 border border-gray-700">
           <p className="text-red-400 font-sans text-lg">{error}</p>
@@ -122,8 +121,8 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="bg-slate-950 text-gray-100 font-sans">
-      <header className="flex items-center justify-between px-8 py-4 bg-gray-900 border-b border-gray-800 shadow-lg">
+    <div className="bg-slate-950 text-gray-100 font-sans w-full">
+      <header className="flex items-center justify-between px-8 py-4 bg-gray-900 border-b border-gray-800 shadow-lg w-full">
         <div className="flex items-center gap-4">
           <input
             type="text"
@@ -134,7 +133,8 @@ export default function UserDashboard() {
         <div className="flex items-center gap-6">
           <HiBell className="text-cyan-400 text-xl animate-pulse" />
           <div className="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold">
-            {user.id[0]?.toUpperCase() || 'U'}
+            {/* Fallback to 'U' if user is not available */}
+            {'U'}
           </div>
         </div>
       </header>
@@ -171,13 +171,13 @@ export default function UserDashboard() {
         </motion.div>
       )}
 
-      <main className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 md:p-10 max-w-7xl mx-auto">
-        <div className="lg:col-span-2 flex flex-col gap-6">
+      <main className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 md:p-10 max-w-7xl mx-auto w-full">
+        <div className="lg:col-span-2 flex flex-col gap-6 w-full">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-gray-800 rounded-xl shadow p-6 flex items-center justify-between border border-gray-700"
+            className="bg-gray-800 rounded-xl shadow p-6 flex items-center justify-between border border-gray-700 w-full"
           >
             <div>
               <div className="text-xs font-semibold text-cyan-400 mb-1">Update</div>
@@ -188,7 +188,7 @@ export default function UserDashboard() {
               <span className="material-icons text-cyan-400">check_circle</span>
             </div>
           </motion.div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full">
             <UsageCard usage={42} quota={100} loading={false} error={false} />
             <PlanCard planName="Pro" renewalDate="2025-08-01" loading={false} error={false} handleUpgradeClick={handleUpgradeClick} />
             <BillingCard lastInvoice="2025-07-01" nextPayment="99 on 2025-08-01" paymentMethod="Visa ****1234" loading={false} error={false} />
@@ -198,9 +198,9 @@ export default function UserDashboard() {
             <RecentActivityCard lastLogin="2025-07-15" recent={['Login on 2025-07-15']} loading={false} error={false} />
           </div>
           <div className="w-full mt-6">
-            <div className="bg-gray-800 rounded-xl shadow p-6 flex flex-col gap-4 min-h-[380px] border border-gray-700">
+            <div className="bg-gray-800 rounded-xl shadow p-6 flex flex-col gap-4 min-h-[380px] border border-gray-700 w-full">
               <div className="text-lg font-bold text-gray-100 mb-2">Team & Insights</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                 <SupportCard openTickets={1} loading={false} error={false} />
                 <TeamCard members={['Alice', 'Bob']} loading={false} error={false} />
                 <UserInsightsCard />
@@ -209,19 +209,19 @@ export default function UserDashboard() {
             </div>
           </div>
         </div>
-        <div className="flex flex-col gap-6 h-full justify-start">
-          <div className="bg-gray-800 rounded-xl shadow p-6 flex flex-col gap-4 min-h-[380px] w-full border border-gray-700">
+        <div className="flex flex-col gap-6 h-full justify-start w-full">
+          <div className="bg-gray-800 rounded-xl shadow p-6 flex flex-col gap-4 min-h-[380px] border border-gray-700 w-full">
             <div className="text-lg font-bold text-gray-100 mb-2">Usage and Security</div>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-4 w-full">
               <UsageTrendsCard />
               <AnomalyDetectionCard />
               <ForecastCard />
-              <div className="bg-gray-900 rounded-lg p-2 border border-gray-700">
+              <div className="bg-gray-900 rounded-lg p-2 border border-gray-700 w-full">
                 <SecurityCard twoFAEnabled={true} sessions={0} apiKeys={0} loading={false} error={false} />
               </div>
             </div>
           </div>
-          <div className="bg-gray-800 rounded-xl shadow p-6 flex flex-col items-center min-h-[180px] justify-center border border-gray-700">
+          <div className="bg-gray-800 rounded-xl shadow p-6 flex flex-col items-center min-h-[180px] justify-center border border-gray-700 w-full">
             <div className="text-lg font-bold text-gray-100 mb-2">Tenant Usage</div>
             <div className="text-3xl font-extrabold text-cyan-400 mb-1">65,328</div>
             <div className="text-xs text-gray-300 mb-2">65% usage</div>
