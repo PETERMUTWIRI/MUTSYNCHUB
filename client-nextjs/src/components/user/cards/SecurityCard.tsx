@@ -1,21 +1,27 @@
 import React from 'react';
 import { HiLockClosed } from 'react-icons/hi';
 import { motion } from 'framer-motion';
+import { useOverviewData } from '@/lib/useOverviewData';
 
-const SecurityCard: React.FC<{ twoFAEnabled?: boolean; sessions?: number; apiKeys?: number; loading?: boolean; error?: boolean }> = ({ twoFAEnabled, sessions = 0, apiKeys = 0, loading, error }) => {
-  if (loading) return <div className="card skeleton">Loading security...</div>;
-  if (error) return <div className="card error">Unable to load security info.</div>;
+const SecurityCard: React.FC = () => {
+  const { data, loading, error } = useOverviewData();
+
+  if (loading) return <div className="bg-[#1E2A44] text-white p-6 rounded-xl shadow-lg">Loading security...</div>;
+  if (error) return <div className="bg-[#1E2A44] text-white p-6 rounded-xl shadow-lg">Unable to load security info.</div>;
+
   return (
     <motion.div
-      className="rounded-2xl shadow-lg bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-lg p-6 border border-gray-700/30 flex flex-col items-center justify-center min-h-[160px] hover:shadow-2xl transition-all"
-      whileHover={{ scale: 1.03, boxShadow: '0 0 24px #a3a3a3' }}
-      transition={{ type: 'spring', stiffness: 300 }}
+      className="rounded-xl shadow-xl bg-[#1E2A44] border border-[#2E7D7D]/30 p-6 flex flex-col items-start justify-start min-h-[200px] hover:shadow-2xl transition-all duration-300"
+      whileHover={{ scale: 1.02, boxShadow: '0 0 15px rgba(46, 125, 125, 0.5)' }}
+      transition={{ type: 'spring', stiffness: 400 }}
     >
-      <HiLockClosed className="text-gray-300 text-3xl mb-2" />
-      <div className="font-bold text-lg text-white mb-1">Security</div>
-      <div className="text-gray-300 mb-2">2FA: {twoFAEnabled ? 'Enabled' : 'Disabled'}</div>
-      <div className="text-xs text-gray-400 mb-2">Sessions: {sessions}</div>
-      <div className="text-xs text-gray-400">API Keys: {apiKeys}</div>
+      <div className="flex items-center gap-3 mb-4">
+        <HiLockClosed className="text-[#2E7D7D] text-2xl" />
+        <span className="text-white font-inter font-semibold text-lg">Security</span>
+      </div>
+      <div className="text-white font-inter font-bold text-xl mb-2">2FA: {data?.anomaly?.detected ? 'Enabled' : 'Disabled'}</div> {/* Placeholder */}
+      <div className="text-gray-300 font-inter text-base mb-2">Active Sessions: {data?.billing?.lastInvoice ? 2 : 0}</div> {/* Placeholder */}
+      <div className="text-gray-300 font-inter text-base">API Keys: {data?.billing?.nextPayment ? 3 : 0}</div> {/* Placeholder */}
     </motion.div>
   );
 };

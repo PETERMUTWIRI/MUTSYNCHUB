@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import Spinner from '../ui/Spinner';
 import { Input } from '../ui/input';
+import Spinner from '../ui/Spinner';
 
 const QueryAnalytics: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
@@ -48,45 +49,64 @@ const QueryAnalytics: React.FC = () => {
   };
 
   return (
-    <Card className="bg-gray-800 border-gray-700">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-white">Query Analytics</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex mb-4">
-          <Input
-            placeholder="Enter your query..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            disabled={loading}
-            className="bg-gray-700 border-gray-600 text-white"
-          />
-          <Button size="sm" onClick={handleRunQuery} disabled={loading || !query.trim()} className="ml-2">
-            Run Query
-          </Button>
-        </div>
-        {loading ? <Spinner /> : error ? <div className="text-red-400">{error}</div> : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-white">Query</TableHead>
-                <TableHead className="text-white">Date</TableHead>
-                <TableHead className="text-white">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {history.map((item, idx) => (
-                <TableRow key={idx}>
-                  <TableCell className="text-gray-300">{item.query}</TableCell>
-                  <TableCell className="text-gray-300">{new Date(item.date).toLocaleString()}</TableCell>
-                  <TableCell className="text-gray-300">{item.status}</TableCell>
+    <motion.div
+      className="bg-[#1E2A44] rounded-xl shadow-xl p-6 min-h-[200px]"
+      whileHover={{ scale: 1.02, boxShadow: '0 0 15px rgba(46, 125, 125, 0.5)' }}
+      transition={{ type: 'spring', stiffness: 300 }}
+    >
+      <Card className="bg-transparent border-none">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-xl font-inter text-gray-200">Query Analytics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex mb-4">
+            <Input
+              placeholder="Enter your query..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={loading}
+              className="bg-[#1E2A44] border-[#2E7D7D] text-gray-200 font-inter text-base focus:ring-[#2E7D7D]"
+            />
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                size="sm"
+                onClick={handleRunQuery}
+                disabled={loading || !query.trim()}
+                className="ml-2 bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white font-inter text-base"
+              >
+                Run Query
+              </Button>
+            </motion.div>
+          </div>
+          {loading ? (
+            <Spinner />
+          ) : error ? (
+            <div className="text-red-400 font-inter text-base">{error}</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-[#2E7D7D]">
+                  <TableHead className="text-gray-200 font-inter text-base">Query</TableHead>
+                  <TableHead className="text-gray-200 font-inter text-base">Date</TableHead>
+                  <TableHead className="text-gray-200 font-inter text-base">Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+              </TableHeader>
+              <TableBody>
+                {history.map((item, idx) => (
+                  <TableRow key={idx} className="border-[#2E7D7D]">
+                    <TableCell className="text-gray-300 font-inter text-base">{item.query}</TableCell>
+                    <TableCell className="text-gray-300 font-inter text-base">
+                      {new Date(item.date).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-gray-300 font-inter text-base">{item.status}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
 

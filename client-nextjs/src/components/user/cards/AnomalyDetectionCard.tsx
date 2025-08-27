@@ -4,16 +4,19 @@ import { FaExclamationTriangle } from 'react-icons/fa';
 export default function AnomalyDetectionCard() {
   return (
     <motion.div
-      className="rounded-2xl shadow-lg bg-gradient-to-br from-purple-900/70 to-indigo-900/80 backdrop-blur-lg p-6 border border-purple-700/30"
-      whileHover={{ scale: 1.03, boxShadow: '0 0 24px #a78bfa' }}
-      transition={{ type: 'spring', stiffness: 300 }}
+      className="rounded-xl shadow-xl bg-[#1E2A44] border border-[#2E7D7D]/30 p-6 flex flex-col items-start justify-start min-h-[200px] hover:shadow-2xl transition-all duration-300"
+      whileHover={{ scale: 1.02, boxShadow: '0 0 15px rgba(46, 125, 125, 0.5)' }}
+      transition={{ type: 'spring', stiffness: 400 }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <FaExclamationTriangle className="text-orange-400 text-xl" />
-        <span className="text-orange-300 font-semibold">Anomaly Detection</span>
+      <div className="flex items-center gap-3 mb-4">
+        <FaExclamationTriangle className="text-[#2E7D7D] text-2xl" />
+        <span className="text-white font-inter font-semibold text-lg">Anomaly Detection</span>
       </div>
-      <div className="text-white text-lg font-bold mb-2">Usage spike detected!</div>
-      <div className="text-slate-300 text-sm">AI flagged a 35% increase in API calls at 2:14pm. <span className="text-orange-400 font-bold">Investigate?</span></div>
+      <div className="text-white font-inter font-bold text-xl mb-2">Usage Spike Detected</div>
+      <div className="text-gray-300 font-inter text-base">
+        AI flagged a 35% increase in API calls at 2:14 PM.{' '}
+        <span className="text-[#2E7D7D] font-bold cursor-pointer hover:underline">Investigate Now</span>
+      </div>
     </motion.div>
   );
 }

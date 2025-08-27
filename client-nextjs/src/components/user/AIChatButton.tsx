@@ -25,19 +25,20 @@ export default function AIChatButton() {
 
   const handleClick = async () => {
     await fetchChatbotStatus();
+    router.push('/chat'); // Adjust route as needed
   };
 
   return (
     <button
-      className="fixed bottom-8 right-8 bg-gradient-to-r from-purple-600 to-teal-400 shadow-lg rounded-full p-4 text-white text-2xl hover:scale-105 transition-all z-50"
+      className="fixed bottom-8 right-8 bg-[#2E7D7D] rounded-full p-4 text-white text-2xl shadow-xl hover:bg-[#1E2A44] hover:text-[#2E7D7D] transition-all duration-200 z-50"
       onClick={handleClick}
       aria-label="Open AI Chatbot"
       disabled={loading}
     >
       <FaRobot />
-      {loading && <span className="ml-2 text-xs">Loading...</span>}
-      {status && <span className="ml-2 text-xs">{status}</span>}
-      {error && <span className="ml-2 text-xs text-red-400">{error}</span>}
+      {loading && <span className="ml-2 text-sm text-gray-200">Loading...</span>}
+      {status && <span className="ml-2 text-sm text-gray-200">{status}</span>}
+      {error && <span className="ml-2 text-sm text-red-400">{error}</span>}
     </button>
   );
 }

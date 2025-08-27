@@ -29,10 +29,14 @@ model UserProfile {
   lastLoginAt         DateTime?
   createdAt           DateTime       @default(now()) @map("created_at")
   updatedAt           DateTime       @updatedAt @map("updated_at")
+  dashboardLayout      Json?          @map("dashboard_layout")
+  layoutMode          String?        @default("beginner") @map("layout_mode")
+  isTechnical         Boolean        @default(false) @map("is_technical")
   organization        Organization   @relation(fields: [orgId], references: [id])
 
+
   @@schema("public")
-}
+  }
 
 model Organization {
   id        String    @id @default(uuid())

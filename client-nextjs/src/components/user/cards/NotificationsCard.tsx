@@ -1,20 +1,26 @@
 import React from 'react';
 import { HiBell } from 'react-icons/hi';
 import { motion } from 'framer-motion';
+import { useOverviewData } from '@/lib/useOverviewData';
 
-const NotificationsCard: React.FC<{ unreadCount?: number; latest?: string; loading?: boolean; error?: boolean }> = ({ unreadCount = 0, latest, loading, error }) => {
-  if (loading) return <div className="card skeleton">Loading notifications...</div>;
-  if (error) return <div className="card error">Unable to load notifications.</div>;
+const NotificationsCard: React.FC = () => {
+  const { data, loading, error } = useOverviewData();
+
+  if (loading) return <div className="bg-[#1E2A44] text-white p-6 rounded-xl shadow-lg">Loading notifications...</div>;
+  if (error) return <div className="bg-[#1E2A44] text-white p-6 rounded-xl shadow-lg">Unable to load notifications.</div>;
+
   return (
     <motion.div
-      className="rounded-2xl shadow-lg bg-gradient-to-br from-yellow-500/80 to-orange-400/80 backdrop-blur-lg p-6 border border-yellow-400/30 flex flex-col items-center justify-center min-h-[160px] hover:shadow-2xl transition-all"
-      whileHover={{ scale: 1.03, boxShadow: '0 0 24px #fbbf24' }}
-      transition={{ type: 'spring', stiffness: 300 }}
+      className="rounded-xl shadow-xl bg-[#1E2A44] border border-[#2E7D7D]/30 p-6 flex flex-col items-start justify-start min-h-[200px] hover:shadow-2xl transition-all duration-300"
+      whileHover={{ scale: 1.02, boxShadow: '0 0 15px rgba(46, 125, 125, 0.5)' }}
+      transition={{ type: 'spring', stiffness: 400 }}
     >
-      <HiBell className="text-yellow-700 text-3xl mb-2 animate-pulse" />
-      <div className="font-bold text-lg text-white mb-1">Notifications</div>
-      <div className="text-gray-300 mb-2">Unread: {unreadCount}</div>
-      <div className="text-xs text-gray-700">Latest: {latest || 'No notifications'}</div>
+      <div className="flex items-center gap-3 mb-4">
+        <HiBell className="text-[#2E7D7D] text-2xl" />
+        <span className="text-white font-inter font-semibold text-lg">Notifications</span>
+      </div>
+      <div className="text-white font-inter font-bold text-xl mb-2">Unread: {data?.anomaly?.detected ? 1 : 0}</div> {/* Placeholder */}
+      <div className="text-gray-300 font-inter text-base">Latest: {data?.anomaly?.message || 'No notifications'}</div>
     </motion.div>
   );
 };

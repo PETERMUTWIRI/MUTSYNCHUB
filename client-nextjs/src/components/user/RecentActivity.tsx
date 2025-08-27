@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
 const RecentActivity: React.FC = () => {
   const [count, setCount] = useState<number>(0);
@@ -23,14 +24,24 @@ const RecentActivity: React.FC = () => {
     fetchActivity();
   }, []);
 
-  if (loading) return <div className="text-center text-gray-400">Loading...</div>;
-  if (error) return <div className="text-center text-red-400">{error}</div>;
   return (
-    <div className="text-center">
-      <div className="text-lg font-bold text-gray-200 mb-2">Recent Activity</div>
-      <div className="text-4xl font-extrabold text-white mb-1">{count}</div>
-      <div className="text-sm text-gray-400">New Activities</div>
-    </div>
+    <motion.div
+      className="bg-[#1E2A44] rounded-xl shadow-xl p-6 min-h-[200px] flex flex-col justify-center items-center"
+      whileHover={{ scale: 1.02, boxShadow: '0 0 15px rgba(46, 125, 125, 0.5)' }}
+      transition={{ type: 'spring', stiffness: 300 }}
+    >
+      {loading ? (
+        <div className="text-center text-gray-300 font-inter text-base">Loading...</div>
+      ) : error ? (
+        <div className="text-center text-red-400 font-inter text-base">{error}</div>
+      ) : (
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-200 font-inter mb-2">Recent Activity</h2>
+          <div className="text-lg font-extrabold text-white font-inter mb-1">{count}</div>
+          <div className="text-base text-gray-300 font-inter">New Activities</div>
+        </div>
+      )}
+    </motion.div>
   );
 };
 

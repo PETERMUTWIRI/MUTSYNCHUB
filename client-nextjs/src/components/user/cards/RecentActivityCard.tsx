@@ -1,21 +1,27 @@
 import React from 'react';
 import { HiClipboardList } from 'react-icons/hi';
 import { motion } from 'framer-motion';
+import { useOverviewData } from '@/lib/useOverviewData';
 
-const RecentActivityCard: React.FC<{ lastLogin?: string; recent?: string[]; loading?: boolean; error?: boolean }> = ({ lastLogin, recent = [], loading, error }) => {
-  if (loading) return <div className="card skeleton">Loading activity...</div>;
-  if (error) return <div className="card error">Unable to load activity.</div>;
+const RecentActivityCard: React.FC = () => {
+  const { data, loading, error } = useOverviewData();
+
+  if (loading) return <div className="bg-[#1E2A44] text-white p-6 rounded-xl shadow-lg">Loading activity...</div>;
+  if (error) return <div className="bg-[#1E2A44] text-white p-6 rounded-xl shadow-lg">Unable to load activity.</div>;
+
   return (
     <motion.div
-      className="rounded-2xl shadow-lg bg-gradient-to-br from-purple-800/70 to-indigo-900/80 backdrop-blur-lg p-6 border border-purple-700/30 flex flex-col items-center justify-center min-h-[160px] hover:shadow-2xl transition-all"
-      whileHover={{ scale: 1.03, boxShadow: '0 0 24px #a78bfa' }}
-      transition={{ type: 'spring', stiffness: 300 }}
+      className="rounded-xl shadow-xl bg-[#1E2A44] border border-[#2E7D7D]/30 p-6 flex flex-col items-start justify-start min-h-[200px] hover:shadow-2xl transition-all duration-300"
+      whileHover={{ scale: 1.02, boxShadow: '0 0 15px rgba(46, 125, 125, 0.5)' }}
+      transition={{ type: 'spring', stiffness: 400 }}
     >
-      <HiClipboardList className="text-purple-300 text-3xl mb-2" />
-      <div className="font-bold text-lg text-white mb-1">Recent Activity</div>
-      <div className="text-gray-300 mb-2">Last login: {lastLogin || 'N/A'}</div>
-      <ul className="text-xs text-gray-400 list-disc pl-4">
-        {recent.length === 0 ? <li>No recent actions</li> : recent.map((item, i) => <li key={i}>{item}</li>)}
+      <div className="flex items-center gap-3 mb-4">
+        <HiClipboardList className="text-[#2E7D7D] text-2xl" />
+        <span className="text-white font-inter font-semibold text-lg">Recent Activity</span>
+      </div>
+      <div className="text-white font-inter font-bold text-xl mb-2">Last Login: {data?.billing?.lastInvoice || 'N/A'}</div> {/* Placeholder */}
+      <ul className="text-gray-300 list-disc pl-5 space-y-2">
+        {data?.anomaly?.detected ? <li className="text-base">Anomaly detected at 2:14 PM</li> : <li className="text-base">No recent actions</li>}
       </ul>
     </motion.div>
   );

@@ -1,19 +1,25 @@
 import { motion } from 'framer-motion';
 import { FaChartLine } from 'react-icons/fa';
+import { useOverviewData } from '@/lib/useOverviewData';
 
 export default function ForecastCard() {
+  const { data, loading, error } = useOverviewData();
+
+  if (loading) return <div className="bg-[#1E2A44] text-white p-6 rounded-xl shadow-lg">Loading forecast...</div>;
+  if (error) return <div className="bg-[#1E2A44] text-white p-6 rounded-xl shadow-lg">Unable to load forecast.</div>;
+
   return (
     <motion.div
-      className="rounded-2xl shadow-lg bg-gradient-to-br from-teal-900/70 to-indigo-900/80 backdrop-blur-lg p-6 border border-teal-700/30"
-      whileHover={{ scale: 1.03, boxShadow: '0 0 24px #14b8a6' }}
-      transition={{ type: 'spring', stiffness: 300 }}
+      className="rounded-xl shadow-xl bg-[#1E2A44] border border-[#2E7D7D]/30 p-6 flex flex-col items-start justify-start min-h-[200px] hover:shadow-2xl transition-all duration-300"
+      whileHover={{ scale: 1.02, boxShadow: '0 0 15px rgba(46, 125, 125, 0.5)' }}
+      transition={{ type: 'spring', stiffness: 400 }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <FaChartLine className="text-teal-400 text-xl" />
-        <span className="text-teal-300 font-semibold">Forecast</span>
+      <div className="flex items-center gap-3 mb-4">
+        <FaChartLine className="text-[#2E7D7D] text-2xl" />
+        <span className="text-white font-inter font-semibold text-lg">Forecast</span>
       </div>
-      <div className="text-white text-lg font-bold mb-2">Next Month: 2,800 API calls</div>
-      <div className="text-slate-300 text-sm">AI predicts a 10% increase in usage and billing.</div>
+      <div className="text-white font-inter font-bold text-xl mb-2">Next Month: {data?.billing?.nextPayment ? '2,800 API calls' : 'N/A'}</div>
+      <div className="text-gray-300 font-inter text-base">AI predicts a 10% increase in usage and billing.</div>
     </motion.div>
   );
 }
