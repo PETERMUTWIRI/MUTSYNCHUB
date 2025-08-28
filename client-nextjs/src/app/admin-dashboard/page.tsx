@@ -1,10 +1,15 @@
 "use client";
 import { HiUserGroup, HiCurrencyDollar, HiShieldCheck, HiClipboardList, HiUsers, HiCog } from 'react-icons/hi';
 import Link from "next/link";
-import DataSources from '@/components/admin/DataSources';
-import NLQueries from '@/components/admin/NLQueries';
-import Schedules from '@/components/admin/Schedules';
-import RevenuePanel from '@/components/admin/RevenuePanel/RevenuePanel';
+import dynamic from "next/dynamic";
+
+const RevenuePanel = dynamic(() => import("@/components/admin/RevenuePanel"), {
+  ssr: false,
+});
+
+const DataSources = dynamic(() => import("@/components/admin/DataSources"), { ssr: false });
+const NLQueries = dynamic(() => import("@/components/admin/NLQueries"), { ssr: false });
+const Schedules = dynamic(() => import("@/components/admin/Schedules"), { ssr: false });
 
 const AdminDashboard: React.FC = () => {
   return (

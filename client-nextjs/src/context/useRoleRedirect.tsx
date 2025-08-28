@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -29,7 +28,7 @@ export const useRoleRedirect = () => {
           const parsed = JSON.parse(cachedSession);
           if (parsed.expiresAt && parsed.expiresAt > Date.now()) {
             const role = parsed.role?.toLowerCase() || 'user';
-            console.log('useRoleRedirect: Role from cache', role, 'orgId:', parsed.orgId);
+            console.log('useRoleRedirect: Role from cache', role, 'orgId:', parsed.orgId, 'isTechnical:', parsed.isTechnical);
             router.push(role === 'admin' ? '/admin-dashboard' : '/resources');
             return;
           }
@@ -37,12 +36,13 @@ export const useRoleRedirect = () => {
         }
 
         console.log('useRoleRedirect: Fetching role for user', user.id);
-        const { role, orgId } = await ensureAndFetchUserProfile();
+        const { role, orgId, isTechnical } = await ensureAndFetchUserProfile();
         const fetchedRole = role.toLowerCase() || 'user';
-        console.log('useRoleRedirect: Role fetched', fetchedRole, 'orgId:', orgId);
+        console.log('useRoleRedirect: Role fetched', fetchedRole, 'orgId:', orgId, 'isTechnical:', isTechnical);
         localStorage.setItem('userSession', JSON.stringify({
           role: fetchedRole,
           orgId,
+          isTechnical,
           expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour
         }));
         router.push(fetchedRole === 'admin' ? '/admin-dashboard' : '/resources');
@@ -55,3 +55,5 @@ export const useRoleRedirect = () => {
     fetchRole();
   }, [user, pathname, router]);
 };
+
+export default useRoleRedirect;

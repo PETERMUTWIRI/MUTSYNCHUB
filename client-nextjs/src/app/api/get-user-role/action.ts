@@ -1,6 +1,6 @@
 'use server';
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient,Prisma } from '@prisma/client';
 import { stackServerApp } from '@/stack';
 import { v4 as uuidv4 } from 'uuid';
 import { neon } from '@neondatabase/serverless';
@@ -22,7 +22,7 @@ export async function ensureAndFetchUserProfile() {
 
   let profile = await prisma.userProfile.findUnique({
     where: { userId },
-    select: { role: true, orgId: true, isTechnical: true },
+    select: { role: true, orgId: true, isTechnical: true, dashboardLayout: true, layoutMode: true },
   });
 
   if (!profile) {
@@ -57,11 +57,11 @@ export async function ensureAndFetchUserProfile() {
         failedLoginAttempts: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
-        isTechnical: false, // Default for new users
-        layoutMode: 'beginner', // Default for new users
-        dashboardLayout: Prisma.JsonNull, // Initialize as null
+        isTechnical: false,
+        layoutMode: 'beginner',
+        dashboardLayout: null,
       },
-      select: { role: true, orgId: true, isTechnical: true },
+      select: { role: true, orgId: true, isTechnical: true, dashboardLayout: true, layoutMode: true },
     });
   }
 
@@ -69,5 +69,7 @@ export async function ensureAndFetchUserProfile() {
     role: profile.role || 'USER',
     orgId: profile.orgId,
     isTechnical: profile.isTechnical || false,
+    dashboardLayout: profile.dashboardLayout || null,
+    layoutMode: profile.layoutMode || 'beginner',
   };
 }

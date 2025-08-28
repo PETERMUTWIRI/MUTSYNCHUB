@@ -14,21 +14,23 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { ensureAndFetchUserProfile } from '@/app/api/get-user-role/action';
 
-// Dynamic Imports
-const UsageCard = dynamic(() => import('@/components/user/cards/UsageCard'), { ssr: false });
-const PlanCard = dynamic(() => import('@/components/user/cards/PlanCard'), { ssr: false });
-const BillingCard = dynamic(() => import('@/components/user/cards/BillingCard'), { ssr: false });
-const NotificationsCard = dynamic(() => import('@/components/user/cards/NotificationsCard'), { ssr: false });
-const SupportCard = dynamic(() => import('@/components/user/cards/SupportCard'), { ssr: false });
-const TeamCard = dynamic(() => import('@/components/user/cards/TeamCard'), { ssr: false });
-const AnnouncementsCard = dynamic(() => import('@/components/user/cards/AnnouncementsCard'), { ssr: false });
-const UsageTrendsCard = dynamic(() => import('@/components/user/cards/UsageTrendsCard'), { ssr: false });
-const AnomalyDetectionCard = dynamic(() => import('@/components/user/cards/AnomalyDetectionCard'), { ssr: false });
-const ForecastCard = dynamic(() => import('@/components/user/cards/ForecastCard'), { ssr: false });
-const UserInsightsCard = dynamic(() => import('@/components/user/cards/UserInsightsCard'), { ssr: false });
-const AIChatButton = dynamic(() => import('@/components/user/AIChatButton'), { ssr: false });
-const QueryAnalytics = dynamic(() => import('@/components/user/QueryAnalytics'), { ssr: false });
-const ScheduleAnalytics = dynamic(() => import('@/components/user/ScheduleAnalytics'), { ssr: false });
+
+
+// Dynamic Imports with Error Handling
+const UsageProgressBar = dynamic(() => import('@/components/user/UsageProgressBar').catch(() => ({ default: () => <div>Error loading UsageProgressBar</div> })), { ssr: false });
+const PlanStatus = dynamic(() => import('@/components/user/PlanStatus').catch(() => ({ default: () => <div>Error loading PlanStatus</div> })), { ssr: false });
+const BillingCard = dynamic(() => import('@/components/user/cards/BillingCard').catch(() => ({ default: () => <div>Error loading BillingCard</div> })), { ssr: false });
+const NotificationsCard = dynamic(() => import('@/components/user/cards/NotificationsCard').catch(() => ({ default: () => <div>Error loading NotificationsCard</div> })), { ssr: false });
+const SupportCard = dynamic(() => import('@/components/user/cards/SupportCard').catch(() => ({ default: () => <div>Error loading SupportCard</div> })), { ssr: false });
+const TeamCard = dynamic(() => import('@/components/user/cards/TeamCard').catch(() => ({ default: () => <div>Error loading TeamCard</div> })), { ssr: false });
+const AnnouncementsCard = dynamic(() => import('@/components/user/cards/AnnouncementsCard').catch(() => ({ default: () => <div>Error loading AnnouncementsCard</div> })), { ssr: false });
+
+const AnomalyDetectionCard = dynamic(() => import('@/components/user/cards/AnomalyDetectionCard').catch(() => ({ default: () => <div>Error loading AnomalyDetectionCard</div> })), { ssr: false });
+const ForecastCard = dynamic(() => import('@/components/user/cards/ForecastCard').catch(() => ({ default: () => <div>Error loading ForecastCard</div> })), { ssr: false });
+const UserInsightsCard = dynamic(() => import('@/components/user/cards/UserInsightsCard').catch(() => ({ default: () => <div>Error loading UserInsightsCard</div> })), { ssr: false });
+const AIChatButton = dynamic(() => import('@/components/user/AIChatButton').catch(() => ({ default: () => <div>Error loading AIChatButton</div> })), { ssr: false });
+const QueryAnalytics = dynamic(() => import('@/components/user/QueryAnalytics').catch(() => ({ default: () => <div>Error loading QueryAnalytics</div> })), { ssr: false });
+const ScheduleAnalytics = dynamic(() => import('@/components/user/ScheduleAnalytics').catch(() => ({ default: () => <div>Error loading ScheduleAnalytics</div> })), { ssr: false });
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -37,15 +39,29 @@ const defaultLayouts = {
   beginner: [
     { i: 'usage', x: 0, y: 0, w: 2, h: 2 },
     { i: 'plan', x: 2, y: 0, w: 2, h: 2 },
-    { i: 'query', x: 0, y: 2, w: 4, h: 4 },
+    { i: 'billing', x: 4, y: 0, w: 2, h: 2 },
+    { i: 'notifications', x: 0, y: 2, w: 2, h: 2 },
+    { i: 'query', x: 2, y: 2, w: 4, h: 4 },
   ],
   power: [
     { i: 'usage', x: 0, y: 0, w: 2, h: 2 },
     { i: 'query', x: 2, y: 0, w: 4, h: 4 },
     { i: 'schedule', x: 0, y: 4, w: 4, h: 4 },
-    { i: 'trends', x: 4, y: 0, w: 2, h: 2 },
-    { i: 'anomaly', x: 4, y: 2, w: 2, h: 2 },
+    { i: 'notifications', x: 4, y: 0, w: 2, h: 2 },
+    { i: 'billing', x: 4, y: 2, w: 2, h: 2 },
+    // Temporarily disable trends to isolate issue
+    // { i: 'trends', x: 0, y: 6, w: 2, h: 2 },
+    { i: 'anomaly', x: 2, y: 6, w: 2, h: 2 },
+    { i: 'forecast', x: 4, y: 6, w: 2, h: 2 },
+    { i: 'insights', x: 0, y: 8, w: 2, h: 2 },
   ],
+};
+
+// Validate layout to ensure it contains valid widget keys
+const validateLayout = (layout: any, mode: 'beginner' | 'power'): any => {
+  const validKeys = defaultLayouts[mode].map(item => item.i);
+  if (!Array.isArray(layout)) return defaultLayouts[mode];
+  return layout.filter(item => validKeys.includes(item.i));
 };
 
 export default function UserDashboard() {
@@ -65,18 +81,20 @@ export default function UserDashboard() {
     { title: 'Enterprise', packages: ['Custom Integrations', 'Dedicated Manager', 'Unlimited Users'], price: 10000 },
   ];
 
-  // Fetch user profile and layout
-  const { data: userProfile } = useQuery({
+  // Fetch user profile with layout
+  const { data: userProfile, error: profileError } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
       const cachedSession = localStorage.getItem('userSession');
       if (cachedSession) {
         const parsed = JSON.parse(cachedSession);
         if (parsed.expiresAt && parsed.expiresAt > Date.now()) {
+          console.log('UserDashboard: Loaded user profile from cache', parsed);
           return parsed;
         }
         localStorage.removeItem('userSession');
       }
+      console.log('UserDashboard: Fetching user profile');
       const profile = await ensureAndFetchUserProfile();
       localStorage.setItem('userSession', JSON.stringify({
         ...profile,
@@ -84,20 +102,12 @@ export default function UserDashboard() {
       }));
       return profile;
     },
-  });
-
-  const { data: savedLayout } = useQuery({
-    queryKey: ['userLayout', orgId],
-    queryFn: async () => {
-      const res = await fetch(`/api/user/layouts?orgId=${orgId}`);
-      if (!res.ok) throw new Error('Failed to fetch layout');
-      return res.json();
-    },
-    enabled: !!orgId,
+    retry: false,
   });
 
   const saveLayoutMutation = useMutation({
     mutationFn: async (newLayout: any) => {
+      console.log('UserDashboard: Saving layout for orgId:', orgId, 'layout:', newLayout);
       const res = await fetch('/api/user/layouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,28 +116,36 @@ export default function UserDashboard() {
       if (!res.ok) throw new Error('Failed to save layout');
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['userLayout'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['userProfile'] }),
   });
 
   useEffect(() => {
-    if (userProfile) {
+    if (profileError) {
+      console.error('UserDashboard: Profile fetch error', profileError);
+      setError('Failed to load user profile');
+      setLoading(false);
+    } else if (userProfile) {
+      console.log('UserDashboard: Profile loaded', userProfile);
       setRole(userProfile.role?.toLowerCase() || 'user');
       setOrgId(userProfile.orgId);
       setLayoutMode(userProfile.isTechnical ? 'power' : 'beginner');
-      setLayouts(savedLayout || defaultLayouts[userProfile.isTechnical ? 'power' : 'beginner']);
+      const validatedLayout = validateLayout(userProfile.dashboardLayout, userProfile.isTechnical ? 'power' : 'beginner');
+      setLayouts(validatedLayout || defaultLayouts[userProfile.isTechnical ? 'power' : 'beginner']);
       setLoading(false);
     }
-  }, [userProfile, savedLayout]);
+  }, [userProfile, profileError]);
 
   useEffect(() => {
     if (!loading && role && role !== 'user' && role !== 'admin') {
+      console.log('UserDashboard: Unauthorized role, redirecting', role);
       router.push('/unauthorized');
     }
   }, [role, loading, router]);
 
   const handleLayoutChange = (newLayout: any) => {
-    setLayouts(newLayout);
-    saveLayoutMutation.mutate(newLayout);
+    const validatedLayout = validateLayout(newLayout, layoutMode);
+    setLayouts(validatedLayout);
+    saveLayoutMutation.mutate(validatedLayout);
   };
 
   const handleUpgradeClick = () => setShowPlans(true);
@@ -242,10 +260,10 @@ export default function UserDashboard() {
           isResizable
         >
           <div key="usage" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <UsageCard />
+            <UsageProgressBar />
           </div>
           <div key="plan" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <PlanCard planName="Pro" renewalDate="2025-08-01" loading={false} error={false} handleUpgradeClick={handleUpgradeClick} />
+            <PlanStatus />
           </div>
           <div key="billing" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
             <BillingCard />
@@ -259,9 +277,10 @@ export default function UserDashboard() {
           <div key="schedule" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
             <ScheduleAnalytics />
           </div>
-          <div key="trends" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
+          {/* Temporarily commented to isolate issue */}
+          {/* <div key="trends" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
             <UsageTrendsCard />
-          </div>
+          </div> */}
           <div key="anomaly" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
             <AnomalyDetectionCard />
           </div>
