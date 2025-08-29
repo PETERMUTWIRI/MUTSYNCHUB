@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import Link from 'next/link';
 import { FaHome, FaChartBar, FaUsers, FaFileAlt, FaMoneyBill, FaCog, FaSignOutAlt } from 'react-icons/fa';
 // Removed useNeonUser import
 import { useRouter } from 'next/navigation';
@@ -40,18 +40,15 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, isAuthenticated, load
       </div>
       <nav className="flex-1 flex flex-col items-center w-full">
         {navItems.map((item) => (
-          <NavLink
+          <Link
             key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              `flex flex-col items-center mb-8 text-xl transition-colors duration-150 ${isActive ? 'text-blue-600 font-bold scale-110 bg-blue-50 rounded-lg shadow-md' : 'text-gray-400 hover:text-blue-500'}`
-            }
+            href={item.to}
+            className="flex flex-col items-center mb-8 text-xl transition-colors duration-150 text-gray-400 hover:text-blue-500 w-full py-2"
             title={item.label}
-            style={{ width: '100%', padding: '0.5rem 0' }}
           >
             {item.icon}
             <span className="text-xs mt-1">{item.label}</span>
-          </NavLink>
+          </Link>
         ))}
       </nav>
       {/* Logout button */}
