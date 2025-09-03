@@ -2,18 +2,24 @@
 
 import { CredentialSignUp, OAuthButton } from '@stackframe/stack';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PostLoginRedirect } from '@/components/PostLoginRedirect';
 import { useUser } from '@stackframe/stack';
 
 export default function SignUpPage() {
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
   const user = useUser();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   if (user) {
     return <PostLoginRedirect />;
   }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F7FAFC] dark:bg-[#1E2A44]">
       <Card className="w-full max-w-md border-[#E2E8F0] dark:border-[#2E7D7D]/20 shadow-lg">
@@ -24,7 +30,7 @@ export default function SignUpPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Google OAuth Sign-up Button */}
-          <OAuthButton provider="google" type="sign-up" />
+          {isClient && <OAuthButton provider="google" type="sign-up" />}
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -38,15 +44,16 @@ export default function SignUpPage() {
           </div>
 
           {/* Credential Sign-up Form */}
-          <CredentialSignUp
-            noPasswordRepeat
-            
-          />
+          {isClient && (
+            <CredentialSignUp
+              noPasswordRepeat
+            />
+          )}
           <span
-                className="underline text-blue-600 cursor-pointer"
-                onClick={() => router.replace('/sign-in')}
-              >
-                Go to Sign In
+            className="underline text-blue-600 cursor-pointer"
+            onClick={() => router.replace('/sign-in')}
+          >
+            Go to Sign In
           </span>
         </CardContent>
       </Card>

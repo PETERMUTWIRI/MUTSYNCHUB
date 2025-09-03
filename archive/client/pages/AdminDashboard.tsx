@@ -73,7 +73,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <Link
             to="/admin/users"
-            className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-auto text-center"
+            className="text-sm text-[var(--accent-amber)] hover:underline font-semibold mt-auto text-center"
           >
             Manage All Users
           </Link>
@@ -89,7 +89,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <Link
             to="/admin/audit-logs"
-            className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4 text-center"
+            className="text-sm text-[var(--accent-amber)] hover:underline font-semibold mt-4 text-center"
           >
             View All Logs
           </Link>
@@ -114,7 +114,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <Link
             to="/admin/revenue"
-            className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
+            className="text-sm text-[var(--accent-amber)] hover:underline font-semibold mt-4"
           >
             View Revenue Details
           </Link>
@@ -137,7 +137,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <Link
             to="/admin/system-status"
-            className="text-sm text-[var(--accent-amber,#FFA500)] hover:underline font-semibold mt-4"
+            className="text-sm text-[var(--accent-amber)] hover:underline font-semibold mt-4"
           >
             View System Status
           </Link>

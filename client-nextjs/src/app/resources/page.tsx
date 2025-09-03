@@ -1,5 +1,6 @@
-
 'use client';
+export const dynamic = 'force-dynamic';
+
 
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -101,10 +102,10 @@ export default function Resources() {
             Trusted by Industry Leaders
           </motion.h2>
           <div className="flex justify-center gap-8 flex-wrap">
-            <Image src="/assets/logos/client-logo-1.png" alt="Client 1" width={120} height={60} className="opacity-80 hover:opacity-100" />
-            <Image src="/assets/logos/client-logo-2.png" alt="Client 2" width={120} height={60} className="opacity-80 hover:opacity-100" />
-            <Image src="/assets/logos/soc2-logo.png" alt="SOC 2 Certified" width={100} height={50} className="opacity-80 hover:opacity-100" />
-            <Image src="/assets/logos/iso27001-logo.png" alt="ISO 27001 Certified" width={100} height={50} className="opacity-80 hover:opacity-100" />
+            <Image src="/assets/logos/client-logo-1.svg" alt="Client 1" width={120} height={60} className="opacity-80 hover:opacity-100" />
+            <Image src="/assets/logos/client-logo-2.svg" alt="Client 2" width={120} height={60} className="opacity-80 hover:opacity-100" />
+            <Image src="/assets/logos/soc2-logo.svg" alt="SOC 2 Certified" width={100} height={50} className="opacity-80 hover:opacity-100" />
+            <Image src="/assets/logos/iso27001-logo.svg" alt="ISO 27001 Certified" width={100} height={50} className="opacity-80 hover:opacity-100" />
           </div>
         </div>
       </section>

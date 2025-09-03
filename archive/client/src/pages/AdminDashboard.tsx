@@ -1,26 +1,18 @@
-
-'use client'; // Required for Client Component in Next.js App Router
-
+import React from 'react';
 import { HiUserGroup, HiCurrencyDollar, HiShieldCheck, HiClipboardList, HiUsers, HiCog } from 'react-icons/hi';
-import Link from 'next/link';
-import dynamic from 'next/dynamic';
-
-const RevenuePanel = dynamic(() => import('@/components/admin/RevenuePanel'), {
-  ssr: false,
-});
-
-const DataSources = dynamic(() => import('@/components/admin/DataSources'), { ssr: false });
-const NLQueries = dynamic(() => import('@/components/admin/NLQueries'), { ssr: false });
-const Schedules = dynamic(() => import('@/components/admin/Schedules'), { ssr: false });
+// ...existing code...
+import { Link } from "react-router-dom";
+import DataSources from '../components/admin/DataSources';
+import NLQueries from '../components/admin/NLQueries';
+import Schedules from '../components/admin/Schedules';
+import RevenuePanel from '../components/admin/RevenuePanel/RevenuePanel';
 
 const AdminDashboard: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto py-12">
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
         {/* Overview Title (left) */}
-        <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg mb-4 md:mb-0 text-left">
-          Overview
-        </h1>
+        <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg mb-4 md:mb-0 text-left">Overview</h1>
         {/* Welcome Banner (right) */}
         <div className="rounded-2xl bg-gradient-to-r from-blue-900 to-indigo-900 shadow-xl p-8 flex flex-col justify-center animate-fade-in max-w-xl w-full md:w-auto">
           <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">Welcome back, Admin!</h2>
@@ -67,6 +59,8 @@ const AdminDashboard: React.FC = () => {
           <div className="text-xs text-green-400 mt-2">100% uptime</div>
         </div>
       </div>
+
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-6 md:gap-8 mt-8">
         {/* User Management Card */}
         <div className="col-span-1 md:col-span-5 rounded-2xl shadow-2xl bg-gradient-to-br from-cyan-800 to-blue-900 flex flex-col p-8 min-h-[340px]">
@@ -78,8 +72,8 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
           <Link
-            href="/admin/users"
-            className="text-sm text-amber-500 hover:underline font-semibold mt-auto text-center"
+            to="/admin/users"
+            className="text-sm text-[var(--accent-amber)] hover:underline font-semibold mt-auto text-center"
           >
             Manage All Users
           </Link>
@@ -94,8 +88,8 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
           <Link
-            href="/admin/audit-logs"
-            className="text-sm text-amber-500 hover:underline font-semibold mt-4 text-center"
+            to="/admin/audit-logs"
+            className="text-sm text-[var(--accent-amber)] hover:underline font-semibold mt-4 text-center"
           >
             View All Logs
           </Link>
@@ -119,8 +113,8 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
           <Link
-            href="/admin/revenue"
-            className="text-sm text-amber-500 hover:underline font-semibold mt-4"
+            to="/admin/revenue"
+            className="text-sm text-[var(--accent-amber)] hover:underline font-semibold mt-4"
           >
             View Revenue Details
           </Link>
@@ -142,8 +136,8 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
           <Link
-            href="/admin/system-status"
-            className="text-sm text-amber-500 hover:underline font-semibold mt-4"
+            to="/admin/system-status"
+            className="text-sm text-[var(--accent-amber)] hover:underline font-semibold mt-4"
           >
             View System Status
           </Link>

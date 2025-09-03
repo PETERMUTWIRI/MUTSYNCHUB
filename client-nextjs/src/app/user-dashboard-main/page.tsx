@@ -9,28 +9,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import dynamic from 'next/dynamic';
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
+// import dynamic from 'next/dynamic';
+// import 'react-grid-layout/css/styles.css';
+// import 'react-resizable/css/styles.css';
 import { ensureAndFetchUserProfile } from '@/app/api/get-user-role/action';
 
 
 
-// Dynamic Imports with Error Handling
-const UsageProgressBar = dynamic(() => import('@/components/user/UsageProgressBar').catch(() => ({ default: () => <div>Error loading UsageProgressBar</div> })), { ssr: false });
-const PlanStatus = dynamic(() => import('@/components/user/PlanStatus').catch(() => ({ default: () => <div>Error loading PlanStatus</div> })), { ssr: false });
-const BillingCard = dynamic(() => import('@/components/user/cards/BillingCard').catch(() => ({ default: () => <div>Error loading BillingCard</div> })), { ssr: false });
-const NotificationsCard = dynamic(() => import('@/components/user/cards/NotificationsCard').catch(() => ({ default: () => <div>Error loading NotificationsCard</div> })), { ssr: false });
-const SupportCard = dynamic(() => import('@/components/user/cards/SupportCard').catch(() => ({ default: () => <div>Error loading SupportCard</div> })), { ssr: false });
-const TeamCard = dynamic(() => import('@/components/user/cards/TeamCard').catch(() => ({ default: () => <div>Error loading TeamCard</div> })), { ssr: false });
-const AnnouncementsCard = dynamic(() => import('@/components/user/cards/AnnouncementsCard').catch(() => ({ default: () => <div>Error loading AnnouncementsCard</div> })), { ssr: false });
 
-const AnomalyDetectionCard = dynamic(() => import('@/components/user/cards/AnomalyDetectionCard').catch(() => ({ default: () => <div>Error loading AnomalyDetectionCard</div> })), { ssr: false });
-const ForecastCard = dynamic(() => import('@/components/user/cards/ForecastCard').catch(() => ({ default: () => <div>Error loading ForecastCard</div> })), { ssr: false });
-const UserInsightsCard = dynamic(() => import('@/components/user/cards/UserInsightsCard').catch(() => ({ default: () => <div>Error loading UserInsightsCard</div> })), { ssr: false });
-const AIChatButton = dynamic(() => import('@/components/user/AIChatButton').catch(() => ({ default: () => <div>Error loading AIChatButton</div> })), { ssr: false });
-const QueryAnalytics = dynamic(() => import('@/components/user/QueryAnalytics').catch(() => ({ default: () => <div>Error loading QueryAnalytics</div> })), { ssr: false });
-const ScheduleAnalytics = dynamic(() => import('@/components/user/ScheduleAnalytics').catch(() => ({ default: () => <div>Error loading ScheduleAnalytics</div> })), { ssr: false });
+import { default as UsageProgressBar } from '@/components/user/UsageProgressBar';
+import { default as PlanStatus } from '@/components/user/PlanStatus';
+import { default as BillingCard } from '@/components/user/cards/BillingCard';
+import { default as NotificationsCard } from '@/components/user/cards/NotificationsCard';
+import { default as SupportCard } from '@/components/user/cards/SupportCard';
+import { default as TeamCard } from '@/components/user/cards/TeamCard';
+import { default as AnnouncementsCard } from '@/components/user/cards/AnnouncementsCard';
+import { default as AnomalyDetectionCard } from '@/components/user/cards/AnomalyDetectionCard';
+import { default as ForecastCard } from '@/components/user/cards/ForecastCard';
+import { default as UserInsightsCard } from '@/components/user/cards/UserInsightsCard';
+import { default as AIChatButton } from '@/components/user/AIChatButton';
+import { default as QueryAnalytics } from '@/components/user/QueryAnalytics';
+import { default as ScheduleAnalytics } from '@/components/user/ScheduleAnalytics';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 

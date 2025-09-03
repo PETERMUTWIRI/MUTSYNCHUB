@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2020", // Updated from es5 for modern browser support
+    "target": "es6", // Use es6 for Next.js 14 compatibility (es2020 is fine but es6 is safer)
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -9,10 +9,10 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler", // Updated from node for Next.js 15
+    "moduleResolution": "node", // Change to node for Next.js 14
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve", // Still valid for Next.js
+    "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
     "paths": {
@@ -24,7 +24,6 @@
         "name": "next"
       }
     ],
-    // Add strictNullChecks if not already enabled (optional, but recommended)
     "strictNullChecks": true
   },
   "include": [
@@ -36,7 +35,6 @@
   "exclude": [
     "node_modules",
     "out",
-    ".next",
-    "**/[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9]*"
+    ".next"
   ]
 }

@@ -12,6 +12,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { useQuery } from '@tanstack/react-query';
 import QueryAnalytics from '@/components/user/QueryAnalytics'; // From prior refactor
 import Spinner from '@/components/ui/Spinner';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 // New ScheduleAnalytics Component
 const ScheduleAnalytics: React.FC = () => {

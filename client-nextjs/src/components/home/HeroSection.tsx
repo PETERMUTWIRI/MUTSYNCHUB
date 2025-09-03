@@ -1,13 +1,13 @@
 // src/components/home/HeroSection.tsx
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import styles from './HeroSection.module.css'; // Import CSS
 
-// Logo image paths (public/assets/logos)
 const trustLogos = [
   '/assets/logos/aws.svg',
   '/assets/logos/cisco.svg',
@@ -22,7 +22,7 @@ const trustLogos = [
   '/assets/logos/sap.svg',
 ];
 
-const HeroSection: React.FC = () => {
+export default function HeroSection() {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -33,7 +33,6 @@ const HeroSection: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas dimensions
     const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -42,7 +41,6 @@ const HeroSection: React.FC = () => {
     window.addEventListener('resize', handleResize);
     handleResize();
 
-    // Generate revenue data points
     const generateData = (count: number) => {
       const data = [];
       let lastRevenue = 500;
@@ -51,20 +49,12 @@ const HeroSection: React.FC = () => {
       for (let i = 0; i < count; i++) {
         const trend = Math.sin(i / 20) * 0.8 + Math.cos(i / 8) * 0.5;
         const volatility = Math.random() * 0.4 + 0.8;
-
         const revenue = lastRevenue * (1 + trend * 0.02 * volatility);
         const volume = lastVolume * (1 + trend * 0.03 * volatility);
-
-        data.push({
-          x: i,
-          revenue: Math.max(100, revenue),
-          volume: Math.max(50, volume),
-        });
-
+        data.push({ x: i, revenue: Math.max(100, revenue), volume: Math.max(50, volume) });
         lastRevenue = revenue;
         lastVolume = volume;
       }
-
       return data;
     };
 
@@ -72,15 +62,11 @@ const HeroSection: React.FC = () => {
     let animationFrame: number;
     let progress = 0;
 
-    // Animation function
     const animate = () => {
       if (!ctx) return;
-
-      // Clear canvas with solid color
       ctx.fillStyle = '#1E2A44';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Calculate visible points based on animation progress
       const visiblePoints = Math.min(data.length, Math.floor(progress * data.length));
       const visibleData = data.slice(0, visiblePoints);
 
@@ -90,11 +76,8 @@ const HeroSection: React.FC = () => {
         return;
       }
 
-      // Draw grid lines
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
       ctx.lineWidth = 1;
-
-      // Draw vertical grid lines
       const gridSize = 80;
       for (let x = gridSize; x < canvas.width; x += gridSize) {
         ctx.beginPath();
@@ -102,8 +85,6 @@ const HeroSection: React.FC = () => {
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
       }
-
-      // Draw horizontal grid lines
       for (let y = gridSize; y < canvas.height; y += gridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
@@ -111,55 +92,40 @@ const HeroSection: React.FC = () => {
         ctx.stroke();
       }
 
-      // Calculate scales
       const margin = 80;
       const graphWidth = canvas.width - margin * 2;
       const graphHeight = canvas.height - margin * 2;
-
       const minRevenue = Math.min(...visibleData.map((d) => d.revenue));
       const maxRevenue = Math.max(...visibleData.map((d) => d.revenue));
       const minVolume = Math.min(...visibleData.map((d) => d.volume));
       const maxVolume = Math.max(...visibleData.map((d) => d.volume));
 
-      // Draw volume bars (candlestick style)
       const barWidth = graphWidth / visibleData.length;
       visibleData.forEach((point, i) => {
         const x = margin + i * barWidth;
         const barHeight = (point.volume / maxVolume) * graphHeight * 0.3;
         const y = canvas.height - margin - barHeight;
-
-        // Color based on trend
         const isUp = i > 0 && point.volume > visibleData[i - 1].volume;
         ctx.fillStyle = isUp ? '#38A169' : '#E53E3E';
-
         ctx.fillRect(x, y, barWidth * 0.8, barHeight);
       });
 
-      // Draw revenue line
       ctx.beginPath();
       ctx.strokeStyle = '#2E7D7D';
       ctx.lineWidth = 3;
       ctx.lineJoin = 'round';
-
       visibleData.forEach((point, i) => {
         const x = margin + i * barWidth + barWidth / 2;
         const y = margin + graphHeight - ((point.revenue - minRevenue) / (maxRevenue - minRevenue)) * graphHeight;
-
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       });
-
       ctx.stroke();
 
-      // Draw gradient under revenue line
       if (visibleData.length > 1) {
         const lastPoint = visibleData[visibleData.length - 1];
         const lastX = margin + (visibleData.length - 1) * barWidth + barWidth / 2;
         const lastY = margin + graphHeight - ((lastPoint.revenue - minRevenue) / (maxRevenue - minRevenue)) * graphHeight;
-
         ctx.beginPath();
         ctx.moveTo(margin, margin + graphHeight);
         visibleData.forEach((point, i) => {
@@ -169,7 +135,6 @@ const HeroSection: React.FC = () => {
         });
         ctx.lineTo(lastX, margin + graphHeight);
         ctx.closePath();
-
         const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
         gradient.addColorStop(0, 'rgba(46, 125, 125, 0.3)');
         gradient.addColorStop(1, 'rgba(46, 125, 125, 0)');
@@ -177,40 +142,29 @@ const HeroSection: React.FC = () => {
         ctx.fill();
       }
 
-      // Draw axis labels
       ctx.fillStyle = '#A0AEC0';
       ctx.font = '12px Arial';
-
-      // Y-axis labels
       ctx.fillText(`$${Math.round(maxRevenue / 1000)}K`, 10, margin + 15);
       ctx.fillText(`$${Math.round(minRevenue / 1000)}K`, 10, canvas.height - margin);
 
-      // Draw moving indicator
       if (visibleData.length > 1) {
         const lastPoint = visibleData[visibleData.length - 1];
         const lastX = margin + (visibleData.length - 1) * barWidth + barWidth / 2;
         const lastY = margin + graphHeight - ((lastPoint.revenue - minRevenue) / (maxRevenue - minRevenue)) * graphHeight;
-
-        // Draw indicator circle
         ctx.beginPath();
         ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
         ctx.fillStyle = '#2E7D7D';
         ctx.fill();
-
-        // Draw pulse animation
         ctx.beginPath();
         ctx.arc(lastX, lastY, 10, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(46, 125, 125, 0.5)';
         ctx.lineWidth = 2;
         ctx.stroke();
-
-        // Draw value indicator
         ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 14px Arial';
         ctx.fillText(`$${Math.round(lastPoint.revenue)}`, lastX + 15, lastY - 10);
       }
 
-      // Continue animation
       progress += 0.005;
       if (progress < 1.1) {
         animationFrame = requestAnimationFrame(animate);
@@ -232,12 +186,9 @@ const HeroSection: React.FC = () => {
 
   return (
     <div className="relative">
-      {/* Canvas-based revenue visualization */}
       <div className="relative overflow-hidden w-full h-[700px] flex items-center justify-start">
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover z-0" />
         <div className="absolute inset-0 bg-[#1E2A44]/70 z-10" />
-
-        {/* Hero Content */}
         <div className="relative z-20 flex flex-col justify-center items-start h-full px-8 md:px-24 pt-24">
           <motion.h1
             initial={{ opacity: 0, y: 40 }}
@@ -247,7 +198,6 @@ const HeroSection: React.FC = () => {
           >
             The Intelligence Platform for Modern Enterprises
           </motion.h1>
-
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -256,7 +206,6 @@ const HeroSection: React.FC = () => {
           >
             Accurate, Secure, and Scalable.
           </motion.p>
-
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -281,12 +230,10 @@ const HeroSection: React.FC = () => {
           </motion.div>
         </div>
       </div>
-
-      {/* Trust Carousel Section */}
       <section className="w-full py-8 px-0 bg-white border-t border-[#E2E8F0]">
         <div className="overflow-hidden">
           <motion.div
-            className="flex gap-8 animate-logo-marquee py-4 w-max"
+            className={`flex gap-8 ${styles['animate-logo-marquee']} py-4 w-max`}
             style={{ minWidth: '100vw' }}
             aria-label="Trusted Companies Carousel"
           >
@@ -310,28 +257,12 @@ const HeroSection: React.FC = () => {
             ))}
           </motion.div>
         </div>
-
         <div className="max-w-7xl mx-auto px-4 mt-4">
           <p className="text-center text-[#1E2A44] text-base font-semibold">
             Trusted by enterprises worldwide and compliant with industry-leading standards
           </p>
         </div>
       </section>
-
-      {/* Carousel animation styles */}
-      <style>{`
-        @keyframes logo-marquee {
-          0% { transform: translateX(100vw); }
-          100% { transform: translateX(-100vw); }
-        }
-        .animate-logo-marquee {
-          animation: logo-marquee 30s linear infinite;
-          display: flex;
-          align-items: center;
-        }
-      `}</style>
     </div>
   );
-};
-
-export default HeroSection;
+}
