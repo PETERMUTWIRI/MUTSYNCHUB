@@ -1,20 +1,14 @@
-// src/components/ErrorPage.tsx
-import { useRouteError } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+// src/components/ui/ErrorPage.tsx
+"use client";
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { HiExclamationCircle } from 'react-icons/hi';
 
-export default function ErrorPage() {
-  const error = useRouteError() as { status: number; data: string };
-  
+export default function ErrorPage({ error }: { error: Error }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <h1 className="text-4xl font-bold">Oops!</h1>
-      <p className="text-lg">Sorry, an unexpected error has occurred.</p>
-      <p className="text-muted-foreground">
-        {error.status} - {error.data}
-      </p>
-      <Button asChild>
-        <a href="/">Return Home</a>
-      </Button>
-    </div>
+    <Alert>
+      <HiExclamationCircle className="h-5 w-5" />
+      <AlertTitle>Error</AlertTitle>
+      <AlertDescription>{error.message}</AlertDescription>
+    </Alert>
   );
 }

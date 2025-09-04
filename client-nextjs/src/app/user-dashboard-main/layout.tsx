@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@stackframe/stack';
-import { Suspense, useState } from 'react';
+import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
@@ -11,20 +11,14 @@ const DashboardSidebar = dynamic(() => import('@/components/user/DashboardSideba
 
 export default function UserDashboardLayout({ children }: { children: React.ReactNode }) {
   const user = useUser({ or: 'redirect' });
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const isSidebarOpen = true; // Hardcode for now to avoid useState; reintroduce if needed
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex min-h-screen w-full bg-[#1E2A44] text-white font-inter"
-    >
-      <DashboardSidebar
-        className="flex-shrink-0"
-        onToggle={(isOpen) => setIsSidebarOpen(isOpen)}
-      />
+    <div className="flex min-h-screen w-full bg-[#1E2A44] text-white font-inter">
+      <DashboardSidebar className="flex-shrink-0" onToggle={() => {}} />
       <motion.main
-        animate={{ marginLeft: isSidebarOpen ? '260px' : '60px' }}
+        initial={{ marginLeft: '260px' }} // Match hardcoded isSidebarOpen
+        animate={{ marginLeft: '260px' }}
         transition={{ duration: 0.3 }}
         className="flex-1 p-8 w-full max-w-7xl mx-auto"
       >
@@ -40,6 +34,6 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
         </Suspense>
       </motion.main>
       <Toaster position="top-right" />
-    </motion.div>
+    </div>
   );
 }

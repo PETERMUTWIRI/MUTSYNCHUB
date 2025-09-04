@@ -7,7 +7,7 @@ import { PostLoginRedirect } from '@/components/PostLoginRedirect';
 export const dynamic = 'force-static'; // Force static rendering
 
 export default function AuthCallback() {
-  const { loading } = useRoleRedirect();
+  useRoleRedirect();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F7FAFC] dark:bg-[#1E2A44]">

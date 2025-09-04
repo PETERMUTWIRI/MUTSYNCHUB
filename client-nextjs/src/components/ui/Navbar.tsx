@@ -1,7 +1,9 @@
-'use client'; // Required for Client Component in Next.js App Router
+
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,8 +17,14 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center space-x-3" aria-label="MutSyncHub Home">
-            <img src="/assets/images/mutsynchub-logo.png" alt="MutSyncHub Logo" className="h-8 w-8" />
+          <Link href="/" className="flex items-center space-x-3">
+            <Image
+              src="/assets/images/mutsynchub-logo.png"
+              alt="MutSyncHub Logo"
+              width={32}
+              height={32}
+              priority // Optimize loading for above-the-fold content
+            />
             <span className="text-xl font-semibold text-white font-inter">MutSyncHub</span>
           </Link>
         </div>

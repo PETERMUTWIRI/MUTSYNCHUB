@@ -77,7 +77,7 @@
 'use server';
 
 import { PrismaClient, Prisma } from '@prisma/client';
-import { stackServerApp } from '@/stack';
+import { stackServerApp } from '@/lib/stack';
 import { v4 as uuidv4 } from 'uuid';
 import { neon } from '@neondatabase/serverless';
 import { cookies } from 'next/headers';
