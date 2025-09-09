@@ -1,4 +1,3 @@
-// src/components/home/HeroSection.tsx
 'use client';
 
 import React, { useEffect, useRef } from 'react';
@@ -6,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import styles from './HeroSection.module.css'; // Import CSS
 
 const trustLogos = [
   '/assets/logos/aws.svg',
@@ -185,84 +183,100 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <div className="relative">
-      <div className="relative overflow-hidden w-full h-[700px] flex items-center justify-start">
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover z-0" />
-        <div className="absolute inset-0 bg-[#1E2A44]/70 z-10" />
-        <div className="relative z-20 flex flex-col justify-center items-start h-full px-8 md:px-24 pt-24">
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            className="text-white text-4xl md:text-6xl font-bold mb-6 max-w-2xl"
-          >
-            The Intelligence Platform for Modern Enterprises
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 1 }}
-            className="text-lg md:text-xl text-[#A0AEC0] font-normal max-w-2xl mb-8 leading-relaxed"
-          >
-            Accurate, Secure, and Scalable.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 1 }}
-            className="flex flex-col sm:flex-row gap-4"
-          >
-            <Button
-              size="lg"
-              className="group bg-[#2E7D7D] text-white px-8 py-3 text-base font-semibold rounded-md hover:bg-[#256363] transition-colors duration-200 shadow-sm hover:shadow-md"
-              onClick={() => router.push('/signup')}
+    <>
+      <style jsx>{`
+        @keyframes logo-marquee {
+          0% {
+            transform: translateX(100vw);
+          }
+          100% {
+            transform: translateX(-100vw);
+          }
+        }
+        .animate-logo-marquee {
+          animation: logo-marquee 30s linear infinite;
+          display: flex;
+          align-items: center;
+        }
+      `}</style>
+      <div className="relative">
+        <div className="relative overflow-hidden w-full h-[700px] flex items-center justify-start">
+          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover z-0" />
+          <div className="absolute inset-0 bg-[#1E2A44]/70 z-10" />
+          <div className="relative z-20 flex flex-col justify-center items-start h-full px-8 md:px-24 pt-24">
+            <motion.h1
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1 }}
+              className="text-white text-4xl md:text-6xl font-bold mb-6 max-w-2xl"
             >
-              Explore Analytics Engine
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
-            <Button
-              variant="outline"
-              className="bg-transparent border-[#E2E8F0] text-[#2E7D7D] hover:bg-[#2E7D7D]/10 hover:border-[#256363] px-8 py-3 text-base font-semibold rounded-md"
-              onClick={() => router.push('/solutions')}
+              The Intelligence Platform for Modern Enterprises
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 1 }}
+              className="text-lg md:text-xl text-[#A0AEC0] font-normal max-w-2xl mb-8 leading-relaxed"
             >
-              View Enterprise Solutions
-            </Button>
-          </motion.div>
-        </div>
-      </div>
-      <section className="w-full py-8 px-0 bg-white border-t border-[#E2E8F0]">
-        <div className="overflow-hidden">
-          <motion.div
-            className={`flex gap-8 ${styles['animate-logo-marquee']} py-4 w-max`}
-            style={{ minWidth: '100vw' }}
-            aria-label="Trusted Companies Carousel"
-          >
-            {[...trustLogos, ...trustLogos].map((src, idx) => (
-              <motion.div
-                key={idx}
-                className="rounded-full bg-[#F7FAFC] p-3 flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
-                tabIndex={0}
-                aria-label="Trusted Company Logo"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              Accurate, Secure, and Scalable.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <Button
+                size="lg"
+                className="group bg-[#2E7D7D] text-white px-8 py-3 text-base font-semibold rounded-md hover:bg-[#256363] transition-colors duration-200 shadow-sm hover:shadow-md"
+                onClick={() => router.push('/signup')}
               >
-                <motion.img
-                  src={src}
-                  alt="Enterprise Logo"
-                  className="h-10 w-10 object-contain grayscale hover:grayscale-0 opacity-80 hover:opacity-100 transition rounded-full"
-                  draggable={false}
-                  whileHover={{ scale: 1.1 }}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
+                Explore Analytics Engine
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-transparent border-[#E2E8F0] text-[#2E7D7D] hover:bg-[#2E7D7D]/10 hover:border-[#256363] px-8 py-3 text-base font-semibold rounded-md"
+                onClick={() => router.push('/solutions')}
+              >
+                View Enterprise Solutions
+              </Button>
+            </motion.div>
+          </div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 mt-4">
-          <p className="text-center text-[#1E2A44] text-base font-semibold">
-            Trusted by enterprises worldwide and compliant with industry-leading standards
-          </p>
-        </div>
-      </section>
-    </div>
+        <section className="w-full py-8 px-0 bg-white border-t border-[#E2E8F0]">
+          <div className="overflow-hidden">
+            <motion.div
+              className="flex gap-8 animate-logo-marquee py-4 w-max min-w-[100vw]"
+              aria-label="Trusted Companies Carousel"
+            >
+              {[...trustLogos, ...trustLogos].map((src, idx) => (
+                <motion.div
+                  key={idx}
+                  className="rounded-full bg-[#F7FAFC] p-3 flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
+                  tabIndex={0}
+                  aria-label="Trusted Company Logo"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <motion.img
+                    src={src}
+                    alt="Enterprise Logo"
+                    className="h-10 w-10 object-contain grayscale hover:grayscale-0 opacity-80 hover:opacity-100 transition rounded-full"
+                    draggable={false}
+                    whileHover={{ scale: 1.1 }}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+          <div className="max-w-7xl mx-auto px-4 mt-4">
+            <p className="text-center text-[#1E2A44] text-base font-semibold">
+              Trusted by enterprises worldwide and compliant with industry-leading standards
+            </p>
+          </div>
+        </section>
+      </div>
+    </>
   );
 }

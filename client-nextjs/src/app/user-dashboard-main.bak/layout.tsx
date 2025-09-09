@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 
 // Dynamic import for DashboardSidebar
-import DashboardSidebar from '@/components/user/DashboardSidebar';
+const DashboardSidebar = dynamic(() => import('@/components/user/DashboardSidebar'), { ssr: false });
 
 export default function UserDashboardLayout({ children }: { children: React.ReactNode }) {
   const user = useUser({ or: 'redirect' });

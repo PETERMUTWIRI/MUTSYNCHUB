@@ -139,7 +139,7 @@ export async function ensureAndFetchUserProfile() {
         updatedAt: new Date(),
         isTechnical: false,
         layoutMode: 'beginner',
-        dashboardLayout: null,
+        dashboardLayout: Prisma.DbNull, // ✅
       },
       select: { role: true, orgId: true, isTechnical: true, dashboardLayout: true, layoutMode: true },
     });

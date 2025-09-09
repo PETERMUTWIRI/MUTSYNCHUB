@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { getCurrentPlan, getInvoices, getPaymentMethods, deletePaymentMethod } from '@/lib/user';
-const Spinner = dynamic(() => import('@/components/ui/Spinner').then(mod => mod.default), { ssr: false });
+import Spinner from '@/components/ui/Spinner';
 import {Button} from '@/components/ui/button';
 // Dynamic imports for individual components
 import { ChevronDown } from 'lucide-react';

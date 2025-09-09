@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { useUser } from '@stackframe/stack';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -11,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
-const QueryAnalytics = dynamic(() => import('@/components/user/QueryAnalytics').then(mod => mod.default), { ssr: false });
-const Spinner = dynamic(() => import('@/components/ui/Spinner').then(mod => mod.default), { ssr: false });
+import QueryAnalytics from '@/components/user/QueryAnalytics'; // From prior refactor
+import Spinner from '@/components/ui/Spinner';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 // New ScheduleAnalytics Component

@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    // allow any origin while you develop
+    serverActionsAllowedOrigins: ['*'],
+    serverActionsBodySizeLimit: '2mb', 
+  },
   compiler: {
     removeConsole: {
       exclude: ['error'], // Keep console.error in production
@@ -25,10 +30,6 @@ const nextConfig = {
           {
             key: 'Access-Control-Allow-Origin',
             value: 'https://potential-yodel-4jr5qq54gqvwh6wg-3000.app.github.dev',
-          },
-          {
-            key: 'X-Forwarded-Host',
-            value: 'potential-yodel-4jr5qq54gqvwh6wg-3000.app.github.dev',
           },
           {
             key: 'Cache-Control',
