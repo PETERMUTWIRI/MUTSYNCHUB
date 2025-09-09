@@ -1,23 +1,25 @@
-// // middleware.ts
-// import { NextResponse } from 'next/server';
-// import { NextRequest, NextFetchEvent } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// const publicPaths = ['/', '/solutions', '/resources', '/what-we-do-support', '/sign-in', '/sign-up', '/auth/callback'];
+export function middleware(req: NextRequest) {
+  // If tunnel forwarded host exists, normalize origin/host so Next's Server Actions check passes.
+  const xfHost = req.headers.get("x-forwarded-host");
+  if (xfHost) {
+    const xfProto = req.headers.get("x-forwarded-proto") || "https";
+    const normalizedOrigin = `${xfProto}://${xfHost}`;
 
-// export function middleware(req: NextRequest, ev?: NextFetchEvent): NextResponse | undefined {
-//     const { pathname } = req.nextUrl;
-//     if (publicPaths.includes(pathname) || pathname.startsWith('/_next') || pathname === '/favicon.ico') {
-//         return NextResponse.next();
-//     }
+    // Copy existing headers and override origin/host
+    const headers = new Headers(req.headers);
+    headers.set("origin", normalizedOrigin);
+    headers.set("host", xfHost);
 
-//     const authCookie = req.cookies.get('stack-auth')?.value;
-//     if (!authCookie) {
-//         return NextResponse.redirect(new URL('/sign-in', req.url));
-//     }
+    // Return request with modified headers (applies to downstream Next handling)
+    return NextResponse.next({
+      request: {
+        headers,
+      },
+    });
+  }
 
-//     return NextResponse.next();
-// }
-
-// export const config = {
-//   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
-// };
+  return NextResponse.next();
+}
