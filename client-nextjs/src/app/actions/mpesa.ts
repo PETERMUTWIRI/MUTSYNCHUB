@@ -39,7 +39,10 @@ export async function initiateSTKPush(userId: string, req: STKRequest): Promise<
 
   const plan = planByAmount(req.amount);
   if (!plan) throw new Error('Invalid amount');
+<<<<<<< HEAD
   if (!req.phoneNumber) throw new Error("Phone number required");
+=======
+>>>>>>> bc1d01e43a949b7b4dcb8478fe634ef35f7069db
   const phone = req.phoneNumber.replace('+', '');
   if (!/^254\d{9}$/.test(phone)) throw new Error('Bad phone format');
 
@@ -139,6 +142,7 @@ export async function registerC2BUrl(): Promise<void> {
   const validationURL = `${process.env.API_URL}/payments/mpesa/c2b/validate`;
   await registerC2BUrls(confirmationURL, validationURL);
 }
+<<<<<<< HEAD
 
 
 
@@ -155,3 +159,5 @@ export async function confirmC2BPayment(payload: { TransID: string; TransAmount:
 // Add Stripe / Apple Pay alongside M-Pesa
 // GDPR export / delete commands
 // Grafana alerts for circuit-breaker
+=======
+>>>>>>> bc1d01e43a949b7b4dcb8478fe634ef35f7069db

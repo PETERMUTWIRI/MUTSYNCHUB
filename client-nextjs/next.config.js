@@ -22,20 +22,9 @@ const nextConfig = {
   images: {
     remotePatterns: [{ protocol: 'https', hostname: 'utfs.io', pathname: '/f/**' }],
     domains: ['localhost', 'potential-yodel-4jr5qq54gqvwh6wg-3000.app.github.dev'],
-    minimumCacheTTL: 60,
   },
   async redirects() {
     return [{ source: '/old-path', destination: '/', permanent: false }];
-  },
-  trailingSlash: false,
-  output: 'standalone',
-  eslint: { ignoreDuringBuilds: false },
-  typescript: { ignoreBuildErrors: false },
-  generateBuildId: async () => 'mutsynchub-build',
-  webpack: (config) => {
-    config.module.rules.push({ test: /\.svg$/i, issuer: /\.[jt]sx?$/, use: ['@svgr/webpack'] });
-    return config;
-  },
 };
 
 module.exports = nextConfig;
