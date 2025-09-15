@@ -68,6 +68,6 @@ export async function getPlans() {
   return PLANS;
 }
 
-export function getPlanUuid(planId: string): string {
+export async function getPlanUuid(planId: string): string {
   return PLAN_UUIDS[planId as keyof typeof PLAN_UUIDS] ?? planId;
 }

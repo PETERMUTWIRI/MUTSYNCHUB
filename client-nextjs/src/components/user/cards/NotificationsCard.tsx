@@ -1,47 +1,52 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { HiBell } from 'react-icons/hi';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { io } from 'socket.io-client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Button } from '@//components/ui/button';
 
 interface Notification {
   id: string;
+  title: string;
   message: string;
   createdAt: string;
-  read: boolean;
+  status: 'READ' | 'UNREAD';
   type: 'anomaly' | 'system' | 'billing';
-  actionUrl?: string; // e.g., link to analytics or payment
+  actionUrl?: string;
 }
 
-const fetchNotifications = async (): Promise<Notification[]> => {
-  const res = await fetch('/api/notifications');
-  if (!res.ok) throw new Error('Failed to fetch notifications');
-  return res.json();
-};
-
-const NotificationsCard: React.FC = () => {
+export default function NotificationsCard() {
   const router = useRouter();
-  const { data: notifications = [], isLoading, error } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: fetchNotifications,
-  });
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const latestNotification = notifications[0];
+  /* initial fetch + live socket */
+  useEffect(() => {
+    fetch('/api/notifications')
+      .then((r) => r.json())
+      .then(setNotifications);
+
+    const socket = io(`${process.env.NEXT_PUBLIC_ORIGIN}/analytics`);
+    socket.on('notification:new', (n: Notification) => setNotifications((prev) => [n, ...prev]));
+    socket.on('notification:read', (id: string) =>
+      setNotifications((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'READ', readAt: new Date() } : p)))
+    );
+    socket.on('notification:readAll', () =>
+      setNotifications((prev) => prev.map((p) => ({ ...p, status: 'READ', readAt: new Date() })))
+    );
+    return () => socket.disconnect();
+  }, []);
+
+  const unreadCount = notifications.filter((n) => n.status === 'UNREAD').length;
+  const latest = notifications[0];
 
   const getAlertMessage = () => {
-    if (!latestNotification) return null;
-    if (latestNotification.type === 'anomaly') {
-      return `Anomaly detected: ${latestNotification.message}. Take action now!`;
-    }
-    if (latestNotification.type === 'billing') {
-      return `Billing issue: ${latestNotification.message}. Resolve to avoid disruptions.`;
-    }
-    return latestNotification.message;
+    if (!latest) return null;
+    if (latest.type === 'anomaly') return `Anomaly detected: ${latest.message}. Take action now!`;
+    if (latest.type === 'billing') return `Billing issue: ${latest.message}. Resolve to avoid disruptions.`;
+    return latest.message;
   };
 
   return (
@@ -50,50 +55,33 @@ const NotificationsCard: React.FC = () => {
       whileHover={{ scale: 1.02, boxShadow: '0 0 15px rgba(46, 125, 125, 0.5)' }}
       transition={{ type: 'spring', stiffness: 400 }}
     >
-      {isLoading ? (
-        <div className="text-gray-300 font-inter text-base">Loading notifications...</div>
-      ) : error ? (
-        <div className="text-red-400 font-inter text-base">Unable to load notifications.</div>
-      ) : (
-        <>
-          <div className="flex items-center gap-3 mb-4">
-            <HiBell className="text-[#2E7D7D] text-2xl" />
-            <span className="text-white font-inter font-semibold text-lg">Notifications</span>
-          </div>
-          <div className="text-white font-inter font-bold text-xl mb-2">Unread: {unreadCount}</div>
-          {latestNotification && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 w-full"
-            >
-              <Alert className="bg-[#2E7D7D]/20 border-[#2E7D7D] text-gray-100">
-                <HiBell className="h-5 w-5 text-[#2E7D7D]" />
-                <AlertTitle className="font-inter text-base">
-                  {latestNotification.type === 'anomaly' ? 'Anomaly Alert' : 'Notification'}
-                </AlertTitle>
-                <AlertDescription className="font-inter text-sm">
-                  {getAlertMessage()}
-                  {latestNotification.actionUrl && (
-                    <Button
-                      variant="link"
-                      className="text-[#2E7D7D] pl-2"
-                      onClick={() => router.push(latestNotification.actionUrl!)}
-                    >
-                      Take Action →
-                    </Button>
-                  )}
-                </AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-          <div className="text-gray-300 font-inter text-base">
-            Latest: {latestNotification?.message || 'No notifications'}
-          </div>
-        </>
+      <div className="flex items-center gap-3 mb-4">
+        <HiBell className="text-[#2E7D7D] text-2xl" />
+        <span className="text-white font-inter font-semibold text-lg">Notifications</span>
+      </div>
+
+      <div className="text-white font-inter font-bold text-xl mb-2">Unread: {unreadCount}</div>
+
+      {latest && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 w-full">
+          <Alert className="bg-[#2E7D7D]/20 border-[#2E7D7D] text-gray-100">
+            <HiBell className="h-5 w-5 text-[#2E7D7D]" />
+            <AlertTitle className="font-inter text-base">
+              {latest.type === 'anomaly' ? 'Anomaly Alert' : 'Notification'}
+            </AlertTitle>
+            <AlertDescription className="font-inter text-sm">
+              {getAlertMessage()}
+              {latest.actionUrl && (
+                <Button variant="link" className="text-[#2E7D7D] pl-2" onClick={() => router.push(latest.actionUrl)}>
+                  Take Action →
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        </motion.div>
       )}
+
+      <div className="text-gray-300 font-inter text-base">Latest: {latest?.message || 'No notifications'}</div>
     </motion.div>
   );
-};
-
-export default NotificationsCard;
+}

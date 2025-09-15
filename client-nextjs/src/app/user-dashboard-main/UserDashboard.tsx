@@ -14,7 +14,7 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { ensureAndFetchUserProfile } from '@/app/api/get-user-role/action';
 import { saveDashboardLayout } from '@/app/api/get-layout/action';
-
+import { NotificationBell } from '@/components/notification-bell'; 
 
 
 const UsageProgressBar = dynamic(() => import('@/components/user/UsageProgressBar').then(mod => mod.default), { ssr: false });
@@ -209,7 +209,8 @@ export default function UserDashboard() {
           </Select>
         </div>
         <div className="flex items-center gap-6">
-          <HiBell className="text-[#2E7D7D] text-xl animate-pulse" />
+          {/*  LIVE BELL  */}
+          <NotificationBell />
           <div className="w-8 h-8 rounded-full bg-[#2E7D7D] flex items-center justify-center text-white font-bold">
             {userProfile?.name?.[0] || 'U'}
           </div>
@@ -277,7 +278,7 @@ export default function UserDashboard() {
           <div key="schedule" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
             <ScheduleAnalytics />
           </div>
-          {/* Temporarily commented to isolate issue */}
+         
           <div key="trends" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
             <UsageProgressBar/>
           </div>
