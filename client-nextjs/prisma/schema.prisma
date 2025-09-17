@@ -32,6 +32,7 @@ model UserProfile {
   dashboardLayout     Json?          @map("dashboard_layout")
   layoutMode          String?        @default("beginner") @map("layout_mode") @db.VarChar(50)
   isTechnical         Boolean?       @default(false) @map("is_technical")
+  email               String?        @unique
   apiUsages           ApiUsage[]
   auditLogs           AuditLog[]
   notifications       Notification[]

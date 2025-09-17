@@ -1,38 +1,45 @@
 'use client';
 
+import { ProfileCompletionBanner } from '@/components/profile-completion-banner';
 import { useUser } from '@stackframe/stack';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
+import { AiOutlineMenu } from 'react-icons/ai'; // hamburger
 
-// Dynamic import for DashboardSidebar
-import DashboardSidebar from '@/components/user/DashboardSidebar';
+const DashboardSidebar = dynamic(() => import('@/components/user/DashboardSidebar'));
 
 export default function UserDashboardLayout({ children }: { children: React.ReactNode }) {
   const user = useUser({ or: 'redirect' });
-  const isSidebarOpen = true; // Hardcode for now to avoid useState; reintroduce if needed
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div className="flex min-h-screen w-full bg-[#1E2A44] text-white font-inter">
-      <DashboardSidebar className="flex-shrink-0" onToggle={() => {}} />
-      <motion.main
-        initial={{ marginLeft: '260px' }} // Match hardcoded isSidebarOpen
-        animate={{ marginLeft: '260px' }}
-        transition={{ duration: 0.3 }}
-        className="flex-1 p-8 w-full max-w-7xl mx-auto"
-      >
-        <Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E7D7D] mx-auto"></div>
-              <p className="mt-4 text-gray-300 font-inter text-lg">Loading...</p>
-            </div>
-          }
-        >
-          {children}
-        </Suspense>
-      </motion.main>
+      {/* Sidebar */}
+  <DashboardSidebar onToggle={setSidebarOpen} />
+
+      {/* Main area – CSS grid auto-resizes when sidebar collapses */}
+      <main className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+        {/* Banner inside main → respects sidebar width */}
+        <ProfileCompletionBanner />
+
+        {/* Top bar with hamburger */}
+        <div className="flex items-center justify-between p-4 border-b border-[#2E7D7D]/30">
+          <button onClick={() => setSidebarOpen((s) => !s)} className="lg:hidden text-teal-400 hover:text-white">
+            <AiOutlineMenu className="w-6 h-6" />
+          </button>
+          <div className="flex-1" />
+          <span className="text-sm text-gray-300">Hello, {user.displayName || 'User'}</span>
+        </div>
+
+        {/* Page content */}
+        <div className="flex-1 p-8 w-full max-w-7xl mx-auto">
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E7D7D]"></div></div>}>
+            {children}
+          </Suspense>
+        </div>
+      </main>
+
       <Toaster position="top-right" />
     </div>
   );

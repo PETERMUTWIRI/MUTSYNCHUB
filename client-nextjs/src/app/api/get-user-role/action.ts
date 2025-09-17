@@ -17,7 +17,7 @@ export async function ensureAndFetchUserProfile() {
   // RLS helper
   await sql`SELECT set_config('session.jwt', ${JSON.stringify({ user_id: userId })}, true)`;
 
-  // 1.  fetch existing profile (include id for createdBy)
+  // 1.  fetch existing profile (include new fields)
   let profile = await prisma.userProfile.findUnique({
     where: { userId },
     select: {
@@ -27,6 +27,9 @@ export async function ensureAndFetchUserProfile() {
       isTechnical: true,
       dashboardLayout: true,
       layoutMode: true,
+      firstName: true, // ← new
+      lastName: true,  // ← new
+      email: true,     // ← new
     },
   });
 
@@ -69,6 +72,9 @@ export async function ensureAndFetchUserProfile() {
         isTechnical: true,
         dashboardLayout: true,
         layoutMode: true,
+        firstName: true, // ← new
+        lastName: true,  // ← new
+        email: true,     // ← new
       },
     });
   }
@@ -76,11 +82,14 @@ export async function ensureAndFetchUserProfile() {
   // 3.  return everything downstream code needs
   return {
     userId,
-    profileId: profile.id,   // <-- use this as createdBy
+    profileId: profile.id,
     role: profile.role || 'USER',
     orgId: profile.orgId,
     isTechnical: profile.isTechnical || false,
     dashboardLayout: profile.dashboardLayout || null,
     layoutMode: profile.layoutMode || 'beginner',
+    firstName: profile.firstName || null, // ← new
+    lastName: profile.lastName || null,   // ← new
+    email: profile.email || null,         // ← new
   };
 }
