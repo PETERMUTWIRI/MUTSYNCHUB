@@ -14,19 +14,4 @@
       - "traefik.http.routers.analytics.entrypoints=websecure"
       - "traefik.http.routers.analytics.tls.certresolver=letsencrypt"
     restart: unless-stopped
-  analytics:
-    build: ./analytics-service
-    ports: ["8000:8000"]
-    depends_on: [redis, postgres]
-    environment:
-      REDIS_URL: redis://redis:6379
-      DATABASE_URL: postgresql://mutsync:postgres@postgres:5432/analytics
-      HF_TOKEN: ${HF_TOKEN}
-    volumes:
-      - ./analytics-data:/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.analytics.rule=Host(`api.yourdomain.com`)"
-      - "traefik.http.routers.analytics.entrypoints=websecure"
-      - "traefik.http.routers.analytics.tls.certresolver=letsencrypt"
-    restart: unless-stopped
+ 

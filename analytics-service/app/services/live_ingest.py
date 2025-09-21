@@ -1,4 +1,4 @@
-import asyncio, json, pandas as pd, redis
+import json, pandas as pd, redis
 from datetime import datetime
 from app.engine.analytics import AnalyticsService
 from app.redis_pool import redis_client
@@ -29,6 +29,6 @@ class LiveIngestService:
 
     def _detect_industry(self, df: pd.DataFrame) -> str:
         cols = set(df.columns)
-        if {"product_id", "qty", "price"}.issubset(cols): return "supermarket"
+        if {"product_id", "qty", "price", "total"}.issubset(cols): return "supermarket"
         if {"sku", "wholesale_price"}.issubset(cols): return "wholesale"
         return "retail"

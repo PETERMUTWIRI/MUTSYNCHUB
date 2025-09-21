@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from pydantic import BaseModel
 from app.utils.hf_interpreter import interpret_report
 
