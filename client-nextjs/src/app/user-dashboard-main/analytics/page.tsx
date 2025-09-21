@@ -97,58 +97,60 @@ export default function AnalyticsPage() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+
+        {/* AI-Assisted Drill-Down */}
+        <Card className="bg-[#2E7D7D]/10 border border-[#2E7D7D]/30">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-lg text-gray-200">Drill-Down (AI Assisted)</CardTitle>
+            <div className="flex gap-2">
+              {drill.stack.map((s, i) => (
+                <span key={i} className="px-2 py-1 text-xs rounded bg-[#2E7D7D]/30 text-gray-200">
+                  {s.key} = {String(s.value)}
+                </span>
+              ))}
+              {drill.stack.length > 0 && (
+                <Button size="sm" variant="outline" onClick={drill.pop} className="text-xs">← Back</Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* mini bar chart of filtered data */}
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={drill.filtered.slice(0, 20)} onClick={(e: any) => e && drill.drill({ key: e.activeLabel, value: e.activeLabel })}>
+                <CartesianGrid stroke="#2E7D7D" strokeOpacity={0.3} />
+                <XAxis dataKey="date" stroke="#9ca3af" />
+                <YAxis stroke="#9ca3af" />
+                <Tooltip contentStyle={{ backgroundColor: '#1E2A44', border: '1px solid #2E7D7D' }} />
+                <Bar dataKey="sales" fill={industryColor} cursor="pointer" />
+              </BarChart>
+            </ResponsiveContainer>
+
+            {/* AI insight for current slice */}
+            <div className="mt-4">
+              <Button
+                size="sm"
+                onClick={async () => {
+                  const res = await fetch('/api/ai/interpret', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ report: { filtered: drill.filtered }, question: `Why did ${drill.stack.map((s) => `${s.key}=${s.value}`).join(', ')} change?` }),
+                  });
+                  const j = await res.json();
+                  setDrillInsight(j.answer);
+                }}
+                className="bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white"
+              >
+                Explain this slice
+              </Button>
+              {drillInsight && <p className="mt-2 text-sm text-gray-300">{drillInsight}</p>}
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
 }
-{/* AI-Assisted Drill-Down */}
-<Card className="bg-[#2E7D7D]/10 border border-[#2E7D7D]/30">
-  <CardHeader className="flex items-center justify-between">
-    <CardTitle className="text-lg text-gray-200">Drill-Down (AI Assisted)</CardTitle>
-    <div className="flex gap-2">
-      {drill.stack.map((s, i) => (
-        <span key={i} className="px-2 py-1 text-xs rounded bg-[#2E7D7D]/30 text-gray-200">
-          {s.key} = {String(s.value)}
-        </span>
-      ))}
-      {drill.stack.length > 0 && (
-        <Button size="sm" variant="outline" onClick={drill.pop} className="text-xs">← Back</Button>
-      )}
-    </div>
-  </CardHeader>
-  <CardContent>
-    {/* mini bar chart of filtered data */}
-    <ResponsiveContainer width="100%" height={250}>
-      <BarChart data={drill.filtered.slice(0, 20)} onClick={(e: any) => e && drill.drill({ key: e.activeLabel, value: e.activeLabel })}>
-        <CartesianGrid stroke="#2E7D7D" strokeOpacity={0.3} />
-        <XAxis dataKey="date" stroke="#9ca3af" />
-        <YAxis stroke="#9ca3af" />
-        <Tooltip contentStyle={{ backgroundColor: '#1E2A44', border: '1px solid #2E7D7D' }} />
-        <Bar dataKey="sales" fill={industryColor} cursor="pointer" />
-      </BarChart>
-    </ResponsiveContainer>
 
-    {/* AI insight for current slice */}
-    <div className="mt-4">
-      <Button
-        size="sm"
-        onClick={async () => {
-          const res = await fetch('/api/ai/interpret', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ report: { filtered: drill.filtered }, question: `Why did ${drill.stack.map((s) => `${s.key}=${s.value}`).join(', ')} change?` }),
-          });
-          const j = await res.json();
-          setDrillInsight(j.answer);
-        }}
-        className="bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white"
-      >
-        Explain this slice
-      </Button>
-      {drillInsight && <p className="mt-2 text-sm text-gray-300">{drillInsight}</p>}
-    </div>
-  </CardContent>
-</Card>
 const KPICard = ({ title, value, icon, color }: any) => (
   <motion.div whileHover={{ scale: 1.02 }} className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
     <div className="flex items-center justify-between">

@@ -380,31 +380,31 @@ export default function SecurityPage() {
                         <CardContent>
                           <Table>
                             <TableHeader>
-                              <TableRow>
-                                <TableHead className="text-[#2E7D7D]">Device / OS</TableHead>
-                                <TableHead className="text-[#2E7D7D]">IP</TableHead>
-                                <TableHead className="text-[#2E7D7D]">Last Seen</TableHead>
-                                <TableHead className="text-[#2E7D7D]">Current</TableHead>
-                                <TableHead></TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {!sessions ? <Spinner /> : sessions.map((s: any) => (
-                                <TableRow key={s.id}>
-                                  <TableCell className="text-gray-200">{s.device} / {s.os}</TableCell>
-                                  <TableCell className="text-gray-200">{s.ip}</TableCell>
-                                  <TableCell className="text-gray-200">{new Date(s.lastseen).toLocaleString()}</TableCell>
-                                  <TableCell>{s.current ? <span className="text-green-400">This device</span> : null}</TableCell>
-                                  <TableCell>
-                                    {!s.current && (
-                                      <Button onClick={() => fetch(`/api/security/sessions/${s.id}`, { method: 'DELETE' }).then(() => toast.success('Session revoked'))} className="bg-red-600 hover:bg-red-500 text-white" size="sm">Revoke</Button>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </CardContent>
+                              <>
+                                <Toaster position="top-right" />
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  className="max-w-7xl mx-auto px-6 py-10 bg-[#1E2A44] text-white font-inter"
+                                >
+                                  {/* ----- header ----- */}
+                                  <header className="sticky top-0 z-20 bg-[#1E2A44]/95 backdrop-blur-md border-b border-[#2E7D7D]/30 py-4 px-6">
+                                    <div className="flex items-center justify-between max-w-7xl mx-auto">
+                                      <h1 className="text-2xl font-bold">Security Command Center</h1>
+                                      <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm text-gray-300">Risk Score</span>
+                                          <div className={`px-3 py-1 rounded text-xs font-medium ${riskScore > 70 ? 'bg-red-500/20 text-red-300' : riskScore > 40 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-green-500/20 text-green-300'}`}>
+                                            {riskScore}/100
+                                          </div>
+                                        </div>
+                                        <Button onClick={handleEmergencyLockdown} className="bg-red-600 hover:bg-red-500 text-white">Emergency Lockdown</Button>
+                                      </div>
+                                    </div>
+                                  </header>
+                                  {/* ...existing code... */}
+                                </motion.div>
+                              </>
                       </Card>
                     </div>
 
