@@ -1,6 +1,7 @@
-// src/components/support/SupportChannelCard.tsx
+// client-nextjs/src/components/support/SupportChannelCard.tsx
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ChevronRight } from 'lucide-react';
 
 interface SupportChannelCardProps {
   icon: React.ReactNode;
@@ -11,30 +12,25 @@ interface SupportChannelCardProps {
   color: string;
 }
 
-const SupportChannelCard: React.FC<SupportChannelCardProps> = ({ icon, title, description, actionText, onClick, color }) => {
+export default function SupportChannelCard({ icon, title, description, actionText, onClick, color }: SupportChannelCardProps) {
   return (
     <motion.div
-      whileHover={{ y: -5 }}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+      whileHover={{ y: -4, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className="group relative bg-[#1E2A44] border border-[#2E7D7D]/30 rounded-xl shadow-lg overflow-hidden cursor-pointer"
+      onClick={onClick}
     >
-      <div className="p-6">
-        <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${color}`}>
-          {icon}
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">{description}</p>
-        <button
-          onClick={onClick}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-1"
-        >
+      {/* subtle glow on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#2E7D7D]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="relative p-6">
+        <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${color}`}>{icon}</div>
+        <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+        <p className="text-gray-300 text-sm mb-4">{description}</p>
+        <div className="flex items-center gap-1 text-[#2E7D7D] group-hover:text-teal-300 font-medium text-sm transition-colors">
           {actionText}
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
+          <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+        </div>
       </div>
     </motion.div>
   );
-};
-
-export default SupportChannelCard;
+}

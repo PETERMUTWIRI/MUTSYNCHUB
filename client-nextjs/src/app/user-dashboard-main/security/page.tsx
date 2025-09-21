@@ -1,562 +1,418 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useUser } from '@stackframe/stack';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster, toast } from 'react-hot-toast';
 import { Tooltip } from 'react-tooltip';
-import { getSecuritySettings, enable2FA, disable2FA, getSessions, revokeSession, getApiKeys, createApiKey, revokeApiKey } from '@/lib/user';
+import dynamic from 'next/dynamic';
+// import Radar from 'radar-sdk-js';
+import useSWR from 'swr';
+import  Popup  from 'radar-sdk-js';
 
-// Dynamic imports
-const Card = dynamic(() => import('@/components/ui/card').then((mod) => mod.Card), { ssr: false });
-const CardHeader = dynamic(() => import('@/components/ui/card').then((mod) => mod.CardHeader), { ssr: false });
-const CardTitle = dynamic(() => import('@/components/ui/card').then((mod) => mod.CardTitle), { ssr: false });
-const CardContent = dynamic(() => import('@/components/ui/card').then((mod) => mod.CardContent), { ssr: false });
-const Button = dynamic(() => import('@/components/ui/button').then((mod) => mod.Button), { ssr: false });
-const Input = dynamic(() => import('@/components/ui/input').then((mod) => mod.Input), { ssr: false });
+// ----- server actions -----
+import { createSupportTicket } from '@/app/actions/support';
+import { agentChat } from '@/app/actions/agent';
+import { prisma } from '@/lib/prisma';
+
+// ----- dynamic UI -----
+const Card = dynamic(() => import('@/components/ui/card').then(m => m.Card), { ssr: false });
+const CardHeader = dynamic(() => import('@/components/ui/card').then(m => m.CardHeader), { ssr: false });
+const CardTitle = dynamic(() => import('@/components/ui/card').then(m => m.CardTitle), { ssr: false });
+const CardContent = dynamic(() => import('@/components/ui/card').then(m => m.CardContent), { ssr: false });
+const Button = dynamic(() => import('@/components/ui/button').then(m => m.Button), { ssr: false });
+const Input = dynamic(() => import('@/components/ui/input').then(m => m.Input), { ssr: false });
 const Switch = dynamic(() => import('@/components/ui/Switch'), { ssr: false });
-const Table = dynamic(() => import('@/components/ui/table').then((mod) => mod.Table), { ssr: false });
-const TableBody = dynamic(() => import('@/components/ui/table').then((mod) => mod.TableBody), { ssr: false });
-const TableCell = dynamic(() => import('@/components/ui/table').then((mod) => mod.TableCell), { ssr: false });
-const TableHead = dynamic(() => import('@/components/ui/table').then((mod) => mod.TableHead), { ssr: false });
-const TableHeader = dynamic(() => import('@/components/ui/table').then((mod) => mod.TableHeader), { ssr: false });
-const TableRow = dynamic(() => import('@/components/ui/table').then((mod) => mod.TableRow), { ssr: false });
+const Table = dynamic(() => import('@/components/ui/table').then(m => m.Table), { ssr: false });
+const TableBody = dynamic(() => import('@/components/ui/table').then(m => m.TableBody), { ssr: false });
+const TableCell = dynamic(() => import('@/components/ui/table').then(m => m.TableCell), { ssr: false });
+const TableHead = dynamic(() => import('@/components/ui/table').then(m => m.TableHead), { ssr: false });
+const TableHeader = dynamic(() => import('@/components/ui/table').then(m => m.TableHeader), { ssr: false });
+const TableRow = dynamic(() => import('@/components/ui/table').then(m => m.TableRow), { ssr: false });
 const Spinner = dynamic(() => import('@/components/ui/Spinner'), { ssr: false });
 
-// Error Boundary
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
-  state = { hasError: false };
+/* ---------- types ---------- */
+type SecurityEvent = {
+  id: string;
+  action: string;
+  ip: string;
+  userAgent: string;
+  createdAt: string;
+  risk: 'low' | 'medium' | 'high';
+  city?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
+};
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
+type Session = {
+  id: string;
+  device: string;
+  os: string;
+  browser: string;
+  ip: string;
+  lastSeen: string;
+  current: boolean;
+};
 
-  render() {
-    if (this.state.hasError) {
-      return (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="min-h-screen bg-[#1E2A44] flex items-center justify-center text-white"
-        >
-          <div className="text-center bg-[#2E7D7D]/10 rounded-xl p-8 border border-[#2E7D7D]/30">
-            <p className="text-red-400 font-inter text-lg">Failed to load security settings</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 bg-[#2E7D7D] text-white px-6 py-2 rounded-lg hover:bg-[#2E7D7D]/80"
-            >
-              Retry
-            </button>
-          </div>
-        </motion.div>
-      );
-    }
-    return this.props.children;
-  }
-}
+type ApiKey = {
+  id: string;
+  name: string;
+  keyPreview: string;
+  scopes: string[];
+  createdAt: string;
+  lastUsed?: string;
+};
 
-const Security: React.FC = () => {
+/* ---------- page ---------- */
+export default function SecurityPage() {
   const user = useUser({ or: 'redirect' });
   const router = useRouter();
-  const [settings, setSettings] = useState<any>(null);
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [apiKeys, setApiKeys] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
 
+  /* ----- live data ----- */
+  const [events, setEvents] = useState<SecurityEvent[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [riskScore, setRiskScore] = useState<number>(0);
+  // const [map, setMap] = useState<mapboxgl.Map | null>(null);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const geoEvents = React.useMemo(
+   () => events.filter((ev) => ev.lat != null && ev.lng != null),
+   [events]
+ );
+  /* ----- local state ----- */
+  const [loading, setLoading] = useState(true);
+  const [lockdown, setLockdown] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [selectedScopes, setSelectedScopes] = useState<string[]>(['read']);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'pdf'>('csv');
+
+  /* ----- enterprise features ----- */
+  const SCOPES = ['read', 'write', 'admin', 'billing', 'support'];
+
+  /* ---------- data fetching ---------- */
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    (async () => {
       try {
-        const [settingsRes, sessionsRes, apiKeysRes] = await Promise.all([
-          getSecuritySettings(),
-          getSessions(),
-          getApiKeys(),
+        const [ev, sess, keys] = await Promise.all([
+          fetch('/api/security/events').then(r => r.json()),
+          fetch('/api/security/sessions').then(r => r.json()),
+          fetch('/api/security/api-keys').then(r => r.json()),
         ]);
-        setSettings(settingsRes.data);
-        setSessions(sessionsRes.data);
-        setApiKeys(apiKeysRes.data);
-        setLoading(false);
+        setEvents(ev);
+        setSessions(sess);
+        setApiKeys(keys);
+        /* calculate risk score */
+        const highs = ev.filter((e: SecurityEvent) => e.risk === 'high').length;
+        setRiskScore(Math.min(100, highs * 20));
       } catch (err) {
-        console.error('Failed to fetch security data:', err);
-        setError('Failed to fetch security data');
-        toast.error('Failed to fetch security data');
+        toast.error('Failed to load security data');
+      } finally {
         setLoading(false);
       }
-    };
-    fetchData();
+    })();
   }, []);
 
-  const handle2FAChange = async (enabled: boolean) => {
-    try {
-      const action = enabled ? enable2FA : disable2FA;
-      await action();
-      setSettings({ ...settings, '2fa_enabled': enabled });
-      toast.success(`2FA ${enabled ? 'enabled' : 'disabled'} successfully`);
-    } catch (err) {
-      console.error('Failed to update 2FA:', err);
-      toast.error(`Failed to ${enabled ? 'enable' : 'disable'} 2FA`);
-    }
-  };
+  /* ---------- live events poll ---------- */
+  useEffect(() => {
+    const id = setInterval(async () => {
+      const latest = await fetch('/api/security/events?lastId=' + events[0]?.id).then(r => r.json());
+      if (latest.length) {
+        setEvents((prev) => [...latest, ...prev]);
+        /* push browser notification for high-risk */
+        latest.filter((e: SecurityEvent) => e.risk === 'high').forEach((e: SecurityEvent) => {
+          new Notification('🚨 MutSyncHub Security Alert', {
+            body: `High-risk event: ${e.action} from ${e.ip}`,
+            icon: '/favicon.ico',
+          });
+        });
+      }
+    }, 5000);
+    return () => clearInterval(id);
+  }, [events]);
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
-    setPasswordError('');
-    setPasswordSuccess('');
-  };
+  /* ---------- Radar init ---------- */
+  /* ---------- Radar init (drop-in replacement) ---------- */
+  /* ---------- Login Geography – WebGL Globe ---------- */
+  useEffect(() => {
+    if (!mapContainer.current || geoEvents.length === 0) return;
 
-  const handleChangePassword = async () => {
-    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setPasswordError('All password fields are required');
-      toast.error('All password fields are required');
-      return;
+    // 1. inject globe script once
+    if (!(window as any).GLOBE) {
+      const s = document.createElement('script');
+      s.src = 'https://turban.github.io/webgl-globe/js/globe.js';
+      document.head.appendChild(s);
     }
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('New password and confirmation do not match');
-      toast.error('New password and confirmation do not match');
-      return;
-    }
-    if (passwordForm.newPassword.length < 8) {
-      setPasswordError('New password must be at least 8 characters');
-      toast.error('New password must be at least 8 characters');
-      return;
-    }
-    try {
-      await fetch('/api/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword,
-        }),
+
+    const init = () => {
+      if (!(window as any).GLOBE) { setTimeout(init, 300); return; }
+
+      const container = mapContainer.current!;
+      container.innerHTML = '';
+      const globe = new (window as any).GLOBE.Globe(container);
+      globe.init();
+      globe.animate();
+
+      geoEvents.forEach((ev) => {
+        const colour = ev.risk === 'high' ? 0xff0000 : ev.risk === 'medium' ? 0xffaa00 : 0x00ff00;
+        globe.addData([ev.lat!, ev.lng!, 0.8], { format: 'legend', name: ev.ip, color: colour });
       });
-      setPasswordSuccess('Password changed successfully');
-      toast.success('Password changed successfully');
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setTimeout(() => setPasswordSuccess(''), 3000);
-    } catch (err) {
-      console.error('Failed to change password:', err);
-      setPasswordError('Failed to change password');
-      toast.error('Failed to change password');
-      setTimeout(() => setPasswordError(''), 3000);
-    }
-  };
+    };
 
-  const handleLoginAlertsChange = async (enabled: boolean) => {
-    try {
-      await fetch('/api/login-alerts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login_alerts: enabled }),
-      });
-      setSettings({ ...settings, login_alerts: enabled });
-      toast.success(`Login alerts ${enabled ? 'enabled' : 'disabled'} successfully`);
-    } catch (err) {
-      console.error('Failed to update login alerts:', err);
-      toast.error(`Failed to ${enabled ? 'enable' : 'disable'} login alerts`);
-    }
-  };
+    init();
+  }, [geoEvents]);
 
-  const handleRevokeSession = async (id: string) => {
-    try {
-      await revokeSession(id);
-      setSessions(sessions.filter((s) => s.id !== id));
-      toast.success('Session revoked successfully');
-    } catch (err) {
-      console.error('Failed to revoke session:', err);
-      toast.error('Failed to revoke session');
-    }
-  };
-
+  /* ---------- actions ---------- */
   const handleCreateApiKey = async () => {
-    try {
-      const response = await createApiKey('New Key');
-      setApiKeys([...apiKeys, response.data]);
-      toast.success('API key created successfully');
-    } catch (err) {
-      console.error('Failed to create API key:', err);
-      toast.error('Failed to create API key');
-    }
+    if (!newKeyName) return toast.error('Key name required');
+    const res = await fetch('/api/security/api-keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newKeyName, scopes: selectedScopes }),
+    });
+    const key = await res.json();
+    setApiKeys((k) => [key, ...k]);
+    setNewKeyName('');
+    toast.success('API key created');
   };
 
   const handleRevokeApiKey = async (id: string) => {
-    try {
-      await revokeApiKey(id);
-      setApiKeys(apiKeys.filter((k) => k.id !== id));
-      toast.success('API key revoked successfully');
-    } catch (err) {
-      console.error('Failed to revoke API key:', err);
-      toast.error('Failed to revoke API key');
-    }
+    await fetch(`/api/security/api-keys/${id}`, { method: 'DELETE' });
+    setApiKeys((k) => k.filter((x) => x.id !== id));
+    toast.success('Key revoked');
+  };
+
+  const handleEmergencyLockdown = async () => {
+    const ok = confirm('🔒 Emergency lockdown will revoke ALL sessions and freeze the account. Proceed?');
+    if (!ok) return;
+    setLockdown(true);
+    await fetch('/api/security/lockdown', { method: 'POST' });
+    toast.error('Account locked – contact support');
+    router.push('/login');
   };
 
   const handleExportLogs = async () => {
-    try {
-      const response = await fetch('/api/export-logs', { method: 'GET' });
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'security_logs.csv';
-      a.click();
-      window.URL.revokeObjectURL(url);
-      toast.success('Security logs exported successfully');
-    } catch (err) {
-      console.error('Failed to export logs:', err);
-      toast.error('Failed to export logs');
-    }
+    const logs = await fetch('/api/security/events?format=' + exportFormat).then((r) => r.blob());
+    const url = URL.createObjectURL(logs);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `security_logs.${exportFormat}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Logs exported');
   };
 
-  if (loading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="max-w-7xl mx-auto py-12 bg-[#1E2A44] text-white font-inter w-full"
-      >
-        <header className="sticky top-0 z-20 bg-[#1E2A44]/95 backdrop-blur-md border-b border-[#2E7D7D]/30 py-4 px-6">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <div className="h-8 bg-[#2E7D7D]/20 rounded w-1/4 animate-pulse"></div>
-          </div>
-        </header>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-[#2E7D7D]/10 rounded-lg p-4 animate-pulse">
-              <div className="h-6 bg-[#2E7D7D]/20 rounded w-1/2 mb-2"></div>
-              <div className="h-4 bg-[#2E7D7D]/20 rounded w-3/4"></div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-    );
-  }
-
-  if (error) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen bg-[#1E2A44] flex items-center justify-center w-full"
-      >
-        <div className="text-center bg-[#2E7D7D]/10 rounded-xl p-8 border border-[#2E7D7D]/30">
-          <p className="text-red-400 font-inter text-lg">{error}</p>
-          <button
-            onClick={() => router.push('/')}
-            className="mt-4 bg-[#2E7D7D] text-white px-6 py-2 rounded-lg hover:bg-[#2E7D7D]/80"
-          >
-            Return to Home
-          </button>
-        </div>
-      </motion.div>
-    );
-  }
+  /* ---------- render ---------- */
+  if (loading) return <Spinner />;
 
   return (
-    <ErrorBoundary>
+    <>
+      <Toaster position="top-right" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-7xl mx-auto py-12 bg-[#1E2A44] text-white font-inter w-full"
+        className="max-w-7xl mx-auto px-6 py-10 bg-[#1E2A44] text-white font-inter"
       >
-        {/* Sticky Header */}
+        {/* ----- header ----- */}
         <header className="sticky top-0 z-20 bg-[#1E2A44]/95 backdrop-blur-md border-b border-[#2E7D7D]/30 py-4 px-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold">Security Settings</h1>
-            <div className="flex gap-4">
-              <Input
-                type="text"
-                placeholder="Search security settings..."
-                className="bg-[#2E7D7D]/20 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E7D7D]"
-                aria-label="Search security settings"
-              />
-              <Button
-                className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80"
-                aria-label="Search security settings"
-                data-tooltip-id="search-security"
-                data-tooltip-content="Search security settings"
-              >
-                Search
-              </Button>
-              <Tooltip id="search-security" />
+            <h1 className="text-2xl font-bold">Security Command Center</h1>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-300">Risk Score</span>
+                <div className={`px-3 py-1 rounded text-xs font-medium ${riskScore > 70 ? 'bg-red-500/20 text-red-300' : riskScore > 40 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-green-500/20 text-green-300'}`}>
+                  {riskScore}/100
+                </div>
+              </div>
+              <Button onClick={handleEmergencyLockdown} className="bg-red-600 hover:bg-red-500 text-white">Emergency Lockdown</Button>
             </div>
           </div>
         </header>
 
-        <h1 className="text-4xl font-extrabold text-[#2E7D7D] tracking-tight drop-shadow-lg mb-8 text-left mt-8">
-          Security Settings
-        </h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          {/* 2FA Card */}
-          <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
-            <Card className="bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl w-full">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-[#2E7D7D]">
-                  Two-Factor Authentication (2FA)
-                </CardTitle>
-                <p className="text-sm text-gray-300 mt-2">
-                  Add an extra layer of protection to your account. Toggle to enable or disable 2FA.
-                </p>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between">
-                <span className="text-gray-200">
-                  Status: {settings && settings['2fa_enabled'] ? 'Enabled' : 'Disabled'}
-                </span>
-                <Switch
-                  checked={!!settings && !!settings['2fa_enabled']}
-                  onCheckedChange={handle2FAChange}
-                  disabled={!settings}
-                  aria-label="Toggle 2FA"
-                  data-tooltip-id="toggle-2fa"
-                  data-tooltip-content={settings && settings['2fa_enabled'] ? 'Disable 2FA' : 'Enable 2FA'}
-                />
-                <Tooltip id="toggle-2fa" />
-              </CardContent>
-            </Card>
+        {/* ----- risk banner ----- */}
+        {riskScore > 70 && (
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="mt-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-red-400 text-xl">🚨</span>
+              <div>
+                <p className="text-red-300 font-semibold">High-risk activity detected</p>
+                <p className="text-red-400 text-sm">Review recent events and consider enabling stricter policies.</p>
+              </div>
+            </div>
+            <Button onClick={() => window.scrollTo({ top: 700, behavior: 'smooth' })} className="bg-red-600 hover:bg-red-500 text-white">Review Events</Button>
           </motion.div>
+        )}
 
-          {/* Password Change Card */}
-          <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
-            <Card className="bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl w-full">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-[#2E7D7D]">
-                  Change Password
-                </CardTitle>
-                <p className="text-sm text-gray-300 mt-2">
-                  Update your password regularly to keep your account secure.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {passwordSuccess && (
-                  <div className="text-green-400 text-sm mb-2">{passwordSuccess}</div>
-                )}
-                {passwordError && (
-                  <div className="text-red-400 text-sm mb-2">{passwordError}</div>
-                )}
-                <div>
-                  <Input
-                    type="password"
-                    name="currentPassword"
-                    placeholder="Current Password"
-                    value={passwordForm.currentPassword}
-                    onChange={handlePasswordChange}
-                    className="bg-[#2E7D7D]/20 border-[#2E7D7D]/30 text-white rounded-lg w-full p-2 focus:ring-2 focus:ring-[#2E7D7D]"
-                    aria-label="Current Password"
-                  />
+        {/* ----- top row ----- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+          {/* live event feed */}
+          <Card className="bg-[#1E2A44] border border-[#2E7D7D]/30 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-[#2E7D7D]">Live Security Events</CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[400px] overflow-y-auto pr-2">
+              {!events ? <Spinner /> : events.length === 0 ? <p className="text-gray-400">No events yet.</p> : events.map((ev: any) => (
+                <div key={ev.id} className="flex items-start gap-3 py-2 border-b border-[#2E7D7D]/20 last:border-0">
+                  <span className={`mt-1 text-xs px-2 py-0.5 rounded ${ev.risk === 'high' ? 'bg-red-500/20 text-red-300' : ev.risk === 'medium' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-green-500/20 text-green-300'}`}>{ev.risk}</span>
+                  <div className="flex-1">
+                    <p className="text-white text-sm">{ev.action}</p>
+                    <p className="text-gray-400 text-xs">{ev.ip} • {new Date(ev.createdat).toLocaleTimeString()}</p>
+                  </div>
                 </div>
-                <div>
-                  <Input
-                    type="password"
-                    name="newPassword"
-                    placeholder="New Password"
-                    value={passwordForm.newPassword}
-                    onChange={handlePasswordChange}
-                    className="bg-[#2E7D7D]/20 border-[#2E7D7D]/30 text-white rounded-lg w-full p-2 focus:ring-2 focus:ring-[#2E7D7D]"
-                    aria-label="New Password"
-                  />
-                </div>
-                <div>
-                  <Input
-                    type="password"
-                    name="confirmPassword"
-                    placeholder="Confirm New Password"
-                    value={passwordForm.confirmPassword}
-                    onChange={handlePasswordChange}
-                    className="bg-[#2E7D7D]/20 border-[#2E7D7D]/30 text-white rounded-lg w-full p-2 focus:ring-2 focus:ring-[#2E7D7D]"
-                    aria-label="Confirm New Password"
-                  />
-                </div>
-                <Button
-                  className="w-full bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80"
-                  onClick={handleChangePassword}
-                  aria-label="Change Password"
-                  data-tooltip-id="change-password"
-                  data-tooltip-content="Change Password"
-                >
-                  Change Password
-                </Button>
-                <Tooltip id="change-password" />
-              </CardContent>
-            </Card>
-          </motion.div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* geo map */}
+          <Card className="bg-[#1E2A44] border border-[#2E7D7D]/30 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-[#2E7D7D]">Login Geography</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div ref={mapContainer} className="webgl-globe" />
+            </CardContent>
+          </Card>
+
+          {/* quick actions */}
+          <Card className="bg-[#1E2A44] border border-[#2E7D7D]/30 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-[#2E7D7D]">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button onClick={() => navigator.clipboard.writeText(window.location.origin + '/security/qr-setup')} className="w-full bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white">Copy 2FA Setup Link</Button>
+              <Button onClick={handleExportLogs} className="w-full bg-gray-700 hover:bg-gray-600 text-white">Export Logs</Button>
+              <Button onClick={() => agentChat('Check if my email has been in a breach', user.primaryEmail ?? undefined).then((r) => toast(r.content))} className="w-full bg-purple-700 hover:bg-purple-600 text-white">Dark-Web Check</Button>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          {/* Device Management Card */}
-          <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
-            <Card className="bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl w-full">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-[#2E7D7D]">
-                  Device Management
-                </CardTitle>
-                <p className="text-sm text-gray-300 mt-2">
-                  View and manage devices that have accessed your account.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-[#2E7D7D]">Device</TableHead>
-                      <TableHead className="text-[#2E7D7D]">Last Seen</TableHead>
-                      <TableHead></TableHead>
+        {/* ----- 2FA + password row ----- */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <Card className="bg-[#1E2A44] border border-[#2E7D7D]/30 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-[#2E7D7D]">Two-Factor Authentication</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-300 mb-4">Protect your account with an authenticator app.</p>
+              <Button onClick={() => router.push('/profile?onboard=true')} className="w-full bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white">Manage 2FA</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1E2A44] border border-[#2E7D7D]/30 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-[#2E7D7D]">Change Password</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-300 mb-4">Update your password regularly.</p>
+              <Button onClick={() => router.push('/profile')} className="w-full bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white">Change Password</Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ----- sessions table ----- */}
+        <div className="mt-6">
+          <Card className="bg-[#1E2A44] border border-[#2E7D7D]/30 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-[#2E7D7D]">Active Sessions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-[#2E7D7D]">Device / OS</TableHead>
+                    <TableHead className="text-[#2E7D7D]">IP</TableHead>
+                    <TableHead className="text-[#2E7D7D]">Last Seen</TableHead>
+                    <TableHead className="text-[#2E7D7D]">Current</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {!sessions ? <Spinner /> : sessions.map((s: any) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="text-gray-200">{s.device} / {s.os}</TableCell>
+                      <TableCell className="text-gray-200">{s.ip}</TableCell>
+                      <TableCell className="text-gray-200">{new Date(s.lastseen).toLocaleString()}</TableCell>
+                      <TableCell>{s.current ? <span className="text-green-400">This device</span> : null}</TableCell>
+                      <TableCell>
+                        {!s.current && (
+                          <Button onClick={() => fetch(`/api/security/sessions/${s.id}`, { method: 'DELETE' }).then(() => toast.success('Session revoked'))} className="bg-red-600 hover:bg-red-500 text-white" size="sm">Revoke</Button>
+                        )}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sessions.map((session) => (
-                      <TableRow key={session.id}>
-                        <TableCell className="text-gray-200">{session.device}</TableCell>
-                        <TableCell className="text-gray-200">
-                          {new Date(session.lastSeen).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleRevokeSession(session.id)}
-                            aria-label={`Revoke session for ${session.device}`}
-                            data-tooltip-id={`revoke-session-${session.id}`}
-                            data-tooltip-content={`Revoke session for ${session.device}`}
-                          >
-                            Revoke
-                          </Button>
-                          <Tooltip id={`revoke-session-${session.id}`} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Login Alerts Card */}
-          <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
-            <Card className="bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl w-full">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-[#2E7D7D]">
-                  Login Alerts
-                </CardTitle>
-                <p className="text-sm text-gray-300 mt-2">
-                  Get notified when your account is accessed from a new device or location.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-200">
-                    Enable login alerts
-                  </span>
-                  <Switch
-                    checked={settings && settings['login_alerts']}
-                    onCheckedChange={handleLoginAlertsChange}
-                    disabled={!settings}
-                    aria-label="Toggle login alerts"
-                    data-tooltip-id="toggle-login-alerts"
-                    data-tooltip-content={settings && settings['login_alerts'] ? 'Disable login alerts' : 'Enable login alerts'}
-                  />
-                  <Tooltip id="toggle-login-alerts" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* API Keys Card */}
-          <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
-            <Card className="bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl w-full">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-semibold text-[#2E7D7D]">
-                  API Keys
-                </CardTitle>
-                <Button
-                  onClick={handleCreateApiKey}
-                  className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80"
-                  aria-label="Generate new API key"
-                  data-tooltip-id="generate-api-key"
-                  data-tooltip-content="Generate new API key"
-                >
-                  Generate New Key
-                </Button>
-                <Tooltip id="generate-api-key" />
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-[#2E7D7D]">Key</TableHead>
-                      <TableHead className="text-[#2E7D7D]">Created</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {apiKeys.map((key) => (
-                      <TableRow key={key.id}>
-                        <TableCell className="text-gray-200">{key.value}</TableCell>
-                        <TableCell className="text-gray-200">
-                          {new Date(key.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleRevokeApiKey(key.id)}
-                            aria-label={`Revoke API key ${key.value}`}
-                            data-tooltip-id={`revoke-api-key-${key.id}`}
-                            data-tooltip-content={`Revoke API key ${key.value}`}
-                          >
-                            Revoke
-                          </Button>
-                          <Tooltip id={`revoke-api-key-${key.id}`} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {/* ----- api keys + export ----- */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <Card className="bg-[#1E2A44] border border-[#2E7D7D]/30 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-[#2E7D7D]">API Keys</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                placeholder="Key name (e.g. Production)"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                className="bg-black/30 border border-[#2E7D7D]/50 text-white"
+              />
+              <div className="flex flex-wrap gap-2">
+                {SCOPES.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSelectedScopes((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]))}
+                    className={`px-3 py-1 rounded-full text-xs border ${selectedScopes.includes(s) ? 'bg-[#2E7D7D] text-white border-[#2E7D7D]' : 'bg-black/30 text-gray-300 border-[#2E7D7D]/50'}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <Button onClick={handleCreateApiKey} className="w-full bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white">Generate Key</Button>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                {apiKeys.map((k) => (
+                  <div key={k.id} className="flex items-center justify-between bg-black/30 rounded-lg p-3">
+                    <div>
+                      <p className="text-white font-medium">{k.name}</p>
+                      <p className="text-gray-400 text-xs">{k.keyPreview}</p>
+                      <p className="text-gray-500 text-xs">{k.scopes.join(', ')}</p>
+                    </div>
+                    <Button onClick={() => handleRevokeApiKey(k.id)} className="bg-red-600 hover:bg-red-500 text-white" size="sm">Revoke</Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Export Logs Card */}
-          <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
-            <Card className="bg-[#2E7D7D]/10 border-0 shadow-lg rounded-xl w-full">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-[#2E7D7D]">
-                  Export Security Logs
-                </CardTitle>
-                <p className="text-sm text-gray-300 mt-2">
-                  Download a record of recent security events for auditing.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  className="w-full bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80"
-                  onClick={handleExportLogs}
-                  aria-label="Export security logs"
-                  data-tooltip-id="export-logs"
-                  data-tooltip-content="Export security logs"
-                >
-                  Export Logs
-                </Button>
-                <Tooltip id="export-logs" />
-              </CardContent>
-            </Card>
-          </motion.div>
+          <Card className="bg-[#1E2A44] border border-[#2E7D7D]/30 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-[#2E7D7D]">Export & Audit</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                {(['csv', 'json', 'pdf'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setExportFormat(f)}
+                    className={`px-3 py-1 rounded border ${exportFormat === f ? 'bg-[#2E7D7D] text-white border-[#2E7D7D]' : 'bg-black/30 text-gray-300 border-[#2E7D7D]/50'}`}
+                  >
+                    {f.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <Button onClick={handleExportLogs} className="w-full bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white">Export Logs</Button>
+              <Button onClick={handleEmergencyLockdown} className="w-full bg-red-600 hover:bg-red-500 text-white">Emergency Lockdown</Button>
+            </CardContent>
+          </Card>
         </div>
-
-        <Toaster position="top-right" />
       </motion.div>
-    </ErrorBoundary>
+    </>
   );
-};
-
-export default Security;
+}

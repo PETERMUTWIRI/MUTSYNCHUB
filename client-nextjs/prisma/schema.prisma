@@ -206,16 +206,20 @@ model AuditLog {
 }
 
 model SupportTicket {
-  id            String   @id @default(uuid())
-  userProfileId String
-  orgId         String?
-  status        String
-  subject       String
-  message       String
-  response      String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_email   String
+  org_id       String?        @db.Uuid
+  title        String
+  description  String
+  priority     Priority       @default(MEDIUM)
+  status       TicketStatus   @default(OPEN)
+  assignee     String?
+  created_at   DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime?      @default(now()) @db.Timestamptz(6)
+  SupportReply SupportReply[]
 
+  @@index([org_id])
+  @@index([user_email, status])
   @@schema("public")
 }
 
@@ -383,6 +387,63 @@ model agentmessage {
   @@schema("public")
 }
 
+model ServiceStatus {
+  service      String       @id
+  status       ServiceState
+  last_updated DateTime?    @default(now()) @db.Timestamptz(6)
+
+  @@schema("public")
+}
+
+model SupportReply {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticket_id     String        @db.Uuid
+  author_email  String
+  body          String
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  SupportTicket SupportTicket @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([ticket_id])
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model securityEvent {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  useremail String
+  action    String
+  ip        String?   @db.Inet
+  useragent String?
+  risk      String?
+  city      String?
+  country   String?
+  lat       Float?
+  lng       Float?
+  createdat DateTime? @default(now()) @db.Timestamptz(6)
+  updatedat DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([createdat], map: "securityEvent_createdAt_idx")
+  @@index([risk])
+  @@index([useremail], map: "securityEvent_userEmail_idx")
+  @@schema("public")
+}
+
+model session {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  useremail String
+  device    String?
+  os        String?
+  browser   String?
+  ip        String?   @db.Inet
+  lastseen  DateTime? @default(now()) @db.Timestamptz(6)
+  current   Boolean?  @default(false)
+  createdat DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([lastseen], map: "session_lastSeen_idx")
+  @@index([useremail], map: "session_userEmail_idx")
+  @@schema("public")
+}
+
 enum PaymentStatus {
   PENDING
   COMPLETED
@@ -448,6 +509,33 @@ enum SubStatus {
   CANCELLED
   EXPIRED
   PAST_DUE
+
+  @@schema("public")
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+
+  @@schema("public")
+}
+
+enum ServiceState {
+  OPERATIONAL
+  DEGRADED
+  MAINTENANCE
+  OUTAGE
+
+  @@schema("public")
+}
+
+enum TicketStatus {
+  OPEN
+  PENDING
+  RESOLVED
+  CLOSED
 
   @@schema("public")
 }

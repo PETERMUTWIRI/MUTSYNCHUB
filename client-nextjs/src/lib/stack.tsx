@@ -11,10 +11,3 @@ export const stackServerApp = new StackServerApp({
   secretServerKey: process.env.STACK_SECRET_SERVER_KEY!,
 });
 
-/* ----------  Pure Stack (MFA only) ---------- */
-export const mfaServerApp = new StackServerApp({
-  tokenStore: 'nextjs-cookie',
-  projectId: process.env.NEXT_PUBLIC_STACK_MFA_PROJECT_ID!,
-  publishableClientKey: process.env.NEXT_PUBLIC_STACK_MFA_CLIENT_KEY!,
-  secretServerKey: process.env.STACK_MFA_SERVER_KEY!,
-});
