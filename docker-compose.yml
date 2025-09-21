@@ -1,17 +1,45 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mutsync
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: analytics
+    ports: ["5432:5432"]
+    restart: unless-stopped
+
   analytics:
     build: ./analytics-service
     ports: ["8000:8000"]
     depends_on: [redis, postgres]
+    env_file: .env.local
     environment:
       REDIS_URL: redis://redis:6379
       DATABASE_URL: postgresql://mutsync:postgres@postgres:5432/analytics
-      HF_TOKEN: ${HF_TOKEN}
     volumes:
       - ./analytics-data:/data
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.analytics.rule=Host(`api.yourdomain.com`)"
-      - "traefik.http.routers.analytics.entrypoints=websecure"
-      - "traefik.http.routers.analytics.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.analytics.rule=Host(`potential-yodel-4jr5qq54gqvwh6wg-3000.app.github.dev`)"
+      - "traefik.http.routers.analytics.entrypoints=web"
+      - "traefik.http.routers.analytics.tls=false"
     restart: unless-stopped
- 
+
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
