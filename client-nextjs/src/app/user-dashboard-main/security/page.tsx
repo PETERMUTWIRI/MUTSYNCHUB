@@ -8,7 +8,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { notifyHighRisk } from '@/app/actions/security-notify';
 import { createApiKey, revokeApiKey } from '@/app/actions/api-keys';
 import { createSupportTicket, agentChat } from '@/app/actions/support';
-
+import dynamic from 'next/dynamic';
 // ----- dynamic UI -----
 const Card = dynamic(() => import('@/components/ui/card').then(m => m.Card), { ssr: false });
 const CardHeader = dynamic(() => import('@/components/ui/card').then(m => m.CardHeader), { ssr: false });

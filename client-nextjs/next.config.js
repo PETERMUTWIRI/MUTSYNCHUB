@@ -6,14 +6,14 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     serverActions: true,
-    serverActionsBodySizeLimit: '2mb',
-    // 1. allow GitHub’s forwarded host
-    allowedForwardedHosts: isCodespace
-      ? ['.githubpreview.dev', '.app.github.dev']
-      : undefined,
+    serverActionsBodySizeLimit: '10mb', // <- bigger CSV
+    // 1.  disable the origin / host check that causes digest 1556847683
+    serverActionsAllowedHosts: isCodespace
+      ? ['.githubpreview.dev', '.app.github.dev', 'localhost:3000']
+      : ['localhost:3000'],
   },
 
-  // 2. (Dev-only) make x-forwarded-host match origin
+  // 2.  (Codespaces only) force x-forwarded-host to match browser origin
   ...(isCodespace && {
     headers: async () => [
       {
@@ -28,7 +28,7 @@ const nextConfig = {
     ],
   }),
 
-  // 3. Keep your original headers when NOT in Codespaces
+  // 3.  keep your original headers when NOT in Codespaces
   ...(!isCodespace && {
     headers: async () => [
       {

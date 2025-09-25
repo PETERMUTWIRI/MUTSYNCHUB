@@ -1,57 +1,54 @@
-import React, { useEffect, useState } from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '../ui/input';
-import Spinner from '../ui/Spinner';
+import { Input } from '@/components/ui/input';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 
-const QueryAnalytics: React.FC = () => {
-  const [history, setHistory] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
-  const [error, setError] = useState<string | null>(null);
+/*  –––––––––––––––  HOOKS  –––––––––––––––  */
+const useQueryHistory = () =>
+  useQuery({
+    queryKey: ['analytics-query-history'],
+    queryFn: () => fetch('/api/analytics/query-history', { credentials: 'include' }).then((r) => r.json()),
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    fetchHistory();
-  }, []);
-
-  const fetchHistory = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/analytics/query-history');
-      if (!res.ok) throw new Error('Failed to fetch query history');
-      const data = await res.json();
-      setHistory(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRunQuery = async () => {
-    setError(null);
-    try {
+const useRunQuery = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (sql: string) => {
       const res = await fetch('/api/analytics/run-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query: sql }),
       });
-      if (!res.ok) throw new Error('Failed to run query');
-      await res.json();
-      setQuery('');
-      fetchHistory();
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+      if (!res.ok) throw new Error((await res.json()).error || 'Query failed');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success('Query executed');
+      qc.invalidateQueries({ queryKey: ['analytics-query-history'] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+};
+
+/*  –––––––––––––––  COMPONENT  –––––––––––––––  */
+export default function QueryAnalytics() {
+  const [sql, setSql] = useState('');
+  const { data, isLoading, error } = useQueryHistory();
+  const { mutate: runQuery, isPending } = useRunQuery();
+
+  const history = data?.queries ?? [];
 
   return (
     <motion.div
-      className="bg-[#1E2A44] rounded-xl shadow-xl p-6 min-h-[200px]"
-      whileHover={{ scale: 1.02, boxShadow: '0 0 15px rgba(46, 125, 125, 0.5)' }}
+      className="glass-card"
+      whileHover={{ scale: 1.02 }}
       transition={{ type: 'spring', stiffness: 300 }}
     >
       <Card className="bg-transparent border-none">
@@ -59,29 +56,32 @@ const QueryAnalytics: React.FC = () => {
           <CardTitle className="text-xl font-inter text-gray-200">Query Analytics</CardTitle>
         </CardHeader>
         <CardContent>
+          {/*  –––––––––  RUN QUERY  –––––––––  */}
           <div className="flex mb-4">
             <Input
-              placeholder="Enter your query..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              disabled={loading}
+              placeholder="SELECT * FROM sales WHERE date > '2025-01-01';"
+              value={sql}
+              onChange={(e) => setSql(e.target.value)}
+              disabled={isPending}
               className="bg-[#1E2A44] border-[#2E7D7D] text-gray-200 font-inter text-base focus:ring-[#2E7D7D]"
             />
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
                 size="sm"
-                onClick={handleRunQuery}
-                disabled={loading || !query.trim()}
+                onClick={() => runQuery(sql)}
+                disabled={isPending || !sql.trim()}
                 className="ml-2 bg-[#2E7D7D] hover:bg-[#2E7D7D]/80 text-white font-inter text-base"
               >
                 Run Query
               </Button>
             </motion.div>
           </div>
-          {loading ? (
-            <Spinner />
+
+          {/*  –––––––––  HISTORY TABLE  –––––––––  */}
+          {isLoading ? (
+            <div className="h-5 w-32 bg-gray-700 rounded animate-pulse" />
           ) : error ? (
-            <div className="text-red-400 font-inter text-base">{error}</div>
+            <div className="text-red-400 font-inter text-base">{error.message}</div>
           ) : (
             <Table>
               <TableHeader>
@@ -89,16 +89,16 @@ const QueryAnalytics: React.FC = () => {
                   <TableHead className="text-gray-200 font-inter text-base">Query</TableHead>
                   <TableHead className="text-gray-200 font-inter text-base">Date</TableHead>
                   <TableHead className="text-gray-200 font-inter text-base">Status</TableHead>
+                  <TableHead className="text-gray-200 font-inter text-base">Rows</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {history.map((item, idx) => (
-                  <TableRow key={idx} className="border-[#2E7D7D]">
-                    <TableCell className="text-gray-300 font-inter text-base">{item.query}</TableCell>
-                    <TableCell className="text-gray-300 font-inter text-base">
-                      {new Date(item.date).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-gray-300 font-inter text-base">{item.status}</TableCell>
+                {history.map((q: any) => (
+                  <TableRow key={q.id} className="border-[#2E7D7D]">
+                    <TableCell className="text-gray-300 font-inter text-base">{q.query}</TableCell>
+                    <TableCell className="text-gray-300 font-inter text-base">{new Date(q.createdAt).toLocaleString()}</TableCell>
+                    <TableCell className="text-gray-300 font-inter text-base">{q.status}</TableCell>
+                    <TableCell className="text-gray-300 font-inter text-base">{q.rowsReturned ?? '—'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -108,6 +108,4 @@ const QueryAnalytics: React.FC = () => {
       </Card>
     </motion.div>
   );
-};
-
-export default QueryAnalytics;
+}

@@ -6,7 +6,14 @@ import { PosCard }          from "@/components/data-source/pos-card";
 import { TransferHistory }  from "@/components/data-source/history";
 import { LiveIndicator }    from "@/components/data-source/live-indicator";
 import { io, Socket }       from "socket.io-client";
-import { ensureAndFetchUserProfile } from "@/app/api/get-user-role/action";
+
+/* ----------  NEW: tiny helper to hit the working route  ---------- */
+async function getOrgProfile() {
+  const res = await fetch('/api/org-profile');
+  if (!res.ok) throw new Error('Unauthorized');
+  return res.json(); // { orgId, firstName, ... }
+}
+/* ------------------------------------------------------------------ */
 
 export default function DataSourcesPage() {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -14,17 +21,26 @@ export default function DataSourcesPage() {
   const [orgId, setOrgId]   = useState<string>("");
 
   useEffect(() => {
-    ensureAndFetchUserProfile().then((u) => setOrgId(u.orgId));
+    /* 1.  grab orgId from the WORKING route -------------------- */
+    getOrgProfile()
+      .then((u) => setOrgId(u.orgId))
+      .catch(() => console.error('No org profile'));
 
+    /* 2.  connect socket -------------------------------------- */
+    const token = document.cookie.match(/stack-session=([^;]+)/)?.[1] || "";
     const s = io(`${process.env.NEXT_PUBLIC_ORIGIN}/analytics`, {
-      auth: { token: document.cookie.match(/stack-session=([^;]+)/)?.[1] || "" },
-      query: { orgId },
+      auth: { token },
+      query: { orgId }, // will be empty on first run, then reconnects below
     });
     s.on("connect", () => setLive(true));
     s.on("disconnect", () => setLive(false));
     setSocket(s);
-    return () => s.close();
-  }, [orgId]);
+
+    /* 3.  CORRECT cleanup (function, not socket) -------------- */
+    return () => {
+      s.close();
+    };
+  }, [orgId]); // re-connects when orgId changes
 
   return (
     <div className="min-h-screen bg-[#1E2A44] text-white p-6">

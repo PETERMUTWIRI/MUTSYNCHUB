@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { HiBell } from 'react-icons/hi';
+import { HiBell, HiChip, HiCurrencyDollar, HiCreditCard, HiExclamation, HiTrendingUp, HiLightBulb, HiLockClosed } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,35 +12,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import dynamic from 'next/dynamic';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { ensureAndFetchUserProfile } from '@/app/api/get-user-role/action';
-import { saveDashboardLayout } from '@/app/api/get-layout/action';
-import { NotificationBell } from '@/components/notification-bell'; 
-
-
-const UsageProgressBar = dynamic(() => import('@/components/user/UsageProgressBar').then(mod => mod.default), { ssr: false });
-const PlanStatus = dynamic(() => import('@/components/user/PlanStatus').then(mod => mod.default), { ssr: false });
-const BillingCard = dynamic(() => import('@/components/user/cards/BillingCard').then(mod => mod.default), { ssr: false });
-const NotificationsCard = dynamic(() => import('@/components/user/cards/NotificationsCard').then(mod => mod.default), { ssr: false });
-const SupportCard = dynamic(() => import('@/components/user/cards/SupportCard').then(mod => mod.default), { ssr: false });
-const TeamCard = dynamic(() => import('@/components/user/cards/TeamCard').then(mod => mod.default), { ssr: false });
-const AnnouncementsCard = dynamic(() => import('@/components/user/cards/AnnouncementsCard').then(mod => mod.default), { ssr: false });
-const AnomalyDetectionCard = dynamic(() => import('@/components/user/cards/AnomalyDetectionCard').then(mod => mod.default), { ssr: false });
-const ForecastCard = dynamic(() => import('@/components/user/cards/ForecastCard').then(mod => mod.default), { ssr: false });
-const UserInsightsCard = dynamic(() => import('@/components/user/cards/UserInsightsCard').then(mod => mod.default), { ssr: false });
-const AIChatButton = dynamic(() => import('@/components/user/AIChatButton').then(mod => mod.default), { ssr: false });
-const QueryAnalytics = dynamic(
-  () => import('@/components/user/QueryAnalytics').then(mod => mod.default),
-  { ssr: false }
-);
-
-const ScheduleAnalytics = dynamic(
-  () => import('@/components/user/ScheduleAnalytics').then(mod => mod.default),
-  { ssr: false }
-);
+import { useOrgProfile } from '@/hooks/useOrgProfile';
+import { toast } from 'react-hot-toast';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-// Default layouts for different user types
+/*  –––––––––––––––  CARDS  –––––––––––––––  */
+const UsageProgressBar      = dynamic(() => import('@/components/user/UsageProgressBar').then(m => m.default), { ssr: false });
+const PlanStatus            = dynamic(() => import('@/components/user/PlanStatus').then(m => m.default), { ssr: false });
+const BillingCard           = dynamic(() => import('@/components/user/cards/BillingCard').then(m => m.default), { ssr: false });
+const NotificationsCard     = dynamic(() => import('@/components/user/cards/NotificationsCard').then(m => m.default), { ssr: false });
+const SupportCard           = dynamic(() => import('@/components/user/cards/SupportCard').then(m => m.default), { ssr: false });
+const TeamCard              = dynamic(() => import('@/components/user/cards/TeamCard').then(m => m.default), { ssr: false });
+const AnnouncementsCard     = dynamic(() => import('@/components/user/cards/AnnouncementsCard').then(m => m.default), { ssr: false });
+const AnomalyDetectionCard  = dynamic(() => import('@/components/user/cards/AnomalyDetectionCard').then(m => m.default), { ssr: false });
+const ForecastCard          = dynamic(() => import('@/components/user/cards/ForecastCard').then(m => m.default), { ssr: false });
+const UserInsightsCard      = dynamic(() => import('@/components/user/cards/UserInsightsCard').then(m => m.default), { ssr: false });
+const AIChatButton          = dynamic(() => import('@/components/user/AIChatButton').then(m => m.default), { ssr: false });
+const QueryAnalytics        = dynamic(() => import('@/components/user/QueryAnalytics').then(m => m.default), { ssr: false });
+const ScheduleAnalytics     = dynamic(() => import('@/components/user/ScheduleAnalytics').then(m => m.default), { ssr: false });
+
+type PlanTier = 'free' | 'pro' | 'enterprise';
+
+/*  –––––––––––––––  GRID PRE-SETS  –––––––––––––––  */
 const defaultLayouts = {
   beginner: [
     { i: 'usage', x: 0, y: 0, w: 2, h: 2 },
@@ -51,154 +45,124 @@ const defaultLayouts = {
   ],
   power: [
     { i: 'usage', x: 0, y: 0, w: 2, h: 2 },
-    { i: 'query', x: 2, y: 0, w: 4, h: 4 },
-    { i: 'schedule', x: 0, y: 4, w: 4, h: 4 },
-    { i: 'notifications', x: 4, y: 0, w: 2, h: 2 },
-    { i: 'billing', x: 4, y: 2, w: 2, h: 2 },
-    // Temporarily disable trends to isolate issue
-    // { i: 'trends', x: 0, y: 6, w: 2, h: 2 },
-    { i: 'anomaly', x: 2, y: 6, w: 2, h: 2 },
-    { i: 'forecast', x: 4, y: 6, w: 2, h: 2 },
-    { i: 'insights', x: 0, y: 8, w: 2, h: 2 },
+    { i: 'plan', x: 2, y: 0, w: 2, h: 2 },
+    { i: 'billing', x: 4, y: 0, w: 2, h: 2 },
+    { i: 'query', x: 0, y: 2, w: 4, h: 4 },
+    { i: 'schedule', x: 4, y: 2, w: 4, h: 4 },
+    { i: 'notifications', x: 8, y: 0, w: 2, h: 2 },
+    { i: 'anomaly', x: 0, y: 6, w: 2, h: 2 },
+    { i: 'forecast', x: 2, y: 6, w: 2, h: 2 },
+    { i: 'insights', x: 4, y: 6, w: 2, h: 2 },
   ],
 };
 
-// Validate layout to ensure it contains valid widget keys
 const validateLayout = (layout: any, mode: 'beginner' | 'power'): any => {
-  const validKeys = defaultLayouts[mode].map(item => item.i);
+  const validKeys = defaultLayouts[mode].map((item) => item.i);
   if (!Array.isArray(layout)) return defaultLayouts[mode];
-  return layout.filter(item => validKeys.includes(item.i));
+  return layout.filter((item) => validKeys.includes(item.i));
 };
 
+
+/*  –––––––––––––––  DOCK CARDS (draggable)  –––––––––––––––  */
+const DOCK_CARDS: {
+  key: string;
+  name: string;
+  plan: PlanTier;
+  icon: JSX.Element;
+}[] = [
+  { key: 'notifications', name: 'Notifications', plan: 'free', icon: <HiBell /> },
+  { key: 'query', name: 'Query Analytics', plan: 'free', icon: <HiChip /> },
+  { key: 'schedule', name: 'Schedule Analytics', plan: 'free', icon: <HiChip /> },
+  { key: 'support', name: 'Support', plan: 'free', icon: <HiBell /> },
+  { key: 'team', name: 'Team', plan: 'free', icon: <HiBell /> },
+  { key: 'announcements', name: 'Announcements', plan: 'free', icon: <HiBell /> },
+  { key: 'anomaly', name: 'Anomaly', plan: 'pro', icon: <HiExclamation /> },
+  { key: 'forecast', name: 'Forecast', plan: 'pro', icon: <HiTrendingUp /> },
+  { key: 'insights', name: 'Insights', plan: 'enterprise', icon: <HiLightBulb /> },
+];
+
+const STARTER_KEYS = ['usage', 'plan', 'billing'];
 export default function UserDashboard() {
   const router = useRouter();
-  const [role, setRole] = useState<string | null>(null);
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showPlans, setShowPlans] = useState(false);
-  const [layoutMode, setLayoutMode] = useState<'beginner' | 'power'>('beginner');
-  const [layouts, setLayouts] = useState(defaultLayouts.beginner);
   const queryClient = useQueryClient();
+  const { data: orgProfile, error: profileError, isLoading } = useOrgProfile();
 
-  const plans = [
-    { title: 'Starter', packages: ['Basic Analytics', 'Email Support'], price: 500 },
-    { title: 'Pro', packages: ['Advanced Analytics', 'Priority Support', 'Team Access'], price: 2000 },
-    { title: 'Enterprise', packages: ['Custom Integrations', 'Dedicated Manager', 'Unlimited Users'], price: 10000 },
-  ];
+  const [activeKeys, setActiveKeys] = useState<string[]>(STARTER_KEYS);
 
-  // Fetch user profile with layout
-  const { data: userProfile, error: profileError } = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: async () => {
-      const cachedSession = localStorage.getItem('userSession');
-      if (cachedSession) {
-        const parsed = JSON.parse(cachedSession);
-        if (parsed.expiresAt && parsed.expiresAt > Date.now()) {
-          console.log('UserDashboard: Loaded user profile from cache', parsed);
-          return parsed;
-        }
-        localStorage.removeItem('userSession');
-      }
-      console.log('UserDashboard: Fetching user profile');
-      const profile = await ensureAndFetchUserProfile();
-      localStorage.setItem('userSession', JSON.stringify({
-        ...profile,
-        expiresAt: Date.now() + 60 * 60 * 1000,
-      }));
-      return profile;
-    },
-    retry: false,
-  });
+  const [layoutMode, setLayoutMode] = useState<'beginner' | 'power'>('beginner');
+  const [showPlans, setShowPlans] = useState(false);
 
-  const saveLayoutMutation = useMutation({
-  mutationFn: async (newLayout: any) => {
-      console.log('UserDashboard: Saving layout for orgId:', orgId, 'layout:', newLayout);
-      return saveDashboardLayout(orgId!, newLayout, layoutMode); // ← Server Action
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['userProfile'] }),
-   });
-
+  /*  map profile → old variables  */
   useEffect(() => {
     if (profileError) {
       console.error('UserDashboard: Profile fetch error', profileError);
-      setError('Failed to load user profile');
-      setLoading(false);
-    } else if (userProfile) {
-      console.log('UserDashboard: Profile loaded', userProfile);
-      setRole(userProfile.role?.toLowerCase() || 'user');
-      setOrgId(userProfile.orgId);
-      setLayoutMode(userProfile.isTechnical ? 'power' : 'beginner');
-      const validatedLayout = validateLayout(userProfile.dashboardLayout, userProfile.isTechnical ? 'power' : 'beginner');
-      setLayouts(validatedLayout || defaultLayouts[userProfile.isTechnical ? 'power' : 'beginner']);
-      setLoading(false);
+      return;
     }
-  }, [userProfile, profileError]);
+    if (!orgProfile) return;
+    setLayoutMode(orgProfile.isTechnical ? 'power' : 'beginner');
+    const validated = validateLayout(orgProfile.dashboardLayout as any, orgProfile.isTechnical ? 'power' : 'beginner');
+    setActiveKeys((keys) => [...new Set([...keys, ...validated.map((i: any) => i.i)])]);
+  }, [orgProfile, profileError]);
 
+  /*  auth guard  */
   useEffect(() => {
-    if (!loading && role && role !== 'user' && role !== 'admin') {
-      console.log('UserDashboard: Unauthorized role, redirecting', role);
-      router.push('/unauthorized');
-    }
-  }, [role, loading, router]);
+    const role = orgProfile?.role?.toLowerCase();
+    if (!isLoading && role && role !== 'user' && role !== 'admin') router.push('/unauthorized');
+  }, [orgProfile, isLoading, router]);
+
+  /*  layout save stub  */
+  const saveLayoutMutation = useMutation({
+    mutationFn: async (newLayout: any) => {
+      console.log('Saving layout', newLayout);
+      /*  TODO  –  real endpoint  */
+      return Promise.resolve();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org-profile'] }),
+  });
 
   const handleLayoutChange = (newLayout: any) => {
-    const validatedLayout = validateLayout(newLayout, layoutMode);
-    setLayouts(validatedLayout);
-    saveLayoutMutation.mutate(validatedLayout);
+    const validated = validateLayout(newLayout, layoutMode);
+    saveLayoutMutation.mutate(validated);
   };
+  const planOrder = { free: 0, pro: 1, enterprise: 2 };
+  const userPlanTier: PlanTier = (orgProfile?.plan?.title?.toLowerCase() as PlanTier) || 'free';
+   /*  only the 3 cards that START in the grid  */
+  
 
-  const handleUpgradeClick = () => setShowPlans(true);
-  const handleClosePlans = () => setShowPlans(false);
   const handlePlanSelect = (plan: { title: string; packages: string[]; price: number }) => {
     router.push(`/payment?plan=${plan.title}`);
   };
 
-  if (loading) {
+  /*  skeleton  */
+  if (isLoading)
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen bg-[#1E2A44] flex items-center justify-center w-full"
-      >
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#1E2A44] flex items-center justify-center w-full">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E7D7D] mx-auto"></div>
           <p className="mt-4 text-gray-300 font-inter text-lg">Loading Dashboard...</p>
         </div>
       </motion.div>
     );
-  }
 
-  if (error) {
+  if (profileError)
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen bg-[#1E2A44] flex items-center justify-center w-full"
-      >
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#1E2A44] flex items-center justify-center w-full">
         <div className="text-center bg-[#2E7D7D]/10 rounded-xl p-8 border border-[#2E7D7D]/30">
-          <p className="text-red-400 font-inter text-lg">{error}</p>
-          <Button
-            onClick={() => router.push('/')}
-            className="mt-4 bg-[#2E7D7D] text-white px-6 py-2 rounded-lg hover:bg-[#2E7D7D]/80"
-          >
-            Return to Home
+          <p className="text-red-400 font-inter text-lg">Failed to load profile</p>
+          <Button onClick={() => location.reload()} className="mt-4 bg-[#2E7D7D] text-white px-6 py-2 rounded-lg hover:bg-[#2E7D7D]/80">
+            Retry
           </Button>
         </div>
       </motion.div>
     );
-  }
 
+  /*  ----  RENDER  ----  */
   return (
     <div className="bg-[#1E2A44] text-gray-100 font-inter w-full min-h-screen">
       <header className="flex items-center justify-between px-8 py-4 bg-[#1E2A44] border-b border-[#2E7D7D]/30 shadow-lg w-full">
         <div className="flex items-center gap-4">
-          <Input
-            type="text"
-            placeholder="Ask AI or search..."
-            className="bg-[#2E7D7D]/20 border-[#2E7D7D] text-gray-100 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E7D7D] w-64"
-          />
-          <Select value={layoutMode} onValueChange={(value: 'beginner' | 'power') => setLayoutMode(value)}>
+          <Input type="text" placeholder="Ask AI or search..." className="bg-[#2E7D7D]/20 border-[#2E7D7D] text-gray-100 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E7D7D] w-64" />
+          <Select value={layoutMode} onValueChange={(value) => setLayoutMode(value as any)}>
             <SelectTrigger className="bg-[#2E7D7D]/20 border-[#2E7D7D] text-gray-100">
               <SelectValue placeholder="Layout Mode" />
             </SelectTrigger>
@@ -209,27 +173,26 @@ export default function UserDashboard() {
           </Select>
         </div>
         <div className="flex items-center gap-6">
-          {/*  LIVE BELL  */}
-          <NotificationBell />
+          <HiBell size={24} className="text-gray-300 hover:text-white" />
           <div className="w-8 h-8 rounded-full bg-[#2E7D7D] flex items-center justify-center text-white font-bold">
-            {userProfile?.name?.[0] || 'U'}
+            {orgProfile?.firstName?.[0] || orgProfile?.email?.[0] || 'U'}
           </div>
         </div>
       </header>
 
       {showPlans && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
           <div className="bg-[#2E7D7D]/10 rounded-2xl shadow-2xl p-8 w-full max-w-md mx-auto relative border border-[#2E7D7D]/30">
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-200 text-2xl" onClick={handleClosePlans}>
+            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setShowPlans(false)}>
               &times;
             </button>
             <h2 className="text-3xl font-extrabold text-[#2E7D7D] mb-6 text-center">Choose Your Plan</h2>
             <div className="flex flex-col gap-6">
-              {plans.map((plan) => (
+              {[
+                { title: 'Starter', packages: ['Basic Analytics', 'Email Support'], price: 500 },
+                { title: 'Pro', packages: ['Advanced Analytics', 'Priority Support', 'Team Access'], price: 2000 },
+                { title: 'Enterprise', packages: ['Custom Integrations', 'Dedicated Manager', 'Unlimited Users'], price: 10000 },
+              ].map((plan) => (
                 <div
                   key={plan.title}
                   className="border border-[#2E7D7D]/30 rounded-xl p-6 flex flex-col gap-2 hover:shadow-xl hover:border-[#2E7D7D] transition-all cursor-pointer"
@@ -249,50 +212,84 @@ export default function UserDashboard() {
         </motion.div>
       )}
 
-      <main className="p-6 max-w-7xl mx-auto w-full">
-        <ResponsiveGridLayout
-          className="layout"
-          layouts={{ lg: layouts }}
-          breakpoints={{ lg: 1200, md: 996, sm: 768 }}
-          cols={{ lg: 12, md: 10, sm: 6 }}
-          rowHeight={100}
-          onLayoutChange={handleLayoutChange}
-          isDraggable
-          isResizable
+      <main className="p-6 max-w-7xl mx-auto w-full grid grid-cols-12 gap-6">
+        {/*  ----  LIVE GRID (drop zone)  ----  */}
+        <section
+          className="col-span-9 min-h-[600px] rounded-xl border-2 border-dashed border-[#2E7D7D]/40 bg-[#1E2A44]/30 relative"
+          onDrop={(e) => {
+            e.preventDefault();
+            const key = e.dataTransfer.getData('cardKey');
+            const card = DOCK_CARDS.find((c) => c.key === key);
+            if (!card) return;
+            /*  line 209  –  drop handler  */
+            if (planOrder[card.plan as PlanTier] > (orgProfile?.plan?.title ? planOrder[orgProfile.plan.title.toLowerCase() as PlanTier] : 0)) {
+               toast.error(`${card.name} requires ${card.plan} upgrade`);
+               return;
+            }
+            if (!activeKeys.includes(key)) setActiveKeys((keys) => [...keys, key]);
+          }}
+          onDragOver={(e) => e.preventDefault()}
         >
-          <div key="usage" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <UsageProgressBar />
+          {activeKeys.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400">Drag cards here to build your dashboard</div>
+          )}
+
+          <ResponsiveGridLayout
+            className="layout"
+            layouts={{ lg: activeKeys.map((k, i) => ({ i: k, x: (i * 2) % 12, y: Math.floor(i / 6) * 2, w: 2, h: 2 })) }}
+            breakpoints={{ lg: 1200, md: 996, sm: 768 }}
+            cols={{ lg: 12, md: 10, sm: 6 }}
+            rowHeight={100}
+            onLayoutChange={handleLayoutChange}
+            isDraggable
+            isResizable
+          >
+            {activeKeys.map((key) => (
+              <div key={key} className="glass-card relative">
+                <button onClick={() => setActiveKeys((keys) => keys.filter((k) => k !== key))} className="absolute top-2 right-2 text-gray-400 hover:text-white">
+                  &times;
+                </button>
+                {key === 'usage' && <UsageProgressBar />}
+                {key === 'plan' && <PlanStatus />}
+                {key === 'billing' && <BillingCard />}
+                {key === 'notifications' && <NotificationsCard />}
+                {key === 'query' && <QueryAnalytics />}
+                {key === 'schedule' && <ScheduleAnalytics />}
+                {key === 'anomaly' && <AnomalyDetectionCard />}
+                {key === 'forecast' && <ForecastCard />}
+                {key === 'insights' && <UserInsightsCard />}
+              </div>
+            ))}
+          </ResponsiveGridLayout>
+        </section>
+
+        {/*  ----  DOCK (mini-cards)  ----  */}
+        <aside className="col-span-3">
+          <h3 className="text-sm font-semibold text-gray-300 mb-4">Available Cards</h3>
+          <div className="space-y-3">
+            {DOCK_CARDS.map((card) => {
+              const locked = orgProfile?.plan?.title ? planOrder[card.plan as PlanTier] > planOrder[orgProfile.plan.title.toLowerCase() as PlanTier] : true;
+              return (
+                <div
+                  key={card.key}
+                  draggable={!locked}
+                  onDragStart={(e) => !locked && e.dataTransfer.setData('cardKey', card.key)}
+                  className={`flex items-center gap-3 p-3 rounded-lg border transition
+                    ${locked ? 'border-red-500/30 bg-red-500/10 opacity-60' : 'border-[#2E7D7D]/40 bg-[#2E7D7D]/10 hover:bg-[#2E7D7D]/20 cursor-move'}`}
+                >
+                  <div className="text-xl">{card.icon}</div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{card.name}</div>
+                    <div className="text-xs text-gray-400">{card.plan}</div>
+                  </div>
+                  {locked && <HiLockClosed className="text-red-400" />}
+                </div>
+              );
+            })}
           </div>
-          <div key="plan" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <PlanStatus />
-          </div>
-          <div key="billing" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <BillingCard />
-          </div>
-          <div key="notifications" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <NotificationsCard />
-          </div>
-          <div key="query" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <QueryAnalytics />
-          </div>
-          <div key="schedule" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <ScheduleAnalytics />
-          </div>
-         
-          <div key="trends" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <UsageProgressBar/>
-          </div>
-          <div key="anomaly" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <AnomalyDetectionCard />
-          </div>
-          <div key="forecast" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <ForecastCard />
-          </div>
-          <div key="insights" className="bg-[#2E7D7D]/10 rounded-xl shadow-lg p-6 border border-[#2E7D7D]/30">
-            <UserInsightsCard />
-          </div>
-        </ResponsiveGridLayout>
+        </aside>
       </main>
+
       <AIChatButton />
     </div>
   );

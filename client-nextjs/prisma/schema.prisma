@@ -299,35 +299,6 @@ model IndustrySchema {
   @@schema("public")
 }
 
-model AnalyticsReport {
-  id           String       @id @default(uuid())
-  name         String
-  description  String?
-  orgId        String
-  type         String
-  config       Json
-  schedule     String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  lastRun      DateTime?
-  results      Json?
-  organization Organization @relation(fields: [orgId], references: [id])
-
-  @@schema("public")
-}
-
-model AnalyticsSchedule {
-  id           String       @id @default(uuid())
-  orgId        String
-  frequency    String
-  interval     Int?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  organization Organization @relation(fields: [orgId], references: [id])
-
-  @@schema("public")
-}
-
 model Notification {
   id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title        String
@@ -444,6 +415,37 @@ model session {
   @@schema("public")
 }
 
+model AnalyticsReport {
+  id           String       @id @default(uuid())
+  name         String
+  description  String?
+  orgId        String
+  type         String
+  config       Json
+  schedule     String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  lastRun      DateTime?
+  results      Json?
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@schema("public")
+}
+
+model AnalyticsSchedule {
+  id           String       @id @default(uuid())
+  orgId        String
+  frequency    String
+  interval     Int?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@schema("public")
+}
+
+
+
 enum PaymentStatus {
   PENDING
   COMPLETED
@@ -536,35 +538,6 @@ enum TicketStatus {
   PENDING
   RESOLVED
   CLOSED
-
-  @@schema("public")
-}
-
-model AnalyticsReport {
-  id           String       @id @default(uuid())
-  name         String
-  description  String?
-  orgId        String
-  type         String
-  config       Json
-  schedule     String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  lastRun      DateTime?
-  results      Json?
-  organization Organization @relation(fields: [orgId], references: [id])
-
-  @@schema("public")
-}
-
-model AnalyticsSchedule {
-  id           String       @id @default(uuid())
-  orgId        String
-  frequency    String
-  interval     Int?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  organization Organization @relation(fields: [orgId], references: [id])
 
   @@schema("public")
 }

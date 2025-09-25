@@ -1,5 +1,6 @@
+// src/app/api/security/api-keys/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';   // ← add this line
+import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 
 export async function GET() {
@@ -8,12 +9,16 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const { name, scopes } = await req.json();
-  const key = await prisma.apiKey.create({ data: { name, keyPreview: randomUUID().slice(-8), scopes } });
-  return NextResponse.json(key);
+  const { name, scopes, orgId } = await req.json(); // orgId required
+  const fullKey = 'sk_' + randomUUID().replace(/-/g, '');
+  const key = await prisma.apiKey.create({
+    data: { key: fullKey, name, keyPreview: fullKey.slice(-8), scopes, orgId },
+  });
+  return NextResponse.json({ ...key, key: fullKey }); // return full key once
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  await prisma.apiKey.delete({ where: { id: params.id } });
+export async function DELETE(req: Request) {
+  const { id } = await req.json();
+  await prisma.apiKey.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }
