@@ -469,19 +469,41 @@ const TrendChart = ({
 
 const AnalyticsPieChart = ({ data, color }: { data: TrendPoint[]; color: string }) => {
   const pieData = useMemo(() => {
+    if (!Array.isArray(data)) return [];          // ← add this
     const total = data.reduce((s, d) => s + d.sales, 0);
-    return data.map((d) => ({ name: d.date, value: d.sales, percent: ((d.sales / total) * 100).toFixed(1) }));
+    return data.map((d) => ({
+      name: d.date,
+      value: d.sales,
+      percent: total ? ((d.sales / total) * 100).toFixed(1) : '0.0',
+    }));
   }, [data]);
+
+  if (!pieData.length) return <p className="text-sm text-gray-400">No data for pie chart</p>;
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-  <PieChart>
-        <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill={color} label={(e) => `${e.name}: ${e.percent}%`}>
+      <PieChart>
+        <Pie
+          data={pieData}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={100}
+          fill={color}
+          label={(e) => `${e.name}: ${e.percent}%`}
+        >
           {pieData.map((_, i) => (
-            <Cell key={`cell-${i}`} fill={`${color}${Math.round((i / pieData.length) * 255).toString(16).padStart(2, '0')}`} />
+            <Cell
+              key={`cell-${i}`}
+              fill={`${color}${Math.round((i / pieData.length) * 255)
+                .toString(16)
+                .padStart(2, '0')}`}
+            />
           ))}
         </Pie>
         <Tooltip />
-  </PieChart>
+      </PieChart>
     </ResponsiveContainer>
   );
 };
@@ -656,6 +678,6 @@ const ScheduleModal = ({
 
 const Skeleton = () => (
   <div className="min-h-screen bg-gradient-to-br from-[#0B1120] to-[#1E2A44] flex items-center justify-center">
-    <div className="text-gray-400">Loading Newton-grade analytics…</div>
+    <div className="text-gray-400">Loading analytics…</div>
   </div>
 );

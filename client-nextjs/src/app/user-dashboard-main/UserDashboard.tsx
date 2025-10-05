@@ -2,7 +2,16 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { HiBell, HiChip, HiCurrencyDollar, HiCreditCard, HiExclamation, HiTrendingUp, HiLightBulb, HiLockClosed } from 'react-icons/hi';
+import {
+  HiBell,
+  HiChip,
+  HiCurrencyDollar,
+  HiCreditCard,
+  HiExclamation,
+  HiTrendingUp,
+  HiLightBulb,
+  HiLockClosed,
+} from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,35 +26,35 @@ import { toast } from 'react-hot-toast';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-/*  –––––––––––––––  CARDS  –––––––––––––––  */
-const UsageProgressBar      = dynamic(() => import('@/components/user/UsageProgressBar').then(m => m.default), { ssr: false });
-const PlanStatus            = dynamic(() => import('@/components/user/PlanStatus').then(m => m.default), { ssr: false });
-const BillingCard           = dynamic(() => import('@/components/user/cards/BillingCard').then(m => m.default), { ssr: false });
-const NotificationsCard     = dynamic(() => import('@/components/user/cards/NotificationsCard').then(m => m.default), { ssr: false });
-const SupportCard           = dynamic(() => import('@/components/user/cards/SupportCard').then(m => m.default), { ssr: false });
-const TeamCard              = dynamic(() => import('@/components/user/cards/TeamCard').then(m => m.default), { ssr: false });
-const AnnouncementsCard     = dynamic(() => import('@/components/user/cards/AnnouncementsCard').then(m => m.default), { ssr: false });
-const AnomalyDetectionCard  = dynamic(() => import('@/components/user/cards/AnomalyDetectionCard').then(m => m.default), { ssr: false });
-const ForecastCard          = dynamic(() => import('@/components/user/cards/ForecastCard').then(m => m.default), { ssr: false });
-const UserInsightsCard      = dynamic(() => import('@/components/user/cards/UserInsightsCard').then(m => m.default), { ssr: false });
-const AIChatButton          = dynamic(() => import('@/components/user/AIChatButton').then(m => m.default), { ssr: false });
-const QueryAnalytics        = dynamic(() => import('@/components/user/QueryAnalytics').then(m => m.default), { ssr: false });
-const ScheduleAnalytics     = dynamic(() => import('@/components/user/ScheduleAnalytics').then(m => m.default), { ssr: false });
+/*  –––––––––––––––  LAZY CARDS  –––––––––––––––  */
+const UsageProgressBar      = dynamic(() => import('@/components/user/UsageProgressBar').then((m) => m.default), { ssr: false });
+const PlanStatus            = dynamic(() => import('@/components/user/PlanStatus').then((m) => m.default), { ssr: false });
+const BillingCard           = dynamic(() => import('@/components/user/cards/BillingCard').then((m) => m.default), { ssr: false });
+const NotificationsCard     = dynamic(() => import('@/components/user/cards/NotificationsCard').then((m) => m.default), { ssr: false });
+const SupportCard           = dynamic(() => import('@/components/user/cards/SupportCard').then((m) => m.default), { ssr: false });
+const TeamCard              = dynamic(() => import('@/components/user/cards/TeamCard').then((m) => m.default), { ssr: false });
+const AnnouncementsCard     = dynamic(() => import('@/components/user/cards/AnnouncementsCard').then((m) => m.default), { ssr: false });
+const AnomalyDetectionCard  = dynamic(() => import('@/components/user/cards/AnomalyDetectionCard').then((m) => m.default), { ssr: false });
+const ForecastCard          = dynamic(() => import('@/components/user/cards/ForecastCard').then((m) => m.default), { ssr: false });
+const UserInsightsCard      = dynamic(() => import('@/components/user/cards/UserInsightsCard').then((m) => m.default), { ssr: false });
+const AIChatButton          = dynamic(() => import('@/components/user/AIChatButton').then((m) => m.default), { ssr: false });
+const QueryAnalytics        = dynamic(() => import('@/components/user/QueryAnalytics').then((m) => m.default), { ssr: false });
+const ScheduleAnalytics     = dynamic(() => import('@/components/user/ScheduleAnalytics').then((m) => m.default), { ssr: false });
 
 type PlanTier = 'free' | 'pro' | 'enterprise';
 
-/*  –––––––––––––––  GRID PRE-SETS  –––––––––––––––  */
+/*  –––––––––––––––  DEFAULT LAYOUTS  –––––––––––––––  */
 const defaultLayouts = {
   beginner: [
     { i: 'usage', x: 0, y: 0, w: 2, h: 2 },
-    { i: 'plan', x: 2, y: 0, w: 2, h: 2 },
+    { i: 'plan',  x: 2, y: 0, w: 2, h: 2 },
     { i: 'billing', x: 4, y: 0, w: 2, h: 2 },
     { i: 'notifications', x: 0, y: 2, w: 2, h: 2 },
     { i: 'query', x: 2, y: 2, w: 4, h: 4 },
   ],
   power: [
     { i: 'usage', x: 0, y: 0, w: 2, h: 2 },
-    { i: 'plan', x: 2, y: 0, w: 2, h: 2 },
+    { i: 'plan',  x: 2, y: 0, w: 2, h: 2 },
     { i: 'billing', x: 4, y: 0, w: 2, h: 2 },
     { i: 'query', x: 0, y: 2, w: 4, h: 4 },
     { i: 'schedule', x: 4, y: 2, w: 4, h: 4 },
@@ -62,8 +71,7 @@ const validateLayout = (layout: any, mode: 'beginner' | 'power'): any => {
   return layout.filter((item) => validKeys.includes(item.i));
 };
 
-
-/*  –––––––––––––––  DOCK CARDS (draggable)  –––––––––––––––  */
+/*  –––––––––––––––  AVAILABLE CARDS  –––––––––––––––  */
 const DOCK_CARDS: {
   key: string;
   name: string;
@@ -82,13 +90,13 @@ const DOCK_CARDS: {
 ];
 
 const STARTER_KEYS = ['usage', 'plan', 'billing'];
+
 export default function UserDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: orgProfile, error: profileError, isLoading } = useOrgProfile();
 
   const [activeKeys, setActiveKeys] = useState<string[]>(STARTER_KEYS);
-
   const [layoutMode, setLayoutMode] = useState<'beginner' | 'power'>('beginner');
   const [showPlans, setShowPlans] = useState(false);
 
@@ -114,7 +122,6 @@ export default function UserDashboard() {
   const saveLayoutMutation = useMutation({
     mutationFn: async (newLayout: any) => {
       console.log('Saving layout', newLayout);
-      /*  TODO  –  real endpoint  */
       return Promise.resolve();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org-profile'] }),
@@ -124,10 +131,9 @@ export default function UserDashboard() {
     const validated = validateLayout(newLayout, layoutMode);
     saveLayoutMutation.mutate(validated);
   };
-  const planOrder = { free: 0, pro: 1, enterprise: 2 };
+
+  const planOrder: Record<PlanTier, number> = { free: 0, pro: 1, enterprise: 2 };
   const userPlanTier: PlanTier = (orgProfile?.plan?.title?.toLowerCase() as PlanTier) || 'free';
-   /*  only the 3 cards that START in the grid  */
-  
 
   const handlePlanSelect = (plan: { title: string; packages: string[]; price: number }) => {
     router.push(`/payment?plan=${plan.title}`);
@@ -201,7 +207,9 @@ export default function UserDashboard() {
                   <div className="text-2xl font-bold text-gray-100 mb-2">{plan.title}</div>
                   <ul className="mb-2">
                     {plan.packages.map((pkg) => (
-                      <li key={pkg} className="text-gray-300 text-base">{pkg}</li>
+                      <li key={pkg} className="text-gray-300 text-base">
+                        {pkg}
+                      </li>
                     ))}
                   </ul>
                   <div className="text-xl font-extrabold text-[#2E7D7D]">KES {plan.price.toLocaleString()}</div>
@@ -213,22 +221,21 @@ export default function UserDashboard() {
       )}
 
       <main className="p-6 max-w-7xl mx-auto w-full grid grid-cols-12 gap-6">
-        {/*  ----  LIVE GRID (drop zone)  ----  */}
+        {/*  ----  DROP ZONE (grid)  ----  */}
         <section
-          className="col-span-9 min-h-[600px] rounded-xl border-2 border-dashed border-[#2E7D7D]/40 bg-[#1E2A44]/30 relative"
+          id="drop-zone"
+          className="col-span-12 min-h-[600px] rounded-xl border-2 border-dashed border-[#2E7D7D]/40 bg-[#1E2A44]/30 relative transition"
+          onDragEnter={() => document.getElementById('drop-zone')?.classList.add('drop-active')}
+          onDragLeave={() => document.getElementById('drop-zone')?.classList.remove('drop-active')}
+          onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
+            document.getElementById('drop-zone')?.classList.remove('drop-active');
             e.preventDefault();
             const key = e.dataTransfer.getData('cardKey');
             const card = DOCK_CARDS.find((c) => c.key === key);
             if (!card) return;
-            /*  line 209  –  drop handler  */
-            if (planOrder[card.plan as PlanTier] > (orgProfile?.plan?.title ? planOrder[orgProfile.plan.title.toLowerCase() as PlanTier] : 0)) {
-               toast.error(`${card.name} requires ${card.plan} upgrade`);
-               return;
-            }
             if (!activeKeys.includes(key)) setActiveKeys((keys) => [...keys, key]);
           }}
-          onDragOver={(e) => e.preventDefault()}
         >
           {activeKeys.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center text-gray-400">Drag cards here to build your dashboard</div>
@@ -244,45 +251,84 @@ export default function UserDashboard() {
             isDraggable
             isResizable
           >
-            {activeKeys.map((key) => (
-              <div key={key} className="glass-card relative">
-                <button onClick={() => setActiveKeys((keys) => keys.filter((k) => k !== key))} className="absolute top-2 right-2 text-gray-400 hover:text-white">
-                  &times;
-                </button>
-                {key === 'usage' && <UsageProgressBar />}
-                {key === 'plan' && <PlanStatus />}
-                {key === 'billing' && <BillingCard />}
-                {key === 'notifications' && <NotificationsCard />}
-                {key === 'query' && <QueryAnalytics />}
-                {key === 'schedule' && <ScheduleAnalytics />}
-                {key === 'anomaly' && <AnomalyDetectionCard />}
-                {key === 'forecast' && <ForecastCard />}
-                {key === 'insights' && <UserInsightsCard />}
-              </div>
-            ))}
+            {activeKeys.map((key) => {
+              const card = DOCK_CARDS.find((c) => c.key === key);
+              if (!card) return null;
+              const locked = planOrder[card.plan as PlanTier] > (orgProfile?.plan?.title ? planOrder[orgProfile.plan.title.toLowerCase() as PlanTier] : 0);
+
+              return (
+                <div key={key} className="glass-card relative">
+                  {key === 'usage' && <UsageProgressBar />}
+                  {key === 'plan' && <PlanStatus />}
+                  {key === 'billing' && <BillingCard />}
+                  {key === 'notifications' && <NotificationsCard />}
+                  {key === 'query' && <QueryAnalytics />}
+                  {key === 'schedule' && <ScheduleAnalytics />}
+                  {key === 'anomaly' && <AnomalyDetectionCard />}
+                  {key === 'forecast' && <ForecastCard />}
+                  {key === 'insights' && <UserInsightsCard />}
+
+                  {locked && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-xl">
+                      <div className="text-center">
+                        <div className="text-xs font-inter text-gray-300 mb-1">Plan Locked</div>
+                        <div className="text-xs font-inter text-gray-400 mb-2">{card.plan} required</div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs border-[#2E7D7D] text-[#2E7D7D] hover:bg-[#2E7D7D]/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push('/payment');
+                          }}
+                        >
+                          Upgrade →
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setActiveKeys((keys) => keys.filter((k) => k !== key))}
+                    className="absolute top-1 right-1 text-gray-400 hover:text-white text-xs"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
           </ResponsiveGridLayout>
         </section>
 
-        {/*  ----  DOCK (mini-cards)  ----  */}
-        <aside className="col-span-3">
+        {/*  ----  DOCK (now under the grid)  ----  */}
+        <aside className="col-span-12 mt-6">
           <h3 className="text-sm font-semibold text-gray-300 mb-4">Available Cards</h3>
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {DOCK_CARDS.map((card) => {
-              const locked = orgProfile?.plan?.title ? planOrder[card.plan as PlanTier] > planOrder[orgProfile.plan.title.toLowerCase() as PlanTier] : true;
+              const locked = planOrder[card.plan as PlanTier] > (orgProfile?.plan?.title ? planOrder[orgProfile.plan.title.toLowerCase() as PlanTier] : 0);
               return (
                 <div
                   key={card.key}
-                  draggable={!locked}
-                  onDragStart={(e) => !locked && e.dataTransfer.setData('cardKey', card.key)}
-                  className={`flex items-center gap-3 p-3 rounded-lg border transition
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('cardKey', card.key);
+                    /*  normal-size ghost  */
+                    const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                    ghost.style.transform = 'scale(1)';
+                    ghost.style.opacity = '0.8';
+                    document.body.appendChild(ghost);
+                    e.dataTransfer.setDragImage(ghost, 0, 0);
+                    setTimeout(() => document.body.removeChild(ghost), 0);
+                  }}
+                  className={`flex items-center gap-2 p-2 rounded-lg border transition
                     ${locked ? 'border-red-500/30 bg-red-500/10 opacity-60' : 'border-[#2E7D7D]/40 bg-[#2E7D7D]/10 hover:bg-[#2E7D7D]/20 cursor-move'}`}
                 >
-                  <div className="text-xl">{card.icon}</div>
+                  <div className="text-sm">{card.icon}</div>
                   <div className="flex-1">
                     <div className="text-sm font-medium">{card.name}</div>
                     <div className="text-xs text-gray-400">{card.plan}</div>
                   </div>
-                  {locked && <HiLockClosed className="text-red-400" />}
+                  {locked && <HiLockClosed className="text-red-400 text-xs" />}
                 </div>
               );
             })}
@@ -291,6 +337,14 @@ export default function UserDashboard() {
       </main>
 
       <AIChatButton />
+
+      <style jsx global>{`
+        #drop-zone.drop-active {
+          border-color: #2e7d7d;
+          background-color: rgba(46, 125, 125, 0.15);
+          box-shadow: 0 0 0 2px rgba(46, 125, 125, 0.5);
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,8 +1,9 @@
-# analytics-service/app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import ingress, reports, interpret, flags
+from fastapi import Header
+from app.routers import ingress, reports, interpret, flags, datasources   # ← NEW
 from app.tasks.scheduler import start_scheduler
+from app.deps import verify_key                       # ← use the shared one
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
@@ -12,7 +13,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="MutSyncHub Analytics Engine", version="2.2", lifespan=lifespan)
 
-# ✅ explicit origins – no wildcard
 origins = [
     "https://potential-yodel-4jr5qq54gqvwh6wg-3000.app.github.dev",
     "http://localhost:3000",
@@ -26,10 +26,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ingress.router)
-app.include_router(reports.router)
-app.include_router(interpret.router)
-app.include_router(flags.router)
+# -------------  mount routers (auth guarded)  ------------------------------
+app.include_router(datasources.router, dependencies=[Depends(verify_key)])  # ← NEW
+app.include_router(ingress.router,   dependencies=[Depends(verify_key)])
+app.include_router(reports.router,   dependencies=[Depends(verify_key)])
+app.include_router(interpret.router, dependencies=[Depends(verify_key)])
+app.include_router(flags.router,     dependencies=[Depends(verify_key)])
+
+# -------------  public health check  ---------------------------------------
+@app.post("/api/v1/datasources")
+def debug_datasource(payload: dict, x_api_key: str = Header(None)):
+    print(f"[debug] headers: {x_api_key}, body: {payload}")
+    return {"debug": True, "received": payload}
 
 @app.get("/health")
 def health():

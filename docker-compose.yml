@@ -1,5 +1,4 @@
-version: "3.9"
-
+# docker-compose.yml  (repo root)
 services:
   redis:
     image: redis:7-alpine
@@ -17,7 +16,7 @@ services:
 
   analytics:
     build: ./analytics-service
-    ports: ["8000:8000"]
+    ports: ["8000:8000"]          # Codespace forwards this → public URL
     depends_on: [redis, postgres]
     env_file: .env.local
     environment:
@@ -25,21 +24,4 @@ services:
       DATABASE_URL: postgresql://mutsync:postgres@postgres:5432/analytics
     volumes:
       - ./analytics-data:/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.analytics.rule=Host(`potential-yodel-4jr5qq54gqvwh6wg-3000.app.github.dev`)"
-      - "traefik.http.routers.analytics.entrypoints=web"
-      - "traefik.http.routers.analytics.tls=false"
-    restart: unless-stopped
-
-  traefik:
-    image: traefik:v3.0
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped

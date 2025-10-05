@@ -1,4 +1,4 @@
-huggingface-hub>=0.20
+# Analytics Service dependencies
 apscheduler>=3.10
 pyarrow>=15.0
 redis>=5.0

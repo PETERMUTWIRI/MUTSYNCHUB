@@ -1,7 +1,8 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -13,9 +14,11 @@ import {
   HiOutlineChatBubbleLeftRight, HiOutlineMicrophone, HiOutlineSpeakerWave, HiOutlineSpeakerXMark, HiOutlinePhone, HiOutlineEnvelope, HiOutlineCalendar
 } from 'react-icons/hi2';
 import { useSearchParams } from 'next/navigation';
-import  SolutionsAgent from '@/components/SolutionsAgent';
+// import  SolutionsAgent from '@/components/SolutionsAgent';
 import { X, Calendar, Check, ChevronDown, ChevronUp, ArrowRight, Star, Briefcase, Cpu, Cloud, Database, Bot, Globe, Code2, LayoutGrid } from 'lucide-react';
-import TestAgent from '@/components/TestAgent';
+import { Input } from '@/components/ui/input'; // ➜  add this line
+import { sendConsultationEmail } from '@/lib/emailClient';
+
 // Service categories
 const SERVICE_CATEGORIES = [
   { id: 'ai', name: 'AI & Automation', icon: <Cpu size={20} /> },
@@ -448,66 +451,252 @@ const HOT_SERVICES = [
   "Real-time Fraud Graph","Privacy-Preserving Analytics","Autonomous Supply-Chain"
 ];
 
-/* ---------- PAGE ---------- */
+type Solution = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  services: string[];
+  deliverables: string[];
+  benefits: string[];
+  isHot?: boolean;
+};
+
+/* ----------  THEME CONSTANTS (from dashboard)  ---------- */
+const DEEP_NAVY = '#1E2A44';
+const TEAL = '#2E7D7D';
+const TEXT_MAIN = 'text-gray-100';
+const TEXT_SEC = 'text-gray-300';
+const TEXT_MUTED = 'text-gray-400';
+
+/* ----------  AI CONSULTANT COMPONENT  ---------- */
+function SolutionsAgent({ solutions }: { solutions: any[] }) {
+  type Message = { role: 'user' | 'assistant'; content: string };
+
+  const [threadId] = useState(() => `sol-${Date.now()}`);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [requiresContact, setRequiresContact] = useState(false);
+  const [booking, setBooking] = useState(false);
+
+  const callAgent = async (action: string, payload: any) => {
+    const res = await fetch('/api/agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, payload }),
+    });
+    const text = await res.text();
+    if (!text) return { json: null, status: res.status };
+    try {
+      const json = JSON.parse(text);
+      return { json, status: res.status };
+    } catch (e) {
+      console.error('Bad agent JSON:', text, e);
+      return { json: null, status: res.status };
+    }
+  };
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim()) return;
+    setMessages((m) => [...m, { role: 'user', content: text }]);
+    setInput('');
+    setLoading(true);
+    const { json, status } = await callAgent('chat', { message: text, threadId });
+    setLoading(false);
+    if (!json || !json.content) {
+      setMessages((m) => [...m, { role: 'assistant', content: 'Sorry, I could not process that.' }]);
+      return;
+    }
+    setMessages((m) => [...m, { role: 'assistant', content: json.content }]);
+    if (status === 100 || json.requiresContact) setRequiresContact(true);
+  };
+
+const book = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  const fd = new FormData(e.currentTarget);
+  const name = fd.get('name') as string;
+  const email = fd.get('email') as string;
+  const date = fd.get('date') as string;
+  const time = fd.get('time') as string;
+  
+  setBooking(true);
+  const { json } = await callAgent('book', { name, email, date, time, threadId });
+  setBooking(false);
+  
+  if (json?.ok) {
+    // build ICS string
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//MutSyncHub//Consultation//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:mut-${Date.now()}@mutsynchub.com`,
+      `DTSTART:${date}T${time.replace(':', '')}00`,
+      `DTEND:${date}T${String(Number(time.split(':')[0]) + 1).padStart(2, '0')}${time.split(':')[1]}00`,
+      'SUMMARY:MutSyncHub Consultation',
+      'DESCRIPTION:AI-agent booked consultation slot',
+      'STATUS:CONFIRMED',
+      'TRANSP:OPAQUE',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    
+    const mailVars = {
+      name,
+      email,
+      consultation_date: date,
+      consultation_time: `${time} (East-Africa time)`, // ← human friendly
+      services: 'AI-Consulting',
+      company: 'N/A',
+      phone: 'N/A',
+      message: 'AI-agent booked slot',
+      ics_file: encodeURIComponent(icsContent), // ← filled
+      ics_filename: 'MutSyncHub-consultation.ics',
+      now_year: new Date().getFullYear(),
+    };
+    
+    const res = await sendConsultationEmail(mailVars);
+    if (res.status !== 200) console.warn('EmailJS failed:', res.text);
+    
+    setMessages((m) => [...m, { role: 'assistant', content: `✅ Calendar invite sent to ${email}. See you soon!` }]);
+  }
+};
+
+  return (
+    <div className="flex flex-col gap-3 text-sm">
+      <div className="h-64 overflow-y-auto rounded-xl border border-gray-300 bg-[#F5F5F0] p-3 flex flex-col gap-2">
+        {messages.length === 0 && <p className="text-gray-500">👋 Hi! Ask me anything or pick a solution card below.</p>}
+        {messages.map((m, i) => (
+          <div key={i} className={m.role === 'user' ? 'self-end bg-white text-black border border-gray-200 rounded-xl px-3 py-1' : 'self-start bg-[#EAE6DD] text-black rounded-xl px-3 py-1'}>
+            {m.content}
+          </div>
+        ))}
+        {loading && <span className="text-gray-400 animate-pulse">Thinking…</span>}
+      </div>
+
+      <form onSubmit={(e) => { e.preventDefault(); sendMessage(input); }} className="flex gap-2">
+        <input
+          id="ai-chat-input"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type or speak…"
+          className="flex-1 bg-white text-black border border-gray-300 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2E7D7D]"
+        />
+        <Button type="submit" size="sm" className="bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80 rounded-lg">Send</Button>
+      </form>
+
+      {requiresContact && (
+        <motion.form
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2"
+          onSubmit={book}
+        >
+          <input name="name" type="text" required placeholder="Your name" className="bg-white text-black border border-gray-300 rounded px-3 py-2" />
+          <input name="email" type="email" required placeholder="your@email.com" className="bg-white text-black border border-gray-300 rounded px-3 py-2" />
+          <input name="date" type="date" required className="bg-white text-black border border-gray-300 rounded px-3 py-2" />
+          <input name="time" type="time" required className="bg-white text-black border border-gray-300 rounded px-3 py-2" />
+          <Button type="submit" disabled={booking} className="sm:col-span-3 bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80 rounded-lg">
+            {booking ? 'Booking…' : 'Book free consultation'}
+          </Button>
+        </motion.form>
+      )}
+    </div>
+  );
+}
+
+/* ----------  MAIN PAGE  ---------- */
 export default function SolutionsPage() {
   const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [expandedSolution, setExpandedSolution] = useState<string | null>(null);
-  const [showAgent, setShowAgent] = useState(false);   // <- opt-in, not intrusive
+  const [showAgent, setShowAgent] = useState(false);
+  const agentRef = useRef<HTMLDivElement>(null);
 
-  const filtered = selectedCategory === 'all' ? SOLUTIONS : SOLUTIONS.filter(s => s.category === selectedCategory);
+  const openAgent = () => {
+  setShowAgent(true);
+  setTimeout(() => {
+    agentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelector<HTMLInputElement>('#ai-chat-input')?.focus();
+  }, 100);
+};
+  const filtered = selectedCategory === 'all' ? SOLUTIONS : SOLUTIONS.filter((s) => s.category === selectedCategory);
 
-  /* auto-expand solution from query string */
   useEffect(() => {
     const id = searchParams.get('id');
     if (id) setExpandedSolution(id);
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-gray-100 font-sans">
-      {/* Hero */}
-      <section className="relative pt-24 pb-16 overflow-hidden">
+    <div className="min-h-screen bg-[#1E2A44] text-gray-100 font-inter">
+      {/*  ----  NAV BAR  ----  */}
+      <header className="flex items-center justify-between px-8 py-4 bg-[#1E2A44] border-b border-[#2E7D7D]/30 shadow-lg w-full">
+        <div className="flex items-center gap-4">
+          <Link href="/">
+            <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">MutSyncHub</span>
+          </Link>
+          <nav className="hidden md:flex items-center gap-4 text-sm">
+            <Link href="/" className="text-gray-300 hover:text-white transition">Home</Link>
+            <Link href="/resources" className="text-gray-300 hover:text-white transition">Resources</Link>
+            <Link href="/support" className="text-gray-300 hover:text-white transition">Support</Link>
+          </nav>
+        </div>
+        <div className="flex items-center gap-4">
+          <Input type="text" placeholder="Search solutions..." className="bg-[#2E7D7D]/20 border-[#2E7D7D] text-gray-100 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E7D7D] w-64" />
+          <Link
+            href="https://wa.me/254783423550?text=Hi%20MutSyncHub,%20I%20need%20enterprise%20solutions."
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button className="bg-[#2E7D7D] text-white px-4 py-2 rounded-lg hover:bg-[#2E7D7D]/80">
+              Contact Sales
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {/*  ----  HERO  ----  */}
+      <section className="relative pt-24 pb-16 overflow-hidden bg-[#1E2A44]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
             Enterprise Solutions
           </motion.h1>
-          <p className="mt-4 text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
-            Transform your business with proven, enterprise-grade technology — or let our AI consultant guide you to the next big thing.
-          </p>
+          <p className="mt-4 text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">Transform your business with proven, enterprise-grade technology — or let our AI consultant guide you to the next big thing.</p>
           <div className="mt-8 flex justify-center gap-4">
-            <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg">
+            <Button className="bg-[#2E7D7D] text-white px-6 py-3 rounded-lg hover:bg-[#2E7D7D]/80 shadow-lg">
               <Link href="#solutions">Explore Solutions</Link>
             </Button>
-            <Button variant="outline" onClick={() => setShowAgent(true)} className="border-gray-600 text-gray-200 hover:bg-gray-800 px-8 py-3 rounded-lg flex items-center gap-2">
+            <Button variant="outline" onClick={openAgent} className="border-[#2E7D7D] text-[#2E7D7D] hover:bg-[#2E7D7D]/20 px-6 py-3 rounded-lg flex items-center gap-2">
               <HiOutlineChatBubbleLeftRight size={20} /> Talk to AI Consultant
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Sticky Category Pills */}
-
-      {/* Sticky Category Pills — millimetre height */}
-      <section className="sticky top-0 z-20 bg-slate-950/80 backdrop-blur border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 py-1.5">   {/* ← 6 px total height */}
+      {/*  ----  STICKY CATEGORY PILLS  ----  */}
+      <section className="sticky top-0 z-20 bg-[#1E2A44]/80 backdrop-blur border-b border-[#2E7D7D]/30">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-center gap-2">
             {SERVICE_CATEGORIES.map((cat) => (
               <Button
                 key={cat.id}
                 variant={selectedCategory === cat.id ? 'default' : 'outline'}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`rounded-full px-2.5 py-1 text-xs h-6 ${selectedCategory === cat.id ? 'bg-cyan-600 text-white' : 'border-gray-600 text-gray-200 hover:bg-gray-800'}`}
+                className={`rounded-full px-3 py-1.5 text-xs h-7 ${selectedCategory === cat.id ? 'bg-[#2E7D7D] text-white' : 'border-[#2E7D7D]/40 text-gray-300 hover:bg-[#2E7D7D]/20'}`}
               >
                 <span className="text-xs">{cat.icon}</span>
-                <span className="text-xs">{cat.name}</span>
+                <span className="text-xs ml-1">{cat.name}</span>
               </Button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Solutions Grid (Left Half) */}
-      <section id="solutions" className="py-16 bg-slate-950">
+      {/*  ----  SOLUTIONS GRID  ----  */}
+      <section id="solutions" className="py-16 bg-[#1E2A44]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* LEFT — Enterprise Cards */}
@@ -516,29 +705,27 @@ export default function SolutionsPage() {
               <p className="text-gray-300 mb-8">Pick what you need — or let the AI suggest what you don’t know you need yet.</p>
               <div className="space-y-6">
                 {filtered.map((sol) => (
-                  <Card key={sol.id} className="bg-gray-800 border-gray-700 shadow-md">
+                  <Card key={sol.id} className="bg-[#1E2A44]/30 border border-[#2E7D7D]/30 shadow-md hover:shadow-xl transition-shadow rounded-xl">
                     <CardHeader className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-xl text-gray-100">{sol.title}</CardTitle>
                         <p className="text-sm text-gray-300 mt-1">{sol.description}</p>
                       </div>
-                      {sol.isHot && <span className="bg-cyan-600 text-white text-xs px-2 py-1 rounded-full">HOT</span>}
+                      {sol.isHot && <span className="bg-[#2E7D7D] text-white text-xs px-2 py-1 rounded-full">HOT</span>}
                     </CardHeader>
                     <CardContent>
                       <ul className="text-sm text-gray-300 space-y-1 mb-4">
                         {sol.services.slice(0, 3).map((s) => (
                           <li key={s} className="flex items-center gap-2">
-                            <span className="text-cyan-400">✓</span> {s}
+                            <span className="text-[#2E7D7D]">✓</span> {s}
                           </li>
                         ))}
                       </ul>
                       <Button
                         onClick={() => {
-                          /* you can still open the old static form here if you want */
-                          /* or simply let the AI take over by opening the agent */
                           alert('AI consultant will help you refine this — click "Talk to AI Consultant"');
                         }}
-                        className="w-full bg-cyan-600 hover:bg-cyan-700 text-white"
+                        className="w-full bg-[#2E7D7D] text-white hover:bg-[#2E7D7D]/80 rounded-lg"
                       >
                         Request This Solution
                       </Button>
@@ -548,22 +735,21 @@ export default function SolutionsPage() {
               </div>
             </div>
 
-            {/* RIGHT — AI Consultant ( collapsible ) */}
-            <div className="lg:sticky lg:top-24 self-start">
+            {/* RIGHT — AI Consultant */}
+            <div ref={agentRef} className="lg:sticky lg:top-24 self-start z-30">
               <motion.div
                 initial={false}
                 animate={{ height: showAgent ? 'auto' : 64 }}
-                className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg"
+                className="bg-[#1E2A44]/30 border border-[#2E7D7D]/30 rounded-xl overflow-hidden shadow-lg"
               >
-                {/* Header Bar */}
                 <div
                   onClick={() => setShowAgent((s) => !s)}
-                  className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[#2E7D7D]/10 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-cyan-400 text-xl">🤖</span>
+                    <span className="text-[#2E7D7D] text-xl">🤖</span>
                     <div>
-                      <p className="font-semibold text-gray-100">Mutsynchub Solutions Consultant</p>
+                      <p className="font-semibold text-gray-100">MutSyncHub Solutions Consultant</p>
                       <p className="text-xs text-gray-400">Opt-in • Voice + Text</p>
                     </div>
                   </div>
@@ -587,19 +773,18 @@ export default function SolutionsPage() {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Enterprise Trust Badges */}
               <div className="mt-6 grid grid-cols-3 gap-4 text-center text-xs text-gray-400">
-                <div className="flex flex-col items-center gap-1"><HiOutlinePhone size={20} className="text-cyan-400" /><span>24/7 Support</span></div>
-                <div className="flex flex-col items-center gap-1"><HiOutlineEnvelope size={20} className="text-cyan-400" /><span>Email Summary</span></div>
-                <div className="flex flex-col items-center gap-1"><HiOutlineCalendar size={20} className="text-cyan-400" /><span>Book Slot</span></div>
+                <div className="flex flex-col items-center gap-1"><HiOutlinePhone size={20} className="text-[#2E7D7D]" /><span>24/7 Support</span></div>
+                <div className="flex flex-col items-center gap-1"><HiOutlineEnvelope size={20} className="text-[#2E7D7D]" /><span>Email Summary</span></div>
+                <div className="flex flex-col items-center gap-1"><HiOutlineCalendar size={20} className="text-[#2E7D7D]" /><span>Book Slot</span></div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Case Studies (unchanged) */}
-      <section id="success" className="py-16 bg-gray-900">
+      {/*  ----  CASE STUDIES  ----  */}
+      <section id="success" className="py-16 bg-[#1E2A44] border-t border-[#2E7D7D]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -609,9 +794,7 @@ export default function SolutionsPage() {
           >
             Success Stories
           </motion.h2>
-          <p className="text-gray-300 text-center max-w-2xl mx-auto mb-12">
-            See how MutSyncHub has empowered businesses with transformative technology.
-          </p>
+          <p className="text-gray-300 text-center max-w-2xl mx-auto mb-12">See how MutSyncHub has empowered businesses with transformative technology.</p>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {CASE_STUDIES.map((study, idx) => (
               <motion.div
@@ -620,20 +803,20 @@ export default function SolutionsPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-gray-800 rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow border border-gray-700 hover:border-cyan-600 cursor-pointer"
+                className="bg-[#1E2A44]/30 rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow border border-[#2E7D7D]/30 hover:border-[#2E7D7D] cursor-pointer"
                 onClick={() => window.dispatchEvent(new CustomEvent('openCaseStudy', { detail: study }))}
               >
                 <h3 className="text-xl font-semibold text-gray-100 mb-2">{study.title}</h3>
-                <p className="text-cyan-400 mb-4">{study.client}</p>
+                <p className="text-[#2E7D7D] mb-4">{study.client}</p>
                 <p className="text-gray-300 mb-4 line-clamp-3">{study.challenge}</p>
                 <div className="flex flex-wrap gap-2">
                   {study.results.slice(0, 3).map((result, i) => (
-                    <span key={i} className="text-xs bg-cyan-600 text-white px-3 py-1 rounded-full">
+                    <span key={i} className="text-xs bg-[#2E7D7D] text-white px-3 py-1 rounded-full">
                       {result}
                     </span>
                   ))}
                 </div>
-                <Button variant="link" className="mt-4 text-cyan-400 hover:text-cyan-300 p-0">
+                <Button variant="link" className="mt-4 text-[#2E7D7D] hover:text-cyan-300 p-0">
                   Read Full Case Study →
                 </Button>
               </motion.div>
@@ -642,14 +825,24 @@ export default function SolutionsPage() {
         </div>
       </section>
 
-      {/* Footer CTA (unchanged) */}
-      <section className="py-16 bg-gray-900 border-t border-gray-800">
+      {/*  ----  FOOTER CTA  ----  */}
+      <section className="py-16 bg-[#1E2A44] border-t border-[#2E7D7D]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-gray-100 mb-4">Ready to Transform Your Business?</h2>
           <p className="text-gray-300 mb-8 max-w-2xl mx-auto">Join leading enterprises leveraging MutSyncHub’s AI and cloud solutions for unparalleled growth.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button onClick={() => { setShowAgent(true); setTimeout(() => document.querySelector<HTMLInputElement>('#ai-chat-input')?.focus(), 300); }} className="bg-cyan-600 text-white hover:bg-cyan-700 px-8 py-3 rounded-lg">Schedule Free Consultation</Button>
-            <Button variant="outline" className="border-gray-600 text-gray-200 hover:bg-gray-800 px-8 py-3 rounded-lg" asChild><Link href="/solutions">Explore All Solutions</Link></Button>
+            <Button
+              onClick={() => {
+                setShowAgent(true);
+                setTimeout(() => document.querySelector<HTMLInputElement>('#ai-chat-input')?.focus(), 300);
+              }}
+              className="bg-[#2E7D7D] text-white px-8 py-3 rounded-lg hover:bg-[#2E7D7D]/80"
+            >
+              Schedule Free Consultation
+            </Button>
+            <Button variant="outline" className="border-[#2E7D7D] text-[#2E7D7D] hover:bg-[#2E7D7D]/20 px-8 py-3 rounded-lg" asChild>
+              <Link href="/solutions">Explore All Solutions</Link>
+            </Button>
           </div>
         </div>
       </section>

@@ -6,6 +6,7 @@ export function useDrillDown(initialData: any[]) {
   const [stack, setStack] = useState<DrillSlice[]>([]);
 
   const applyFilters = (data: any[]) => {
+    if (!Array.isArray(data)) return [];
     return data.filter((row) =>
       stack.every((s) => row[s.key] === s.value)
     );
@@ -19,5 +20,5 @@ export function useDrillDown(initialData: any[]) {
 
   const clear = () => setStack([]);
 
-  return { stack, drill, pop, clear, filtered: applyFilters(initialData) };
+  return { stack, drill, pop, clear, filtered: applyFilters(initialData || []) };
 }

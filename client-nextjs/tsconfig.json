@@ -20,9 +20,8 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@prisma/edge": ["./node_modules/.prisma/client-edge"]
     },
     "types": [
       "node",

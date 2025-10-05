@@ -3,6 +3,12 @@ generator client {
   previewFeatures = ["multiSchema"]
 }
 
+// NEW – edge-runtime client (works with ANY Postgres)
+generator edge {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client-edge"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")

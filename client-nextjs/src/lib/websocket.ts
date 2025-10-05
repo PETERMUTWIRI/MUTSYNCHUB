@@ -32,20 +32,23 @@ function getSocket(): Socket {
 }
 
 export const DataGateway = {
+  /** Emit an event to every socket in the given org room. */
   broadcastToOrg(orgId: string, event: string, payload: any) {
     getSocket().emit('broadcast', { orgId, event, payload });
   },
 
+  /** Join org room and return the socket instance. */
   connect(orgId: string): Socket {
     const s = getSocket();
     if (orgId) s.emit('join-org', orgId);
     return s;
   },
 
+  /** Leave org room (if provided) and disconnect socket. */
   disconnect(orgId?: string) {
     if (!socket) return;
     if (orgId) socket.emit('leave-org', orgId);
     socket.disconnect();
     socket = null;
   },
-};
+} as const;

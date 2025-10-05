@@ -1,66 +1,7 @@
-// // src/app/api/org-profile/route.ts
-// import { NextRequest, NextResponse } from 'next/server';
-// import { prisma } from '@/lib/prisma';
-// import { stackServerApp } from '@/lib/stack';
-// import { v4 as uuidv4 } from 'uuid';
-
-// export async function GET(req: NextRequest) {
-//   try {
-//     const user = await stackServerApp.getUser({ or: 'throw', tokenStore: 'nextjs-cookie' });
-
-//     let profile = await prisma.userProfile.findUnique({
-//       where: { userId: user.id },
-//       include: { organization: true },
-//     });
-
-//     if (!profile) {
-//       let org = await prisma.organization.findFirst({});
-//       if (!org) {
-//         org = await prisma.organization.create({
-//           data: {
-//             id: uuidv4(),
-//             name: `Org-${user.id.slice(0, 8)}`,
-//             subdomain: `org-${user.id.slice(0, 8)}-${Date.now()}`,
-//             planId: '088c6a32-7840-4188-bc1a-bdc0c6bee723',
-//           },
-//         });
-//       }
-//       profile = await prisma.userProfile.create({
-//         data: {
-//           id: uuidv4(),
-//           userId: user.id,
-//           orgId: org.id,
-//           role: 'USER',
-//           email: user.primaryEmail,
-//         },
-//         include: { organization: true },
-//       });
-//     }
-
-//     const planId = profile.organization.planId ?? '088c6a32-7840-4188-bc1a-bdc0c6bee723';
-//     const plan = await prisma.plan.findUnique({ where: { id: planId } });
-
-//     // src/app/api/org-profile/route.ts  (return statement)
-//    return NextResponse.json({
-//     orgId: profile.orgId,
-//     firstName: profile.firstName,
-//     lastName: profile.lastName,
-//     email: profile.email,
-//     role: profile.role,
-//     plan,
-//     flags: new Map(), // <-- NEW
-//    });
-
-//    // Add flags to the response
-//   } catch (e: any) {
-//     console.error('[org-profile]', e);
-//     return NextResponse.json({ error: e.message }, { status: 500 });
-//   }
-// }
 
 // src/app/api/org-profile/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { stackServerApp } from '@/lib/stack';
 import { v4 as uuidv4 } from 'uuid';
 

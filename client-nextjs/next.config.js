@@ -6,14 +6,22 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     serverActions: true,
-    serverActionsBodySizeLimit: '10mb', // <- bigger CSV
-    // 1.  disable the origin / host check that causes digest 1556847683
     serverActionsAllowedHosts: isCodespace
       ? ['.githubpreview.dev', '.app.github.dev', 'localhost:3000']
       : ['localhost:3000'],
   },
 
-  // 2.  (Codespaces only) force x-forwarded-host to match browser origin
+  /* ADD THIS BLOCK ------------------------------------------------ */
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push({
+        'onnxruntime-node': 'commonjs onnxruntime-node',
+      });
+    }
+    return config;
+  },
+  /* --------------------------------------------------------------- */
+
   ...(isCodespace && {
     headers: async () => [
       {
@@ -28,7 +36,6 @@ const nextConfig = {
     ],
   }),
 
-  // 3.  keep your original headers when NOT in Codespaces
   ...(!isCodespace && {
     headers: async () => [
       {
