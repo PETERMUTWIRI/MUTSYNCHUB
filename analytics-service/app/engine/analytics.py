@@ -16,6 +16,8 @@ from statsmodels.tsa.stattools import adfuller
 import networkx as nx
 from sklearn.metrics import silhouette_score
 from sklearn.feature_extraction.text import TfidfVectorizer
+from .supermarket_metrics import supermarket_insights
+from app.utils.detect_industry import is_supermarket   # next snippet
 
 class AnalyticsService:
     def __init__(self):
@@ -82,7 +84,10 @@ class AnalyticsService:
             'anomaly_detection': self._detect_anomalies(df),
             'feature_importance': self._calculate_feature_importance(df)
         }
-        
+         # --- supermarket auto-detection ---
+        if is_supermarket(df):
+           industry = 'supermarket'
+           results['supermarket_kpis'] = supermarket_insights(df)
         # Add industry-specific metrics
         if industry and industry.lower() in self.industry_metrics:
             analysis_results['industry_metrics'] = self.industry_metrics[industry.lower()](df)

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Header
-from app.routers import ingress, reports, interpret, flags, datasources   # ← NEW
+from app.routers import ingress, reports, interpret, flags, datasources,scheduler,run     # ← NEW
 from app.tasks.scheduler import start_scheduler
 from app.deps import verify_key                       # ← use the shared one
 from contextlib import asynccontextmanager
@@ -28,16 +28,13 @@ app.add_middleware(
 
 # -------------  mount routers (auth guarded)  ------------------------------
 app.include_router(datasources.router, dependencies=[Depends(verify_key)])  # ← NEW
-app.include_router(ingress.router,   dependencies=[Depends(verify_key)])
+# app.include_router(ingress.router,   dependencies=[Depends(verify_key)])
 app.include_router(reports.router,   dependencies=[Depends(verify_key)])
 app.include_router(interpret.router, dependencies=[Depends(verify_key)])
 app.include_router(flags.router,     dependencies=[Depends(verify_key)])
-
+app.include_router(scheduler.router, dependencies=[Depends(verify_key)]) 
+app.include_router(run.router, dependencies=[Depends(verify_key)])
 # -------------  public health check  ---------------------------------------
-@app.post("/api/v1/datasources")
-def debug_datasource(payload: dict, x_api_key: str = Header(None)):
-    print(f"[debug] headers: {x_api_key}, body: {payload}")
-    return {"debug": True, "received": payload}
 
 @app.get("/health")
 def health():

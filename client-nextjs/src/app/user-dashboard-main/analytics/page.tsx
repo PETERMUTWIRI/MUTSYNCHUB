@@ -1,238 +1,331 @@
-
-// client-nextjs/src/app/user-dashboard-main/analytics/page.tsx
-/* ------------------------------------------------------------------
- * 2040-Ready Enterprise-Analytics Dashboard  –  ISAAC NEWTON EDITION
- * ------------------------------------------------------------------ */
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  useQuery,
-  useQueryClient,
-  useMutation,
-} from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useUser } from '@stackframe/stack';
-import { useFlag } from '@/hooks/useFlag';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { format, addDays, startOfDay } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Calendar,
-  Bell,
-  Download,
-  Clock,
-  Plus,
-  Sparkles,
-  Zap,
-  AlertTriangle,
+  TrendingUp, BarChart3, PieChart as PieChartIcon, Calendar, Bell, Download, Clock, Plus, Sparkles, Zap, AlertTriangle,
+  Filter, ChevronRight, ShoppingCart, Store, HeartPulse, Factory, Bot, History, Play, X
 } from 'lucide-react';
 import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
-import { LiveIndicator } from '@/components/data-source/live-indicator';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { ProgressCircle } from '@/components/ui/progress-circle'; // fancy radial
+import { ProgressCircle } from '@/components/ui/progress-circle';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { LiveIndicator } from '@/components/data-source/live-indicator';
 import { useDrillDown } from '@/lib/useDrillDown';
-import { DataGateway } from '@/lib/websocket';
-import { getAnalyticsContext } from '@/lib/analytics-context'; // fetches org + plan + usage + flags
-import { createScheduledReport } from '@/app/actions/analytics-schedule';
+import { useOrgProfile } from '@/hooks/useOrgProfile';
 import { enforceAnalyticsLimit } from '@/lib/billing';
-import { createNotification } from '@/lib/notification';
-import {useOrgProfile} from '@/hooks/useOrgProfile';
+
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
 /* ------------------------------------------------------------------ */
-type Context = Awaited<ReturnType<typeof getAnalyticsContext>>;
-type LiveSummary = { daily_sales: number; daily_qty: number; avg_basket: number; online: boolean };
-type TrendPoint = { date: string; sales: number; qty: number };
-type Schedule = { id: string; frequency: string; nextRun: string };
+type Industry = 'supermarket' | 'retail' | 'healthcare' | 'manufacturing';
+type AnalyticType = 'eda' | 'forecast' | 'basket' | 'market-dynamics' | 'supply-chain' | 'customer-insights' | 'operational-efficiency' | 'risk-assessment' | 'sustainability';
 
 /* ------------------------------------------------------------------ */
-/* Service layer (thin)                                               */
+/* Service layer – talks to Python container                          */
 /* ------------------------------------------------------------------ */
 const analyticsAPI = {
-  live: (orgId: string) =>
-    fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/live?orgId=${orgId}`)
-      .then((r) => r.json())
-      .then((j) => j as LiveSummary),
-  trend: (orgId: string) =>
-    fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/trend?orgId=${orgId}`)
-      .then((r) => r.json())
-      .then((j) => j as TrendPoint[]),
-  schedules: (orgId: string) =>
-    fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/schedules?orgId=${orgId}`)
-      .then((r) => r.json())
-      .then((j) => j as Schedule[]),
-  export: (orgId: string, format: 'csv' | 'pdf') =>
-    fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/export`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orgId, format }),
-    }).then((r) => r.json()) as Promise<{ downloadUrl: string }>,
-  ai: (orgId: string, question: string, report: LiveSummary) =>
-    fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/ai/interpret`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orgId, question, report }),
-    }).then((r) => r.json()) as Promise<{ text: string; chart?: any }>,
+  live: (orgId: string) => Promise.resolve({}),          // stub
+  trend: (orgId: string) => Promise.resolve({}),         // stub
+  run: (orgId: string, analytic: AnalyticType, body: any) =>
+    fetch('/api/analytics/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orgId, analytic, ...body }) }).then(r => r.json()),
+  schedules: (orgId: string) => fetch(`/api/analytics/schedules?orgId=${orgId}`).then(r => r.json()),
+  history: (orgId: string, limit = 50) => fetch(`/api/analytics/history?orgId=${orgId}&limit=${limit}`).then(r => r.json()),
+  ai: (orgId: string, question: string, report: any) => fetch('/api/analytics/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orgId, question, report }) }).then(r => r.json()),
 };
 
 /* ------------------------------------------------------------------ */
 /* Hooks                                                              */
 /* ------------------------------------------------------------------ */
 function useLiveData(orgId: string) {
-  return useQuery({
-    queryKey: ['analytics-live', orgId],
-    queryFn: () => analyticsAPI.live(orgId),
-    refetchInterval: 5000,
-    enabled: !!orgId,
-  });
+  return useQuery({ queryKey: ['analytics-live', orgId], queryFn: () => analyticsAPI.live(orgId), refetchInterval: 5000, enabled: !!orgId });
 }
-
 function useTrendData(orgId: string) {
-  return useQuery({
-    queryKey: ['analytics-trend', orgId],
-    queryFn: () => analyticsAPI.trend(orgId),
-    enabled: !!orgId,
-  });
+  return useQuery({ queryKey: ['analytics-trend', orgId], queryFn: () => analyticsAPI.trend(orgId), enabled: !!orgId });
 }
-
 function useSchedules(orgId: string) {
-  return useQuery({
-    queryKey: ['analytics-schedules', orgId],
-    queryFn: () => analyticsAPI.schedules(orgId),
-    enabled: !!orgId,
-  });
+  return useQuery({ queryKey: ['analytics-schedules', orgId], queryFn: () => analyticsAPI.schedules(orgId), enabled: !!orgId });
+}
+function useHistory(orgId: string) {
+  return useQuery({ queryKey: ['analytics-history', orgId], queryFn: () => analyticsAPI.history(orgId), enabled: !!orgId });
 }
 
 /* ------------------------------------------------------------------ */
-/* Newton says: let there be life
+/* Main Page – SUPERMARKET FIRST                                      */
 /* ------------------------------------------------------------------ */
 export default function AnalyticsPage() {
   const { t } = useTranslation();
   const user = useUser({ or: 'redirect' });
   const qc = useQueryClient();
-
-  /* --------- context (org + plan + usage + flags) --------- */
-  const { data: ctx } = useOrgProfile(); 
+  const { data: ctx } = useOrgProfile();
   const orgId = ctx?.orgId ?? '';
-  const { data: flags } = useQuery({
-    queryKey: ['flags', ctx?.orgId],
-    queryFn: () =>
-      fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/flags`)
-        .then((r) => r.json()) as Promise<Array<{ key: string; enabled: boolean }>>,
-    enabled: !!ctx?.orgId,
-  });
- 
 
-  const aiEnabled = flags?.find((f) => f.key === 'analytics-ai')?.enabled ?? false;
-  const exportEnabled = flags?.find((f) => f.key === 'analytics-export')?.enabled ?? false;
-  const liveTileEnabled = flags?.find((f) => f.key === 'analytics-live-tile')?.enabled ?? true;
-   
-  /* --------- live data --------- */
+  // Industry picker – supermarket default
+  const [industry, setIndustry] = useState<Industry>('supermarket');
+  const [activeAnalytic, setActiveAnalytic] = useState<AnalyticType>('eda');
+
+  // Data states
   const { data: live } = useLiveData(orgId);
   const { data: trend } = useTrendData(orgId);
   const { data: schedules } = useSchedules(orgId);
+  const { data: history } = useHistory(orgId);
 
-  /* --------- mutations --------- */
-  const exportMut = useMutation({
-    mutationFn: (format: 'csv' | 'pdf') => analyticsAPI.export(orgId, format),
-    onSuccess: ({ downloadUrl }) => window.open(downloadUrl, '_blank'),
-    onError: () => toast.error('Export failed'),
+  // Drill-down state
+  const drill = useDrillDown(trend ?? []);
+
+  // AI chat state
+  const [question, setQuestion] = useState('');
+  const [aiReply, setAiReply] = useState<{ text: string; chart?: any } | null>(null);
+
+  // Schedule modal
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [cron, setCron] = useState('0 8 * * MON');
+
+  // Run analytic mutation
+  const runMut = useMutation({
+     mutationFn: (analytic: AnalyticType) => analyticsAPI.run(orgId, analytic, {}),
+     onSuccess: (data, variables) => {
+        qc.setQueryData(['analytics-results', orgId, variables], data);
+
+       
+        qc.setQueryData(['analytics-results', orgId, 'supermarket_kpis'], data.supermarket_kpis);
+
+        toast.success(`${variables} ready`);
+        qc.invalidateQueries({ queryKey: ['analytics-history', orgId] });
+     },
+    onError: () => toast.error('Analytic failed'),
   });
 
-  const createScheduleMut = useMutation({
-    mutationFn: async (cron: string) => {
+  // Schedule creator mutation
+  const createSchedMut = useMutation({
+    mutationFn: async (freq: 'daily' | 'weekly' | 'monthly') => {
       await enforceAnalyticsLimit(orgId, 'Analytics-Schedule');
-      return createScheduledReport(orgId, cron);
+      const res = await fetch('/api/analytics/schedules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId, frequency: freq, analytics: ['eda', 'basket', 'forecast'] }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['analytics-schedules', orgId] });
-      toast.success('Scheduled report created');
+      toast.success('Schedule created');
+      setShowScheduleModal(false);
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
-  /* --------- local state --------- */
-  const [question, setQuestion] = useState('');
-  const [aiReply, setAiReply] = useState<{ text: string; chart?: any } | null>(null);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [cron, setCron] = useState('0 8 * * MON');
-  const [drillInsight, setDrillInsight] = useState<string>('');
+  // AI ask mutation
+  const askAIMut = useMutation({
+    mutationFn: async (q: string) => {
+      const report = qc.getQueryData(['analytics-results', orgId, activeAnalytic]) as any;
+      return analyticsAPI.ai(orgId, q, report || { daily_sales: 0 });
+    },
+    onSuccess: setAiReply,
+  });
 
-  /* --------- drill-down --------- */
-  const drill = useDrillDown(trend ?? []);
-
-  /* --------- websocket live tile --------- */
-  /* --------- websocket live tile --------- */
+  // Auto-run EDA on mount
   useEffect(() => {
-    if (!liveTileEnabled || !orgId) return;
+    if (!orgId) return;
+    runMut.mutate('eda');
+  }, [orgId]);
 
-    import('@/lib/websocket').then(({ DataGateway }) => {
-      const socket = DataGateway.connect(orgId);
+  // Industry icon helper
+  const industryIcons: Record<Industry, React.ReactNode> = {
+    supermarket: <ShoppingCart className="w-4 h-4" />,
+    retail: <Store className="w-4 h-4" />,
+    healthcare: <HeartPulse className="w-4 h-4" />,
+    manufacturing: <Factory className="w-4 h-4" />,
+  };
 
-      socket.on('analytics:live', (payload: LiveSummary) => {
-        qc.setQueryData(['analytics-live', orgId], payload);
-      });
+  // Render helpers
+ // line ~148  –  change variable name
+const analyticResults = qc.getQueryData(['analytics-results', orgId, activeAnalytic]) as any;
 
-      socket.on('connect', () => console.log('[ws] analytics live'));
-      socket.on('disconnect', () => console.warn('[ws] analytics offline – polling'));
-    });
+  const supermarketKPIs = analyticResults?.supermarket_kpis;
 
-    return () => {
-      DataGateway.disconnect?.(orgId);
-    };
-  }, [orgId, liveTileEnabled, qc]);
+  const renderSupermarketKPIs = () =>
+    !supermarketKPIs ? null : (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <CardContent>
+            <p className="text-xs text-gray-400">Stock on hand</p>
+            <p className="text-xl font-bold">{supermarketKPIs.stock_on_hand ?? 0}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <CardContent>
+            <p className="text-xs text-gray-400">Expiring ≤7 d</p>
+            <p className="text-xl font-bold text-amber-400">{supermarketKPIs.expiring_next_7_days ?? 0}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <CardContent>
+            <p className="text-xs text-gray-400">Promo lift</p>
+            <p className="text-xl font-bold">{supermarketKPIs.promo_lift_pct ?? 0}%</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <CardContent>
+            <p className="text-xs text-gray-400">Shrinkage</p>
+            <p className="text-xl font-bold text-red-400">{supermarketKPIs.shrinkage_pct ?? 0}%</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
 
-  /* --------- AI agent --------- */
-  const askAI = async () => {
-    if (!question.trim() || !aiEnabled || !live) return;
-    toast.promise(
-      analyticsAPI.ai(orgId, question, live).then(setAiReply),
-      { loading: 'Thinking…', success: 'Answer ready', error: 'AI failed' }
+  const renderChart = (type: 'bar' | 'line' | 'pie', data: any[]) => {
+    if (!data.length) return <p className="text-sm text-gray-400">No data</p>;
+    switch (type) {
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data} onClick={(e) => e && drill.drill({ key: 'date', value: e.activeLabel ?? '' })}>
+              <CartesianGrid stroke="#2E7D7D" strokeOpacity={0.3} />
+              <XAxis dataKey="date" stroke="#9ca3af" />
+              <YAxis stroke="#9ca3af" />
+              <Tooltip contentStyle={{ backgroundColor: '#1E2A44', border: '1px solid #2E7D7D' }} />
+              <Bar dataKey="sales" fill="#10b981" cursor="pointer" />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={data}>
+              <CartesianGrid stroke="#444" />
+              <XAxis dataKey="label" stroke="#9ca3af" />
+              <YAxis stroke="#9ca3af" />
+              <Tooltip contentStyle={{ backgroundColor: '#1E2A44', border: '1px solid #666' }} />
+              <Line type="monotone" dataKey="value" stroke="#A3BFFA" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8b5cf6" label>
+                {data.map((_, i) => (
+                  <Cell key={`cell-${i}`} fill={`#8b5cf6${Math.round((i / data.length) * 255).toString(16).padStart(2, '0')}`} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Drill breadcrumb
+  const Breadcrumb = () =>
+    drill.stack.length > 0 ? (
+      <div className="flex items-center gap-2 text-sm text-gray-300 mb-4">
+        <Button variant="ghost" size="sm" onClick={drill.pop}>
+          ← Back
+        </Button>
+        {drill.stack.map((s, i) => (
+          <span key={i} className="flex items-center gap-1">
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-teal-400">{s.key} = {s.value}</span>
+          </span>
+        ))}
+      </div>
+    ) : null;
+
+  // Schedule popover
+  const SchedulePopover = () => (
+    <Popover open={showScheduleModal} onOpenChange={setShowScheduleModal}>
+      <PopoverTrigger asChild>
+        <Button className="bg-gradient-to-r from-teal-500 to-cyan-400 text-white">
+          <Plus className="w-4 h-4 mr-2" /> Schedule
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="bg-[#1E2A44] border border-white/10 rounded-2xl p-4 w-80">
+        <h3 className="text-lg font-semibold mb-4">Schedule Reports</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {(['daily', 'weekly', 'monthly'] as const).map((f) => (
+            <Button key={f} variant="outline" onClick={() => createSchedMut.mutate(f)}>
+              {f}
+            </Button>
+          ))}
+        </div>
+        <Input
+          value={cron}
+          onChange={(e) => setCron(e.target.value)}
+          placeholder="0 8 * * MON"
+          className="mt-4 bg-black/30 border-white/20"
+        />
+        <Button className="mt-2 w-full" onClick={() => createSchedMut.mutate('daily')}>
+          Save Cron
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+
+  // History drawer
+  const HistoryDrawer = () => {
+    const [open, setOpen] = useState(false);
+    const [selected, setSelected] = useState<any>(null);
+    return (
+      <>
+        <Button onClick={() => setOpen(true)} variant="outline">
+          <History className="w-4 h-4 mr-2" /> History
+        </Button>
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              className="fixed right-0 top-0 h-full w-96 bg-[#0B1120] border-l border-white/10 p-6 overflow-y-auto z-50"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Report History</h3>
+                <Button variant="ghost" onClick={() => setOpen(false)}>×</Button>
+              </div>
+              {history?.map((r: any) => (
+                <Card key={r.id} className="mb-4 cursor-pointer hover:bg-white/10" onClick={() => setSelected(r)}>
+                  <CardContent className="pt-4">
+                    <p className="font-medium">{r.name}</p>
+                    <p className="text-xs text-gray-400">{format(new Date(r.createdAt), 'PPp')}</p>
+                  </CardContent>
+                </Card>
+              ))}
+              {selected && (
+                <div className="mt-6">
+                  <h4 className="font-semibold mb-2">Results</h4>
+                  <pre className="text-xs bg-black/30 p-2 rounded overflow-auto">{JSON.stringify(selected.results, null, 2)}</pre>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </>
     );
   };
 
-  /* --------- side effects --------- */
-  useEffect(() => {
-    if (!ctx?.usage) return;
-    if (ctx.usage.remaining <= 2 && ctx.usage.limit > 0) {
-      toast(`⚠️  Only ${ctx.usage.remaining} exports left this month.`, { icon: '🔔', duration: 6000 });
-      createNotification(orgId, {
-        title: 'Quota low',
-        message: `You have ${ctx.usage.remaining} exports remaining.`,
-        type: 'WARNING',
-      });
-    }
-  }, [ctx?.usage, orgId]);
+  // Main render
+  if (!orgId) return <div className="p-6 text-gray-400">Loading analytics…</div>;
 
-  /* --------- render --------- */
-  if (!ctx) return <Skeleton />;
-
-  const industryColor = (ctx?.plan?.features as any[])?.find((f: any) => f.name === 'Industry-Color')?.value ?? '#10b981';
+  const results = qc.getQueryData(['analytics-results', orgId, activeAnalytic]) as any;
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#0B1120] to-[#1E2A44] text-white font-inter">
-      {/* ------- header ------- */}
+      {/* Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -240,185 +333,178 @@ export default function AnalyticsPage() {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 to-cyan-300 bg-clip-text text-transparent">
-              {t('analytics.title')}
-            </h1>
-            <p className="text-sm text-gray-400">
-              {ctx?.firstName || user.displayName} • {ctx?.plan?.name ?? ''} plan
-            </p>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 to-cyan-300 bg-clip-text text-transparent">Analytics</h1>
+            <p className="text-sm text-gray-400">{ctx?.firstName} • {ctx?.plan?.name} plan</p>
           </div>
           <div className="flex items-center gap-3">
             <LiveIndicator live={!!live?.online} />
-            <Bell className="w-5 h-5 text-teal-400 cursor-pointer" onClick={() => toast('Notifications centre coming soon')} />
+            <HistoryDrawer />
+            <Bell className="w-5 h-5 text-teal-400 cursor-pointer" onClick={() => toast('Notifications coming soon')} />
           </div>
         </div>
       </motion.header>
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-10">
-        {/* ------- quota radial ------- */}
-        {ctx?.usage?.limit && ctx.usage.limit > 0 && (
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-6"
-          >
-            <div className="flex items-center gap-6">
-              <ProgressCircle
-                value={(ctx.usage.used / ctx.usage.limit) * 100}
-                size={80}
-                strokeWidth={8}
-                color={ctx.usage.remaining <= 2 ? '#f59e0b' : '#10b981'}
-              />
-              <div>
-                <p className="text-sm text-gray-300">{t('analytics.usage')}</p>
-                <p className="text-xl font-semibold">
-                  {ctx.usage.used} / {ctx.usage.limit}
-                </p>
-                {ctx.usage.remaining <= 2 && (
-                  <p className="text-xs text-amber-400 mt-1">Upgrade to unlock unlimited exports</p>
-                )}
-              </div>
-              <div className="ml-auto">
-                <Button
-                  onClick={() => toast('Billing centre opening…')}
-                  className="bg-gradient-to-r from-teal-500 to-cyan-400 text-white"
-                >
-                  Upgrade
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ------- KPI cards ------- */}
-        <motion.section
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          <KPICard
-            icon={<TrendingUp />}
-            title={t('analytics.todaySales')}
-            value={`KES ${live?.daily_sales ?? 0}`}
-            color={industryColor}
-          />
-          <KPICard
-            icon={<BarChart3 />}
-            title={t('analytics.itemsSold')}
-            value={live?.daily_qty ?? 0}
-            color={industryColor}
-          />
-          <KPICard
-            icon={<PieChartIcon />}
-            title={t('analytics.avgBasket')}
-            value={`KES ${live?.avg_basket ?? 0}`}
-            color={industryColor}
-          />
-          <KPICard
-            icon={<Zap />}
-            title={t('analytics.status')}
-            value={live?.online ? 'Online' : 'Offline'}
-            color={live?.online ? '#10b981' : '#ef4444'}
-            pulse={live?.online}
-          />
-        </motion.section>
-
-        {/* ------- trend + drill ------- */}
-        <Tabs defaultValue="trend" className="bg-white/5 border border-white/10 rounded-2xl p-4">
-          <TabsList className="bg-black/20 border border-white/10">
-            <TabsTrigger value="trend">Trend</TabsTrigger>
-            <TabsTrigger value="pie">Distribution</TabsTrigger>
-            <TabsTrigger value="insights">Insights</TabsTrigger>
-          </TabsList>
-          <TabsContent value="trend">
-            <TrendChart data={drill.filtered} color={industryColor} onDrill={drill.drill} onBack={drill.pop} stack={drill.stack} />
-          </TabsContent>
-          <TabsContent value="pie">
-            <AnalyticsPieChart data={trend ?? []} color={industryColor} />
-          </TabsContent>
-          <TabsContent value="insights">
-            <InsightPanel orgId={orgId} live={live} trend={trend} />
-          </TabsContent>
-        </Tabs>
-
-        {/* ------- AI Agent ------- */}
-        {aiEnabled && (
-          <AIAgent
-            question={question}
-            setQuestion={setQuestion}
-            reply={aiReply}
-            onAsk={askAI}
-            firstName={ctx?.firstName}
-            planName={ctx?.plan?.name ?? ''}
-          />
-        )}
-
-        {/* ------- Scheduled Reports ------- */}
-        <ScheduledReports
-          schedules={schedules ?? []}
-          onNew={() => setShowScheduleModal(true)}
-          limit={ctx?.usage?.limit ?? 0} 
-          used={schedules?.length ?? 0}
-        />
-
-        {/* ------- Export buttons ------- */}
-        {exportEnabled && (
-          <div className="flex gap-3">
-            <Button
-              onClick={() => exportMut.mutate('csv')}
-              className="bg-gradient-to-r from-teal-500 to-cyan-400 text-white"
-            >
-              <Download className="w-4 h-4 mr-2" /> CSV
+        {/* Industry & Analytic Picker */}
+        <Card className="bg-white/5 border border-white/10 rounded-2xl p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <Select value={industry} onValueChange={(v) => setIndustry(v as Industry)}>
+              <SelectTrigger className="w-48 bg-black/30 border-white/20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="supermarket">{industryIcons.supermarket} Supermarket</SelectItem>
+                <SelectItem value="retail">{industryIcons.retail} Retail</SelectItem>
+                <SelectItem value="healthcare">{industryIcons.healthcare} Healthcare</SelectItem>
+                <SelectItem value="manufacturing">{industryIcons.manufacturing} Manufacturing</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={activeAnalytic} onValueChange={(v) => setActiveAnalytic(v as AnalyticType)}>
+              <SelectTrigger className="w-48 bg-black/30 border-white/20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="eda">EDA</SelectItem>
+                <SelectItem value="forecast">Forecast</SelectItem>
+                <SelectItem value="basket">Basket</SelectItem>
+                <SelectItem value="market-dynamics">Market Dynamics</SelectItem>
+                <SelectItem value="supply-chain">Supply Chain</SelectItem>
+                <SelectItem value="customer-insights">Customer Insights</SelectItem>
+                <SelectItem value="operational-efficiency">Operational Efficiency</SelectItem>
+                <SelectItem value="risk-assessment">Risk Assessment</SelectItem>
+                <SelectItem value="sustainability">Sustainability</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={() => runMut.mutate(activeAnalytic)} disabled={runMut.isPending}>
+              <Play className="w-4 h-4 mr-2" /> {runMut.isPending ? 'Running…' : 'Run'}
             </Button>
-            <Button
-              onClick={() => exportMut.mutate('pdf')}
-              className="bg-gradient-to-r from-teal-500 to-cyan-400 text-white"
-            >
-              <Download className="w-4 h-4 mr-2" /> PDF
-            </Button>
+            <SchedulePopover />
           </div>
+        </Card>
+
+        {/* SUPERMARKET KPI RAIL – above old cards */}
+        {industry === 'supermarket' && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <CardContent>
+               <p className="text-xs text-gray-400">Stock on hand</p>
+               <p className="text-xl font-bold">{supermarketKPIs?.stock_on_hand ?? 0}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <CardContent>
+              <p className="text-xs text-gray-400">Expiring ≤7 d</p>
+              <p className="text-xl font-bold text-amber-400">{supermarketKPIs?.expiring_next_7_days ?? 0}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <CardContent>
+              <p className="text-xs text-gray-400">Promo lift</p>
+              <p className="text-xl font-bold">{supermarketKPIs?.promo_lift_pct ?? 0}%</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <CardContent>
+              <p className="text-xs text-gray-400">Shrinkage</p>
+              <p className="text-xl font-bold text-red-400">{supermarketKPIs?.shrinkage_pct ?? 0}%</p>
+           </CardContent>
+          </Card>
+        </div>
         )}
 
-        {/* ------- Schedule modal ------- */}
-        <AnimatePresence>
-          {showScheduleModal && (
-            <ScheduleModal
-              cron={cron}
-              setCron={setCron}
-              onSave={() => {
-                createScheduleMut.mutate(cron);
-                setShowScheduleModal(false);
-              }}
-              onClose={() => setShowScheduleModal(false)}
-            />
-          )}
-        </AnimatePresence>
+        {/* Old 4 KPI cards – still visible */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <KPICard icon={<TrendingUp />} title="Daily Sales" value={`KES ${analyticResults?.daily_sales ?? 0}`} color="#10b981" />
+          <KPICard icon={<BarChart3 />} title="Items Sold" value={analyticResults?.daily_qty ?? 0} color="#10b981" />
+          <KPICard icon={<PieChartIcon />} title="Avg Basket" value={`KES ${analyticResults?.avg_basket ?? 0}`} color="#10b981" />
+          <KPICard icon={<Zap />} title="Status" value={live?.online ? 'Online' : 'Offline'} color={live?.online ? '#10b981' : '#ef4444'} pulse={live?.online} />
+        </div>
+
+        {/* Drill breadcrumb */}
+        <Breadcrumb />
+
+        {/* Charts */}
+        <Card className="bg-white/5 border border-white/10 rounded-2xl p-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">{activeAnalytic} <Filter className="w-4 h-4" /></CardTitle>
+          </CardHeader>
+          <CardContent>
+            {activeAnalytic === 'eda' && renderChart('bar', drill.filtered)}
+            {activeAnalytic === 'forecast' && renderChart('line', results?.forecast ?? [])}
+            {activeAnalytic === 'basket' && renderChart('pie', results?.product_associations ? Object.entries(results.product_associations.support).map(([k, v]) => ({ name: k, value: v })) : [])}
+            {['supply-chain', 'customer-insights', 'operational-efficiency', 'risk-assessment', 'sustainability'].includes(activeAnalytic) && (
+              <pre className="text-xs bg-black/30 p-3 rounded overflow-auto">{JSON.stringify(results, null, 2)}</pre>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* AI Chat with Visuals */}
+        <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-purple-500/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Bot className="w-5 h-5" /> Ask Newton Anything</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 mb-4">
+              <Input
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="E.g. Why did profit dip yesterday?"
+                className="bg-black/30 border-purple-500/50 text-white"
+                onKeyDown={(e) => e.key === 'Enter' && askAIMut.mutate(question)}
+              />
+              <Button onClick={() => askAIMut.mutate(question)} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                Ask
+              </Button>
+            </div>
+            <AnimatePresence>
+              {aiReply && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="text-sm text-gray-200 bg-black/20 rounded-lg p-4"
+                >
+                  {aiReply.text}
+                  {aiReply.chart && renderChart(aiReply.chart.type, aiReply.chart.data)}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </CardContent>
+        </Card>
+
+        {/* Scheduled Reports List */}
+        <Card className="bg-white/5 border border-white/10 rounded-2xl p-4">
+          <CardHeader>
+            <CardTitle>Scheduled Reports</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {schedules?.length ? (
+              <div className="space-y-3">
+                {schedules.map((s: any) => (
+                  <div key={s.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                    <div>
+                      <p className="font-medium">Every {s.frequency}</p>
+                      <p className="text-xs text-gray-400">Next: {format(new Date(s.nextRun), 'PPp')}</p>
+                    </div>
+                    <Clock className="w-4 h-4 text-teal-400" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">No schedules yet – create one above.</p>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Sub-components (typed)                                             */
+/* Sub-components                                                     */
 /* ------------------------------------------------------------------ */
-const KPICard = ({
-  icon,
-  title,
-  value,
-  color,
-  pulse,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  value: string | number;
-  color?: string;
-  pulse?: boolean;
-}) => (
-  <motion.div
-    whileHover={{ scale: 1.02 }}
-    className="bg-white/5 border border-white/10 rounded-xl p-6 shadow-lg"
-  >
+const KPICard = ({ icon, title, value, color, pulse }: { icon: React.ReactNode; title: string; value: string | number; color?: string; pulse?: boolean }) => (
+  <motion.div whileHover={{ scale: 1.02 }} className="bg-white/5 border border-white/10 rounded-xl p-6 shadow-lg">
     <div className="flex items-center justify-between">
       <div>
         <p className="text-sm text-gray-400">{title}</p>
@@ -431,253 +517,4 @@ const KPICard = ({
       </div>
     </div>
   </motion.div>
-);
-
-const TrendChart = ({
-  data,
-  color,
-  onDrill,
-  onBack,
-  stack,
-}: {
-  data: TrendPoint[];
-  color: string;
-  onDrill: (slice: { key: string; value: string | number }) => void;
-  onBack: () => void;
-  stack: { key: string; value: string | number }[];
-}) => (
-  <div>
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-lg font-semibold">7-Day Trend</h3>
-      {stack.length > 0 && (
-        <Button onClick={onBack} size="sm" variant="outline">
-          ← Back
-        </Button>
-      )}
-    </div>
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data} onClick={(e) => e && onDrill({ key: 'date', value: e.activeLabel ?? '' })}>
-        <CartesianGrid stroke="#2E7D7D" strokeOpacity={0.3} />
-        <XAxis dataKey="date" stroke="#9ca3af" />
-        <YAxis stroke="#9ca3af" />
-        <Tooltip contentStyle={{ backgroundColor: '#1E2A44', border: '1px solid #2E7D7D' }} />
-        <Bar dataKey="sales" fill={color} cursor="pointer" />
-      </BarChart>
-    </ResponsiveContainer>
-  </div>
-);
-
-const AnalyticsPieChart = ({ data, color }: { data: TrendPoint[]; color: string }) => {
-  const pieData = useMemo(() => {
-    if (!Array.isArray(data)) return [];          // ← add this
-    const total = data.reduce((s, d) => s + d.sales, 0);
-    return data.map((d) => ({
-      name: d.date,
-      value: d.sales,
-      percent: total ? ((d.sales / total) * 100).toFixed(1) : '0.0',
-    }));
-  }, [data]);
-
-  if (!pieData.length) return <p className="text-sm text-gray-400">No data for pie chart</p>;
-
-  return (
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          data={pieData}
-          dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          outerRadius={100}
-          fill={color}
-          label={(e) => `${e.name}: ${e.percent}%`}
-        >
-          {pieData.map((_, i) => (
-            <Cell
-              key={`cell-${i}`}
-              fill={`${color}${Math.round((i / pieData.length) * 255)
-                .toString(16)
-                .padStart(2, '0')}`}
-            />
-          ))}
-        </Pie>
-        <Tooltip />
-      </PieChart>
-    </ResponsiveContainer>
-  );
-};
-
-const InsightPanel = ({ orgId, live, trend }: { orgId: string; live: LiveSummary | undefined; trend: TrendPoint[] | undefined }) => {
-  const { data: insight } = useQuery({
-    queryKey: ['analytics-insight', orgId],
-    queryFn: () =>
-      fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/ai/insight`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orgId, live, trend }),
-      }).then((r) => r.json()) as Promise<{ text: string }>,
-    enabled: !!live && !!trend,
-  });
-  return (
-    <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-4 border border-teal-500/30">
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="w-5 h-5 text-teal-400" />
-        <p className="text-sm font-semibold text-teal-300">Newton Insight</p>
-      </div>
-      <p className="text-sm text-gray-300">{insight?.text ?? 'Thinking…'}</p>
-    </div>
-  );
-};
-
-const AIAgent = ({
-  question,
-  setQuestion,
-  reply,
-  onAsk,
-  firstName,
-  planName,
-}: {
-  question: string;
-  setQuestion: (q: string) => void;
-  reply: { text: string; chart?: any } | null;
-  onAsk: () => void;
-  firstName?: string | null;
-  planName: string;
-}) => {
-  const greeting = firstName ? `Hi ${firstName}` : 'Hello';
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-purple-500/30"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-purple-300">AI Assistant</h3>
-        <span className="text-xs text-purple-400 bg-purple-900/50 px-2 py-1 rounded-full">{planName}</span>
-      </div>
-      <p className="text-sm text-gray-300 mb-4">
-        {greeting}, ask me anything about your data – trends, forecasts, or why yesterday dipped.
-      </p>
-      <div className="flex gap-2 mb-4">
-        <Input
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="E.g. Why did profit dip yesterday?"
-          className="bg-black/30 border-purple-500/50 text-white"
-          onKeyDown={(e) => e.key === 'Enter' && onAsk()}
-        />
-        <Button onClick={onAsk} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-          Ask
-        </Button>
-      </div>
-      <AnimatePresence>
-        {reply && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="text-sm text-gray-200 bg-black/20 rounded-lg p-4"
-          >
-            {reply.text}
-            {reply.chart && (
-              <ResponsiveContainer width="100%" height={200} className="mt-4">
-                <LineChart data={reply.chart}>
-                  <CartesianGrid stroke="#444" />
-                  <XAxis dataKey="label" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1E2A44', border: '1px solid #666' }} />
-                  <Line type="monotone" dataKey="value" stroke="#A3BFFA" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
-
-const ScheduledReports = ({
-  schedules,
-  onNew,
-  limit,
-  used,
-}: {
-  schedules: Schedule[];
-  onNew: () => void;
-  limit: number;
-  used: number;
-}) => (
-  <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-lg font-semibold">Scheduled Reports</h3>
-      <Button onClick={onNew} className="bg-gradient-to-r from-teal-500 to-cyan-400 text-white">
-        <Plus className="w-4 h-4 mr-2" /> New
-      </Button>
-    </div>
-    {schedules.length ? (
-      <div className="space-y-3">
-        {schedules.map((s) => (
-          <div key={s.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
-            <div>
-              <p className="font-medium">Every {s.frequency}</p>
-              <p className="text-xs text-gray-400">Next: {format(new Date(s.nextRun), 'PPp')}</p>
-            </div>
-            <Clock className="w-4 h-4 text-teal-400" />
-          </div>
-        ))}
-      </div>
-    ) : (
-      <p className="text-sm text-gray-400">No schedules yet – create one above.</p>
-    )}
-    {limit > 0 && (
-      <p className="text-xs text-gray-500 mt-4">
-        {limit - used} of {limit} schedules remaining this month.
-      </p>
-    )}
-  </div>
-);
-
-const ScheduleModal = ({
-  cron,
-  setCron,
-  onSave,
-  onClose,
-}: {
-  cron: string;
-  setCron: (c: string) => void;
-  onSave: () => void;
-  onClose: () => void;
-}) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-    <motion.div
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.9, opacity: 0 }}
-      className="bg-[#1E2A44] border border-white/10 rounded-2xl p-6 w-full max-w-md"
-    >
-      <h3 className="text-lg font-semibold mb-4">Create Scheduled Report</h3>
-      <Input
-        value={cron}
-        onChange={(e) => setCron(e.target.value)}
-        placeholder="0 8 * * MON"
-        className="mb-4 bg-black/30 border-white/20"
-      />
-      <div className="flex gap-3">
-        <Button onClick={onSave} className="bg-gradient-to-r from-teal-500 to-cyan-400 text-white">
-          Save
-        </Button>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-      </div>
-    </motion.div>
-  </div>
-);
-
-const Skeleton = () => (
-  <div className="min-h-screen bg-gradient-to-br from-[#0B1120] to-[#1E2A44] flex items-center justify-center">
-    <div className="text-gray-400">Loading analytics…</div>
-  </div>
 );

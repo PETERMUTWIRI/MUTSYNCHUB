@@ -14,3 +14,4 @@ networkx>=3.0
 sqlalchemy[asyncio]>=2.0
 asyncpg>=0.29          # async postgres driver
 numpy<2.0  
+requests>=2.31

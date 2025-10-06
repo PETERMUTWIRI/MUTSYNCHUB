@@ -19,10 +19,15 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir --prefer-binary -r /tmp/requirements.txt
 
 # ---- 5. copy source last (cheap rebuild when code changes) -----------------
+# ---- 5. copy source last (cheap rebuild when code changes) -----------------
 COPY . /app
 WORKDIR /app
+
+# ---- 5½. scheduler loop (tiny cron-like ticker) ----------------------------
+COPY scheduler_loop.py /app/scheduler_loop.py
 
 # ---- 6. runtime env vars ---------------------------------------------------
 ENV API_KEYS=dev-analytics-key-123
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# ---- 7. start both services in one container -------------------------------
+CMD sh -c "python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 & python /app/scheduler_loop.py"
