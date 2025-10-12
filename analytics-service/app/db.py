@@ -1,7 +1,8 @@
 import duckdb, os, pathlib
 
-DB_DIR = pathlib.Path("/data/duckdb")
+DB_DIR = pathlib.Path("./data/duckdb")
 DB_DIR.mkdir(exist_ok=True)
+DB_DIR.parent.mkdir(exist_ok=True)   # ensure ./data exists
 
 def get_conn(org_id: str):
     db_file = DB_DIR / f"{org_id}.duckdb"
