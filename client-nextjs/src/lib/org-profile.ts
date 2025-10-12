@@ -1,26 +1,14 @@
-/* src/lib/org-profile.ts */
-import { prisma } from '@/lib/prisma';
+/* src/lib/org-profile.ts – client-safe */
+import { getRawOrgProfile } from './server/orgProfileServer';
 import { stackServerApp } from '@/lib/stack';
+import { NextRequest } from 'next/server';
 
-export async function getOrgProfileInternal() {
-  /* 1.  only use StackFrame to get the user id (server-side cookie) */
+export async function getOrgProfileInternal(req: NextRequest) {
   const user = await stackServerApp.getUser({ or: 'throw' });
-
-  /* 2.  everything else lives in our tables */
-  const profile = await prisma.userProfile.findUnique({
-    where: { userId: user.id },
-    include: { organization: true },
-  });
-  if (!profile) throw new Error('Profile not found');
-
-  const planId = profile.organization.planId ?? '088c6a32-7840-4188-bc1a-bdc0c6bee723';
-  const plan = await prisma.plan.findUnique({ where: { id: planId } });
-
+  const raw = await getRawOrgProfile(user.id); // ← server-only
   return {
     userId: user.id,
-    orgId: profile.orgId,
-    email: profile.email,
-    role: profile.role,
-    plan,
+    orgId: raw.orgId,
+    role: raw.role,
   };
 }

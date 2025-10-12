@@ -1,5 +1,5 @@
 """
-Stateless scheduler – caller (Next-js) orchestrates storage & quota.
+State-less scheduler – caller (Next-js) orchestrates storage & quota.
 Only duty: run analytics on cron, return JSON.
 """
 import asyncio
@@ -14,6 +14,7 @@ from app.utils.detect_industry import detect_industry
 from app.utils.email import send_pdf_email
 import os
 from datetime import datetime
+import aiohttp
 
 sched = AsyncIOScheduler()
 
@@ -21,11 +22,19 @@ sched = AsyncIOScheduler()
 # 1  RUN ONE ANALYTIC – pure logic, no DB
 # ------------------------------------------------------------------
 async def run_analytic_job(org_id: str, analytic_type: str, **kwargs) -> dict:
-    path = f"/data/{org_id}/sales.parquet"
-    if not os.path.exists(path):
-        return {"error": "No data file"}
+    """
+    1. Canonify last 6 h of raw rows (any column names) via DuckDB
+    2. Compute chosen analytic
+    3. Log KPIs + purge old raw data
+    4. Return shaped payload
+    """
+    from app.mapper import canonify_df          # NEW: any-shape → canonical
+    from app.tasks.kpi_logger import log_kpis_and_purge  # NEW: history & tidy
 
-    df = pd.read_parquet(path)
+    df = canonify_df(org_id)
+    if df.empty:
+        return {"error": "No recent data found"}
+
     data = df.to_dict("records")
     industry, _ = detect_industry(df)
 
@@ -51,16 +60,30 @@ async def run_analytic_job(org_id: str, analytic_type: str, **kwargs) -> dict:
         case _:
             return {"error": "Unknown analytic"}
 
+    # ----------  NEW – history + disk tidy  ----------
+    log_kpis_and_purge(org_id)          # inserts KPIs & deletes raw > 6 h
+    # -------------------------------------------------
+    async with aiohttp.ClientSession() as session:
+        await session.post(
+            f"{os.getenv('NEXT_PUBLIC_ORIGIN')}/analytics/report/sync",
+            json={
+                "orgId": org_id,
+                "type": analytic_type,
+                "results": result,
+                "lastRun": datetime.utcnow().isoformat(),
+            },
+            headers={"x-api-key": os.getenv("ANALYTICS_KEY")},
+        )
     # fire-and-forget email (caller decides storage)
     pdf_url = f"{os.getenv('PUBLIC_URL', '')}/api/reports/{org_id}/{analytic_type}.pdf"
     asyncio.create_task(send_pdf_email(org_id, f"{analytic_type} report", {"pdf": pdf_url, "data": result}))
 
     return {"orgId": org_id, "analytic": analytic_type, "industry": industry, "results": result, "timestamp": datetime.utcnow().isoformat()}
 
-# --------------  existing code above unchanged  --------------
-
+# ------------------------------------------------------------------
+# 2  APScheduler glue – unchanged
+# ------------------------------------------------------------------
 def add_job_to_scheduler(schedule: dict):
-    """Called by REST router when a schedule is created."""
     org_id    = schedule["orgId"]
     freq      = schedule["frequency"]
     analytics = schedule["analytics"]
@@ -77,22 +100,14 @@ def add_job_to_scheduler(schedule: dict):
                           args=[org_id, analytic], id=job_id)
 
 def remove_job_from_scheduler(schedule_id: str):
-    """Called by REST router when a schedule is deleted."""
-    # APScheduler does not support wild-cards – iterate and match prefix
     for job in sched.get_jobs():
         if job.id.startswith(schedule_id):
             sched.remove_job(job.id)
 
-# --------------  existing load_schedules() below unchanged  --------------
-
 # ------------------------------------------------------------------
-# 2  SCHEDULE LOADER – reads simple ENV list (no Prisma)
+# 3  ENV-loader – unchanged
 # ------------------------------------------------------------------
 async def load_schedules():
-    """
-    Expects ENV variable SCHEDULES as JSON:
-    [{"orgId":"demo","frequency":"daily","analytics":["eda","basket"]}]
-    """
     import json
     raw = os.getenv("SCHEDULES", "[]")
     try:
@@ -115,7 +130,7 @@ async def load_schedules():
                 sched.add_job(run_analytic_job, "cron", day=1, hour=6, minute=0, args=[org_id, analytic], id=job_id)
 
 # ------------------------------------------------------------------
-# 3  STARTER
+# 4  STARTER
 # ------------------------------------------------------------------
 def start_scheduler():
     asyncio.create_task(load_schedules())

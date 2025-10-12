@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend'; // or nodemailer
 import { prisma } from '@/lib/prisma';
-import { jsonToPDF } from '@/lib/pdf-generator';
+import { jsonToPDF } from '@/lib/buildReportPDF';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 

@@ -1,4 +1,3 @@
-// src/lib/websocket.ts
 import { io, Socket } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
 
@@ -6,10 +5,11 @@ let socket: Socket | null = null;
 
 function getSocket(): Socket {
   if (!socket) {
-    socket = io(`${process.env.NEXT_PUBLIC_WS_URL}/analytics`, {
+    socket = io(`${process.env.NEXT_PUBLIC_WS_URL}/socket.io`, { // Use the correct endpoint
       auth: { token: document.cookie.match(/stack-session=([^;]+)/)?.[1] || '' },
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      extraHeaders: { 'x-api-key': process.env.NEXT_PUBLIC_ANALYTICS_KEY ?? 'dev-analytics-key-123' },
     });
 
     socket.on('notification:new', (notif) => {

@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import type { DataSourceType } from '@prisma/client';
 import { ensureAndFetchUserProfile } from "@/app/api/get-user-role/action";
 import CryptoJS from "crypto-js";
 import { revalidatePath } from "next/cache";
@@ -31,10 +32,14 @@ export async function createDataSource(input: {
   }
 
   // 2.  Save encrypted
+  const ALLOWED_TYPES = ['POS_SYSTEM', 'ERP', 'DATABASE', 'API', 'FILE_IMPORT', 'CUSTOM'] as const;
+  if (!ALLOWED_TYPES.includes(input.type as any)) throw new Error(`Invalid data source type: ${input.type}`);
+  const dsType = input.type as DataSourceType;
+
   const ds = await prisma.dataSource.create({
     data: {
       name: input.name,
-      type: input.type as any,
+      type: dsType,
       orgId,
       config: encrypt(input.config),
       status: "ACTIVE",

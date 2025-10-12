@@ -7,40 +7,52 @@ import { TransferHistory }  from "@/components/data-source/history";
 import { LiveIndicator }    from "@/components/data-source/live-indicator";
 import { io, Socket }       from "socket.io-client";
 
-/* ----------  NEW: tiny helper to hit the working route  ---------- */
+/* ----------  helpers  ---------- */
 async function getOrgProfile() {
   const res = await fetch('/api/org-profile');
   if (!res.ok) throw new Error('Unauthorized');
-  return res.json(); // { orgId, firstName, ... }
+  return res.json();
 }
-/* ------------------------------------------------------------------ */
 
+async function createDataSource(orgId: string, type: string, config = {}) {
+  const res = await fetch("/api/v1/datasources", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orgId, sourceId: `${orgId}-${type}`, type, config }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+/* ----------  main page  ---------- */
 export default function DataSourcesPage() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [live, setLive]     = useState(false);
-  const [orgId, setOrgId]   = useState<string>("");
+  const [orgId, setOrgId]   = useState("");
+  const [source, setSource] = useState<any>(null);
 
   useEffect(() => {
-    /* 1.  grab orgId from the WORKING route -------------------- */
-    getOrgProfile()
-      .then((u) => setOrgId(u.orgId))
-      .catch(() => console.error('No org profile'));
+  getOrgProfile()
+    .then(async (u) => {
+      setOrgId(u.orgId);
+      const info = await createDataSource(u.orgId, "supermarket");
+      setSource(info);
+    })
+    .catch(() => console.error("No org profile"));
 
-    /* 2.  connect socket -------------------------------------- */
-    const token = document.cookie.match(/stack-session=([^;]+)/)?.[1] || "";
-    const s = io(`${process.env.NEXT_PUBLIC_ORIGIN}/analytics`, {
-      auth: { token },
-      query: { orgId }, // will be empty on first run, then reconnects below
-    });
-    s.on("connect", () => setLive(true));
-    s.on("disconnect", () => setLive(false));
-    setSocket(s);
+  const token = document.cookie.match(/stack-session=([^;]+)/)?.[1] || "";
+  const s = io(`${process.env.NEXT_PUBLIC_ORIGIN}/analytics`, {
+    auth: { token },
+    query: { orgId },
+  });
+  s.on("connect", () => setLive(true));
+  s.on("disconnect", () => setLive(false));
+  setSocket(s);
 
-    /* 3.  CORRECT cleanup (function, not socket) -------------- */
-    return () => {
-      s.close();
-    };
-  }, [orgId]); // re-connects when orgId changes
+  return () => {
+    s.close();          // 🔥  call, don’t return socket
+  };
+  }, [orgId]);
 
   return (
     <div className="min-h-screen bg-[#1E2A44] text-white p-6">
@@ -52,6 +64,27 @@ export default function DataSourcesPage() {
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <ConnectionCards />
       </section>
+
+      {/*  NEW – real source info  */}
+      {source && (
+        <section className="mt-6 bg-white/5 border border-white/10 rounded-xl p-4">
+          <h3 className="font-semibold mb-2">Connected source</h3>
+          <p className="text-sm text-gray-300">
+            Industry: <span className="text-teal-400">{source.industry}</span> |
+            Confidence: <span className="text-teal-400">{(source.confidence * 100).toFixed(0)} %</span> |
+            Status: <span className="text-green-400">{source.status}</span>
+          </p>
+
+          {source.recentRows.length === 0 ? (
+            <p className="text-sm text-gray-400 mt-2">Waiting for first transactions…</p>
+          ) : (
+            <div className="mt-2 text-xs">
+              <p className="text-gray-400">Last 3 rows:</p>
+              <pre className="bg-black/30 p-2 rounded overflow-auto">{JSON.stringify(source.recentRows, null, 2)}</pre>
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="mt-10"><PosCard /></section>
 

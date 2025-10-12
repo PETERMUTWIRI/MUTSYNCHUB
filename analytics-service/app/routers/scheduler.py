@@ -50,6 +50,11 @@ def _next_run(frequency: str) -> datetime:
 # --------------------------------------------------
 # CRUD
 # --------------------------------------------------
+# ↓↓↓  ADD THIS LINE  ↓↓↓
+@router.get("/schedules", response_model=List[ScheduleOut])
+def list_schedules_endpoint(orgId: str = Query(...)):
+    return list_schedules(orgId)
+
 @router.get("", response_model=List[ScheduleOut])
 def list_schedules(orgId: str = Query(...)):
     data = _load()

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { stackServerApp } from '@/lib/stack';
 import { v4 as uuidv4 } from 'uuid';
-
+import { prisma} from '@/lib/prisma';
 export async function GET(req: NextRequest) {
   try {
     const user = await stackServerApp.getUser({ or: 'throw', tokenStore: 'nextjs-cookie' });

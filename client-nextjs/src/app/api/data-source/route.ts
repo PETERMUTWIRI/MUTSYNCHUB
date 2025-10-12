@@ -1,69 +1,31 @@
-/* src/app/api/data-source/route.ts */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import CryptoJS from 'crypto-js';
-import { DataGateway } from '@/lib/websocket';
+import { createDataSourceServer } from '@/lib/server/dataSourceServer';
 import { getOrgProfileInternal } from '@/lib/org-profile';
-
-const ENC_KEY = process.env.DATASOURCE_ENCRYPTION_KEY!;
-if (!ENC_KEY || ENC_KEY.length !== 32)
-  throw new Error('DATASOURCE_ENCRYPTION_KEY must be 32 chars');
 
 const ANALYTICS_URL = process.env.ANALYTICS_INTERNAL_URL || 'http://analytics:8000';
 
-/* ---------- utils ---------- */
-const encrypt = (o: any) =>
-  CryptoJS.AES.encrypt(JSON.stringify(o), ENC_KEY).toString();
-
-/* ---------- POST ---------- */
 export async function POST(req: NextRequest) {
   try {
-    /* 1. auth ------------------------------------------------------ */
-    const { orgId } = await getOrgProfileInternal(req.headers); 
-
-    /* 2. parse body ----------------------------------------------- */
+    const { orgId } = await getOrgProfileInternal(req);
     const body = await req.json();
-    const { type, name, config } = body; // config = {host,port,token,url,etc}
-    if (!type || !name || !config || typeof config !== 'object')
-      return NextResponse.json({ error: 'Bad payload' }, { status: 400 });
+    const { type, name, config } = body;
+    if (!type || !name || !config) return NextResponse.json({ error: 'Bad payload' }, { status: 400 });
 
-    /* 3. save encrypted record ------------------------------------ */
-    const datasource = await prisma.dataSource.create({
-      data: {
-        orgId,
-        type,
-        name,
-        config: encrypt(config),
-      },
-    });
+    const ds = await createDataSourceServer(orgId, type, name, config);
 
-    /* 4. tell Python service to start first sync ------------------ */
-    const API_KEY = process.env.ANALYTICS_API_KEY!;
-    const pyRes = await fetch(`${ANALYTICS_URL}/api/v1/datasources`, {
+    // Forward to analytics container – **all 4 query params required**
+    const url = `${ANALYTICS_URL}/api/v1/datasources?orgId=${orgId}&sourceId=${ds.id}&type=${type}`;
+    console.log('[data-source] calling:', url); // ← log to confirm
+
+    const res = await fetch(url, {
       method: 'POST',
-       headers: {
-         'Content-Type': 'application/json',
-         'x-api-key': API_KEY,
-       },
-      body: JSON.stringify({
-        orgId,
-        sourceId: datasource.id,
-        type,
-        config,
-      }),
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANALYTICS_API_KEY! },
+      body: JSON.stringify({ config }), // ← pass config in the body
     });
-    if (!pyRes.ok) {
-      const msg = await pyRes.text();
-      throw new Error(`Analytics sync failed: ${pyRes.status} ${msg}`);
-    }
 
-    /* 5. websocket push ------------------------------------------ */
-    if (typeof window !== 'undefined') {
-      DataGateway.broadcastToOrg(orgId, 'datasource_created', { id: datasource.id, name, type });
-    }
+    if (!res.ok) throw new Error(`Analytics sync failed: ${res.status} ${await res.text()}`);
 
-    /* 6. done ----------------------------------------------------- */
-    return NextResponse.json({ id: datasource.id });
+    return NextResponse.json({ id: ds.id });
   } catch (e: any) {
     console.error('[data-source]', e);
     return NextResponse.json({ error: e.message || 'Server error' }, { status: 500 });

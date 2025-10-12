@@ -16,7 +16,7 @@ services:
 
   analytics:
     build: ./analytics-service
-    ports: ["8000:8000"]          # Codespace forwards this → public URL
+    ports: ["8000:8000"]
     depends_on: [redis, postgres]
     env_file: .env.local
     environment:

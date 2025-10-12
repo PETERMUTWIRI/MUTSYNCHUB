@@ -25,6 +25,9 @@ import { LiveIndicator } from '@/components/data-source/live-indicator';
 import { useDrillDown } from '@/lib/useDrillDown';
 import { useOrgProfile } from '@/hooks/useOrgProfile';
 import { enforceAnalyticsLimit } from '@/lib/billing';
+import { buildReportPDF } from "@/lib/buildReportPDF";
+import { PDFDocument, rgb } from "pdf-lib";
+import { Loader2 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -36,15 +39,15 @@ type AnalyticType = 'eda' | 'forecast' | 'basket' | 'market-dynamics' | 'supply-
 /* Service layer – talks to Python container                          */
 /* ------------------------------------------------------------------ */
 const analyticsAPI = {
-  live: (orgId: string) => Promise.resolve({}),          // stub
-  trend: (orgId: string) => Promise.resolve({}),         // stub
+  live: (orgId: string) => Promise.resolve({}),
+  trend: (orgId: string) => Promise.resolve({}),
   run: (orgId: string, analytic: AnalyticType, body: any) =>
     fetch('/api/analytics/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orgId, analytic, ...body }) }).then(r => r.json()),
   schedules: (orgId: string) => fetch(`/api/analytics/schedules?orgId=${orgId}`).then(r => r.json()),
   history: (orgId: string, limit = 50) => fetch(`/api/analytics/history?orgId=${orgId}&limit=${limit}`).then(r => r.json()),
   ai: (orgId: string, question: string, report: any) => fetch('/api/analytics/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orgId, question, report }) }).then(r => r.json()),
+  latest: (orgId: string) => fetch(`/analytics/report/latest?orgId=${orgId}`, { headers: { "x-api-key": process.env.NEXT_PUBLIC_ANALYTICS_KEY ?? "dev-analytics-key-123" } }).then(r => r.ok ? r.json() : null),
 };
-
 /* ------------------------------------------------------------------ */
 /* Hooks                                                              */
 /* ------------------------------------------------------------------ */
@@ -60,6 +63,10 @@ function useSchedules(orgId: string) {
 function useHistory(orgId: string) {
   return useQuery({ queryKey: ['analytics-history', orgId], queryFn: () => analyticsAPI.history(orgId), enabled: !!orgId });
 }
+function useLatestReport(orgId: string) {
+  return useQuery({ queryKey: ['analytics-latest', orgId], queryFn: () => analyticsAPI.latest(orgId), enabled: !!orgId });
+}
+
 
 /* ------------------------------------------------------------------ */
 /* Main Page – SUPERMARKET FIRST                                      */
@@ -80,9 +87,14 @@ export default function AnalyticsPage() {
   const { data: trend } = useTrendData(orgId);
   const { data: schedules } = useSchedules(orgId);
   const { data: history } = useHistory(orgId);
+  const { data: latest } = useQuery({
+    queryKey: ['analytics-latest', orgId],
+    queryFn: () => analyticsAPI.latest(orgId),
+    enabled: !!orgId,
+  });
 
   // Drill-down state
-  const drill = useDrillDown(trend ?? []);
+  const drill = useDrillDown((trend as any[]) ?? []);
 
   // AI chat state
   const [question, setQuestion] = useState('');
@@ -109,7 +121,7 @@ export default function AnalyticsPage() {
 
   // Schedule creator mutation
   const createSchedMut = useMutation({
-    mutationFn: async (freq: 'daily' | 'weekly' | 'monthly') => {
+    mutationFn: async (freq: 'daily' | 'weekly' | 'monthly' | string) => {
       await enforceAnalyticsLimit(orgId, 'Analytics-Schedule');
       const res = await fetch('/api/analytics/schedules', {
         method: 'POST',
@@ -123,7 +135,9 @@ export default function AnalyticsPage() {
       qc.invalidateQueries({ queryKey: ['analytics-schedules', orgId] });
       toast.success('Schedule created');
       setShowScheduleModal(false);
+      setCron(''); // reset custom field
     },
+   onError: (e: any) => toast.error(e.message),
   });
 
   // AI ask mutation
@@ -247,34 +261,95 @@ const analyticResults = qc.getQueryData(['analytics-results', orgId, activeAnaly
     ) : null;
 
   // Schedule popover
-  const SchedulePopover = () => (
-    <Popover open={showScheduleModal} onOpenChange={setShowScheduleModal}>
-      <PopoverTrigger asChild>
-        <Button className="bg-gradient-to-r from-teal-500 to-cyan-400 text-white">
-          <Plus className="w-4 h-4 mr-2" /> Schedule
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="bg-[#1E2A44] border border-white/10 rounded-2xl p-4 w-80">
-        <h3 className="text-lg font-semibold mb-4">Schedule Reports</h3>
-        <div className="grid grid-cols-3 gap-2">
-          {(['daily', 'weekly', 'monthly'] as const).map((f) => (
-            <Button key={f} variant="outline" onClick={() => createSchedMut.mutate(f)}>
-              {f}
-            </Button>
-          ))}
-        </div>
-        <Input
-          value={cron}
-          onChange={(e) => setCron(e.target.value)}
-          placeholder="0 8 * * MON"
-          className="mt-4 bg-black/30 border-white/20"
-        />
-        <Button className="mt-2 w-full" onClick={() => createSchedMut.mutate('daily')}>
-          Save Cron
-        </Button>
-      </PopoverContent>
-    </Popover>
-  );
+    const SchedulePopover = () => {
+    const { createSchedMut, cron, setCron, setShowScheduleModal } = useScheduleMut(); // ← tiny wrapper below
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button className="bg-gradient-to-r from-teal-500 to-cyan-400 text-white">
+            <Plus className="w-4 h-4 mr-2" /> Schedule
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="bg-[#1E2A44] border border-white/10 rounded-2xl p-4 w-80">
+          <h3 className="text-lg font-semibold mb-4">Schedule Reports</h3>
+
+          {/* Frequency buttons – highlight + spin */}
+          <div className="grid grid-cols-3 gap-2">
+            {(['daily', 'weekly', 'monthly'] as const).map((f) => (
+              <Button
+               key={f}
+                variant={createSchedMut.variables === f ? 'default' : 'outline'}
+                onClick={() => createSchedMut.mutate(f)}
+                  disabled={createSchedMut.isPending}
+              >
+                {createSchedMut.isPending && createSchedMut.variables === f ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                f
+                )}
+              </Button>
+           ))}
+          </div>
+
+         {/* Custom cron */}
+         <Input
+           value={cron}
+           onChange={(e) => setCron(e.target.value)}
+           placeholder="0 8 * * MON"
+           className="mt-4 bg-black/30 border-white/20"
+         />
+
+          {/* Save – real value + spin */}
+          <Button
+             className="mt-2 w-full"
+             onClick={() => createSchedMut.mutate(cron || 'daily')}
+             disabled={createSchedMut.isPending}
+           >
+           {createSchedMut.isPending ? (
+             <Loader2 className="w-4 h-4 animate-spin" />
+           ) : (
+              'Save Cron'
+           )}
+          </Button>
+
+          {/* Error banner */}
+          {createSchedMut.isError && (
+           <p className="text-xs text-red-400 mt-2">{createSchedMut.error.message}</p>
+         )}
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  /* tiny hook wrapper – keeps parent component clean */
+  function useScheduleMut() {
+    const qc = useQueryClient();
+    const orgId = useOrgProfile().data?.orgId ?? '';
+    const [cron, setCron] = useState('');
+    const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+    const createSchedMut = useMutation({
+      mutationFn: async (freq: 'daily' | 'weekly' | 'monthly' | string) => {
+       await enforceAnalyticsLimit(orgId, 'Analytics-Schedule');
+       const res = await fetch('/api/analytics/schedules', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orgId, frequency: freq, analytics: ['eda', 'basket', 'forecast'] }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      },
+     onSuccess: () => {
+       qc.invalidateQueries({ queryKey: ['analytics-schedules', orgId] });
+       toast.success('Schedule created');
+       setShowScheduleModal(false);
+        setCron('');
+      },
+      onError: (e: any) => toast.error(e.message),
+    });
+
+    return { createSchedMut, cron, setCron, setShowScheduleModal };
+  }
 
   // History drawer
   const HistoryDrawer = () => {
@@ -297,19 +372,23 @@ const analyticResults = qc.getQueryData(['analytics-results', orgId, activeAnaly
                 <h3 className="text-lg font-semibold">Report History</h3>
                 <Button variant="ghost" onClick={() => setOpen(false)}>×</Button>
               </div>
-              {history?.map((r: any) => (
-                <Card key={r.id} className="mb-4 cursor-pointer hover:bg-white/10" onClick={() => setSelected(r)}>
-                  <CardContent className="pt-4">
-                    <p className="font-medium">{r.name}</p>
-                    <p className="text-xs text-gray-400">{format(new Date(r.createdAt), 'PPp')}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              {history?.length ? (
+                history?.map((r: any) => (
+                 <Card key={r.id} className="mb-4 cursor-pointer hover:bg-white/10" onClick={() => setSelected(r)}>
+                    <CardContent className="pt-4">
+                      <p className="font-medium">{r.type} report</p>
+                      <p className="text-xs text-gray-400">{format(new Date(r.lastRun), 'PPp')}</p>
+                     </CardContent>
+                 </Card>
+                ))
+              ) : (
+             <p className="text-sm text-gray-400">No history yet.</p>
+              )}
               {selected && (
-                <div className="mt-6">
-                  <h4 className="font-semibold mb-2">Results</h4>
-                  <pre className="text-xs bg-black/30 p-2 rounded overflow-auto">{JSON.stringify(selected.results, null, 2)}</pre>
-                </div>
+              <div className="mt-6">
+                 <h4 className="font-semibold mb-2">Results</h4>
+                 <pre className="text-xs bg-black/30 p-2 rounded overflow-auto">{JSON.stringify(selected.results, null, 2)}</pre>
+              </div>
               )}
             </motion.div>
           )}
@@ -322,7 +401,8 @@ const analyticResults = qc.getQueryData(['analytics-results', orgId, activeAnaly
   if (!orgId) return <div className="p-6 text-gray-400">Loading analytics…</div>;
 
   const results = qc.getQueryData(['analytics-results', orgId, activeAnalytic]) as any;
-
+ 
+  
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#0B1120] to-[#1E2A44] text-white font-inter">
       {/* Header */}
@@ -349,10 +429,10 @@ const analyticResults = qc.getQueryData(['analytics-results', orgId, activeAnaly
         <Card className="bg-white/5 border border-white/10 rounded-2xl p-4">
           <div className="flex flex-wrap items-center gap-4">
             <Select value={industry} onValueChange={(v) => setIndustry(v as Industry)}>
-              <SelectTrigger className="w-48 bg-black/30 border-white/20">
+              <SelectTrigger className="w-48 bg-black/30 border-white/20 text-cyan-400">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-[#1E2A44] border border-white/10 text-cyan-300">
                 <SelectItem value="supermarket">{industryIcons.supermarket} Supermarket</SelectItem>
                 <SelectItem value="retail">{industryIcons.retail} Retail</SelectItem>
                 <SelectItem value="healthcare">{industryIcons.healthcare} Healthcare</SelectItem>
@@ -360,10 +440,10 @@ const analyticResults = qc.getQueryData(['analytics-results', orgId, activeAnaly
               </SelectContent>
             </Select>
             <Select value={activeAnalytic} onValueChange={(v) => setActiveAnalytic(v as AnalyticType)}>
-              <SelectTrigger className="w-48 bg-black/30 border-white/20">
+              <SelectTrigger className="w-48 bg-black/30 border-white/20 text-cyan-400">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-[#1E2A44] border border-white/10 text-cyan-300">
                 <SelectItem value="eda">EDA</SelectItem>
                 <SelectItem value="forecast">Forecast</SelectItem>
                 <SelectItem value="basket">Basket</SelectItem>
@@ -474,27 +554,54 @@ const analyticResults = qc.getQueryData(['analytics-results', orgId, activeAnaly
 
         {/* Scheduled Reports List */}
         <Card className="bg-white/5 border border-white/10 rounded-2xl p-4">
-          <CardHeader>
-            <CardTitle>Scheduled Reports</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {schedules?.length ? (
-              <div className="space-y-3">
-                {schedules.map((s: any) => (
-                  <div key={s.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                    <div>
-                      <p className="font-medium">Every {s.frequency}</p>
-                      <p className="text-xs text-gray-400">Next: {format(new Date(s.nextRun), 'PPp')}</p>
+           <CardHeader>
+              <CardTitle>Latest Report</CardTitle>
+           </CardHeader>
+           <CardContent>
+             {latest ? (
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                     <div>
+                       <p className="font-medium">{latest.type}</p>
+                       <p className="text-xs text-gray-400">Ran: {format(new Date(latest.lastRun), "PPp")}</p>
+                     </div>
+                     <Clock className="w-4 h-4 text-teal-400" />
                     </div>
-                    <Clock className="w-4 h-4 text-teal-400" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">No schedules yet – create one above.</p>
-            )}
-          </CardContent>
-        </Card>
+
+                    {/* KPI table */}
+                    <div className="text-sm bg-black/30 p-3 rounded overflow-auto max-h-48">
+                      {Object.entries(latest.results?.supermarket_kpis || latest.results).map(([k, v]) => (
+                       <div key={k} className="flex justify-between py-1 border-b border-white/10 last:border-0">
+                         <span className="text-gray-300">{k.replace(/_/g, " ")}</span>
+                         <span className="text-white font-semibold">{String(v)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* PDF download */}
+                    <button
+                      onClick={async () => {
+                        const bytes = await buildReportPDF(latest);
+                        const blob = new Blob([bytes as Uint8Array<ArrayBuffer>], { type: "application/pdf" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `${latest.type}-report-${latest.orgId}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        }}
+                      className="inline-flex items-center gap-2 mt-3 px-3 py-1 bg-teal-500 text-white rounded hover:bg-teal-600"
+                      >
+                      <Download className="w-4 h-4" /> Download PDF
+                     </button>
+                </div> 
+              ) : (
+               <p className="text-sm text-gray-400">No report yet – run an analytic above.</p>
+              )}
+            </CardContent>
+          </Card>
       </main>
     </div>
   );
