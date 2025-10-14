@@ -7,6 +7,7 @@ from app.utils.detect_industry import detect_industry
 import pandas as pd
 import json
 
+
 router = APIRouter(prefix="/api/v1", tags=["datasources"])
 
 @router.post("/datasources")

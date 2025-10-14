@@ -1,5 +1,5 @@
 export async function createDataSourceAPI(payload: FormData) {
-  const res = await fetch('/api/data-source', {
+  const res = await fetch('/api/datasources', {
     method: 'POST',
     body: payload, // FormData auto-sets headers
   });
