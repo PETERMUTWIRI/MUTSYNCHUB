@@ -500,6 +500,7 @@ enum DataSourceType {
   API
   FILE_IMPORT
   CUSTOM
+  WEBHOOK
 
   @@schema("public")
 }
