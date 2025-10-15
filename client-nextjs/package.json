@@ -106,6 +106,7 @@
     "@types/react-i18next": "^8.1.0",
     "@types/socket.io-client": "^3.0.0",
     "@types/speakeasy": "^2.0.10",
+    "@types/uuid": "^11.0.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.15",
