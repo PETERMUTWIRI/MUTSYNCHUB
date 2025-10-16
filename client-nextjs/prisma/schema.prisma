@@ -3,7 +3,6 @@ generator client {
   previewFeatures = ["multiSchema"]
 }
 
-// NEW – edge-runtime client (works with ANY Postgres)
 generator edge {
   provider = "prisma-client-js"
   output   = "../node_modules/.prisma/client-edge"
@@ -450,7 +449,17 @@ model AnalyticsSchedule {
   @@schema("public")
 }
 
+model feature_flags {
+  key        String
+  enabled    Boolean  @default(false)
+  payload    Json?
+  org_id     String   @default("demo")
+  updated_at DateTime @default(now()) @db.Timestamp(6)
 
+  @@id([key, org_id])
+  @@index([org_id], map: "idx_flags_org")
+  @@schema("public")
+}
 
 enum PaymentStatus {
   PENDING
@@ -491,6 +500,7 @@ enum DataSourceType {
   API
   FILE_IMPORT
   CUSTOM
+  WEBHOOK
 
   @@schema("public")
 }

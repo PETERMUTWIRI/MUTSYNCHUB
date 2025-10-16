@@ -3,7 +3,7 @@ import { getOrgProfileInternal } from '@/lib/org-profile';
 
 // Prefer an internal URL when running in the dev container or docker network.
 // Fall back to the public preview URL when necessary.
-const ANALYTICS_URL = process.env.ANALYTICS_INTERNAL_URL || process.env.NEXT_PUBLIC_ANALYTICS_URL!;
+const ANALYTICS_URL = process.env.ANALYTICS_INTERNAL_URL ;
 // Some environments set ANALYTICS_KEY, others ANALYTICS_API_KEY — accept both.
 const ANALYTICS_KEY = process.env.ANALYTICS_KEY ?? process.env.ANALYTICS_API_KEY ?? 'dev-analytics-key-123';
 

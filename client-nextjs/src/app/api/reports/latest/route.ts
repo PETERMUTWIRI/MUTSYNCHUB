@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   if (wantPDF) {
     const pdf = await buildPDF(report);
-    return new NextResponse(pdf, {
+    return new NextResponse(Buffer.from(pdf), {
       headers: { "Content-Disposition": `attachment; filename="${report.type}-report-${orgId}.pdf` },
     });
   }

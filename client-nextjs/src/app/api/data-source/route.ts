@@ -1,33 +1,56 @@
+export const runtime = 'nodejs';        // or 'edge' – just be explicit
+export const dynamic = 'force-dynamic';
+export const preferredRegion = 'home';  
+// /app/api/datasources/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createDataSourceServer } from '@/lib/server/dataSourceServer';
 import { getOrgProfileInternal } from '@/lib/org-profile';
+import FormData from 'form-data';
+import fetch from 'node-fetch';
 
-const ANALYTICS_URL = process.env.ANALYTICS_INTERNAL_URL || 'http://analytics:8000';
+const ANALYTICS_URL = process.env.ANALYTICS_INTERNAL_URL!;
+const ANALYTICS_API_KEY = process.env.ANALYTICS_API_KEY!;
+
+if (!ANALYTICS_URL || !ANALYTICS_API_KEY) {
+  throw new Error('Missing analytics env vars');
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { orgId } = await getOrgProfileInternal(req);
-    const body = await req.json();
-    const { type, name, config } = body;
-    if (!type || !name || !config) return NextResponse.json({ error: 'Bad payload' }, { status: 400 });
 
-    const ds = await createDataSourceServer(orgId, type, name, config);
+    const incomingForm = await req.formData();
+    const type = incomingForm.get('type') as string;
+    if (!type) return NextResponse.json({ error: 'type required' }, { status: 400 });
 
-    // Forward to analytics container – **all 4 query params required**
-    const url = `${ANALYTICS_URL}/api/v1/datasources?orgId=${orgId}&sourceId=${ds.id}&type=${type}`;
-    console.log('[data-source] calling:', url); // ← log to confirm
+    const url = new URL(`${ANALYTICS_URL}/api/v1/datasources`);
+    url.searchParams.set('orgId', orgId);
+    url.searchParams.set('sourceId', crypto.randomUUID());
+    url.searchParams.set('type', type);
 
-    const res = await fetch(url, {
+    const outgoingForm = new FormData();
+    for (const [k, v] of incomingForm.entries()) {
+      if (v instanceof File) {
+        const arr = await v.arrayBuffer();
+        outgoingForm.append(k, Buffer.from(arr), { filename: v.name });
+      } else {
+        outgoingForm.append(k, v);
+      }
+    }
+
+    const engineRes = await fetch(url.toString(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANALYTICS_API_KEY! },
-      body: JSON.stringify({ config }), // ← pass config in the body
+      headers: { 'x-api-key': ANALYTICS_API_KEY },
+      body: outgoingForm,
     });
 
-    if (!res.ok) throw new Error(`Analytics sync failed: ${res.status} ${await res.text()}`);
+    if (!engineRes.ok) {
+      const text = await engineRes.text();
+      return NextResponse.json({ error: `engine: ${text}` }, { status: engineRes.status });
+    }
 
-    return NextResponse.json({ id: ds.id });
+    return NextResponse.json(await engineRes.json());
   } catch (e: any) {
-    console.error('[data-source]', e);
-    return NextResponse.json({ error: e.message || 'Server error' }, { status: 500 });
+    console.error('[datasource relay]', e);
+    return NextResponse.json({ error: e.message || 'relay failed' }, { status: 500 });
   }
 }

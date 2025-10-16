@@ -16,7 +16,7 @@ export function TransferHistory({ socket }: { socket: any }) {
             id: payload.batchId || Date.now().toString(),
             createdAt: new Date().toISOString(),
             rows: payload.rows?.length || 0,
-            status: "success",
+            status: "success" as const,
           },
         ].slice(-50)
       );

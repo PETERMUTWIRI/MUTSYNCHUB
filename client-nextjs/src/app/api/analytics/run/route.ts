@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
     /* 3. forward to Python container ---------------------------------- */
     const body = await req.json();
-    const res = await fetch(`${ANALYTICS_URL}/api/analytics/run`, {
+    const res = await fetch(`${ANALYTICS_URL}/analytics/run`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

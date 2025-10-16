@@ -1,5 +1,5 @@
 from app.utils.detect_industry import _ALIAS
-import pandas as pd, json, duckdb
+import pandas as pd,os, json, duckdb
 from app.db import get_conn, ensure_raw_table
 
 CANONICAL = {
@@ -15,9 +15,10 @@ CANONICAL = {
 
 def canonify_df(org_id: str) -> pd.DataFrame:
     conn = get_conn(org_id)
-    rows = conn.execute("SELECT row_data FROM raw_rows WHERE ingested_at >= now() - INTERVAL 6 HOUR").fetchall()
+    # 2️⃣  use **ALL** rows, not just last 6 h
+    rows = conn.execute("SELECT row_data FROM raw_rows").fetchall()
     if not rows:
-        return pd.DataFrame()   # empty but shaped
+        return pd.DataFrame()
 
     raw = pd.DataFrame([json.loads(r[0]) for r in rows])
     raw.columns = raw.columns.str.lower().str.strip()
@@ -29,16 +30,24 @@ def canonify_df(org_id: str) -> pd.DataFrame:
                 mapping[col] = canon
                 break
 
-    df = raw.rename(columns=mapping)[CANONICAL.keys()].copy()
-    # coerce dtypes
+    df = raw.rename(columns=mapping)[list(CANONICAL.keys())].copy()
+
+    # dtype fixes
     if "timestamp" in df:
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
     if "expiry_date" in df:
         df["expiry_date"] = pd.to_datetime(df["expiry_date"], errors="coerce").dt.date
     if "promo_flag" in df:
         df["promo_flag"] = df["promo_flag"].astype(str).isin({"1", "true", "t", "yes"})
-    numeric = ["qty", "total"]
-    for col in numeric:
+    for col in ("qty", "total"):
         if col in df:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+    # 3️⃣  overwrite DuckDB snapshot
+    os.makedirs(f"./db", exist_ok=True)
+    duck = duckdb.connect(f"./db/{org_id}.duckdb")
+    duck.execute("CREATE SCHEMA IF NOT EXISTS main")
+    duck.execute("CREATE OR REPLACE TABLE main.canonical AS SELECT * FROM df")
+    duck.close()
+
     return df
