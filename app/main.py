@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
 # ----------  app init  ----------
 app = FastAPI(title="MutSyncHub Analytics Engine", version="2.2", lifespan=lifespan)
 
+app.mount("/socket.io", socket.socket_app)
 # ----------  CORS – live Vercel domain  ----------
 origins = [
     "https://mut-sync-hub.vercel.app",   # ← your live frontend
