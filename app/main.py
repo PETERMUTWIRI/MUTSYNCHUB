@@ -6,7 +6,16 @@ from app.tasks.scheduler import start_scheduler
 from app.deps import verify_key
 from contextlib import asynccontextmanager
 import os
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
+
+@app.middleware("http")
+async def serialize_all_responses(request, call_next):
+    response = await call_next(request)
+    if isinstance(response, dict):
+        return JSONResponse(content=jsonable_encoder(response))
+    return response
 # ----------  lifespan  ----------
 @asynccontextmanager
 async def lifespan(app: FastAPI):

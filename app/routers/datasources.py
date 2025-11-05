@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Query, Form, File, UploadFile, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Any
 from app.deps import verify_key
@@ -96,10 +97,12 @@ async def create_source_json(
     rows = df.head(3).to_dict("records")
     await sio.emit("datasource:new-rows", {"rows": rows}, room=orgId)
 
-    return {
-        "id": sourceId,
-        "status": "listening",
-        "industry": industry,
-        "confidence": confidence,
-        "recentRows": rows,
-    }
+    return JSONResponse(
+      content=json.loads(json.dumps({
+         "id": sourceId,
+         "status": "listening",
+         "industry": industry,
+         "confidence": confidence,
+         "recentRows": rows,
+       }, default=str))
+    )
