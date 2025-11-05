@@ -37,4 +37,4 @@ COPY scheduler_loop.py /app/scheduler_loop.py
 ENV API_KEYS=dev-analytics-key-123
 
 # ---- 7. start both services -----------------------------------------------
-CMD sh -c "python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 & python /app/scheduler_loop.py"
+CMD sh -c "python -m uvicorn app.main:app --host 0.0.0.0 --port 8080 & python /app/scheduler_loop.py"

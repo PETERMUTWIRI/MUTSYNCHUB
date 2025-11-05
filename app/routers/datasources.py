@@ -5,7 +5,7 @@ from app.deps import verify_key
 from app.db import get_conn, ensure_raw_table
 from app.mapper import canonify_df
 from app.utils.detect_industry import detect_industry
-from app.sockets import sio  # <-- your socket.io instance
+from app.routers.socket import sio # <-- your socket.io instance
 import pandas as pd
 import json
 
