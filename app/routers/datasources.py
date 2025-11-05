@@ -71,10 +71,10 @@ class JsonPayload(BaseModel):
 
 @router.post("/datasources/json")
 async def create_source_json(
-    orgId: str = Query(...),
+    payload: JsonPayload,                     # ①  no default
+    orgId: str = Query(...),                  # ②  defaults
     sourceId: str = Query(...),
     type: str = Query(...),
-    payload: JsonPayload,
     _: str = Depends(verify_key),
 ):
     """
