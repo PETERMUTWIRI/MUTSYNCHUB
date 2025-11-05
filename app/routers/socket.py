@@ -1,8 +1,8 @@
 # app/routers/socket.py
 import socketio
-import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
+from app.deps import verify_key   # your API-key guard
 
 # 1. long-lived Socket.IO server
 sio = socketio.AsyncServer(
@@ -13,43 +13,35 @@ sio = socketio.AsyncServer(
     ],
 )
 
-# 2. cache orgId from Vercel
-ORG_ID_URL = "https://mut-sync-hub.vercel.app/api/org-id"
-_org_id_cache: str | None = None
+# 2. ASGI sub-app mounted at /socket.io
+socket_app = socketio.ASGIApp(sio)
 
-async def _get_org_id() -> str:
-    global _org_id_cache
-    if _org_id_cache:
-        return _org_id_cache
-    async with httpx.AsyncClient() as c:
-        r = await c.get(ORG_ID_URL, timeout=5)
-        r.raise_for_status()
-        _org_id_cache = r.json()["orgId"]
-    return _org_id_cache
+# 3. FastAPI router for extra REST routes
+router = APIRouter(prefix="/socket.io")
 
-# 3. Socket.IO events
+# ----------  new broadcast route (called by n8n workflow) ----------
+@router.post("/socket-push/{org_id}")
+async def socket_push(org_id: str, payload: dict, _: str = Depends(verify_key)):
+    """
+    Receive top-N rows from n8n and broadcast them to every browser
+    connected to this org room.
+    """
+    await sio.emit("datasource:new-rows", payload, room=org_id)
+    return {"broadcast": "ok"}
+
+# ----------  old health stub ----------
+@router.get("/health")
+async def health():
+    return PlainTextContent("ok")
+
+# ----------  socket events (keep what you already had) ----------
 @sio.event
 async def connect(sid, environ, auth):
-    org_id = await _get_org_id()
+    org_id = auth.get("orgId") if auth else "demo"
     await sio.save_session(sid, {"orgId": org_id})
-    print(f"[socket] client {sid} connected for org {org_id}")
+    await sio.enter_room(sid, org_id)          # join org room
+    print(f"[socket] {sid} connected → room {org_id}")
 
 @sio.event
 async def disconnect(sid):
-    print(f"[socket] client {sid} disconnected")
-
-@sio.event
-async def broadcast(sid, data):
-    """client asks to broadcast to its own org room"""
-    org_id = (await sio.get_session(sid))["orgId"]
-    await sio.emit(data["event"], data["payload"], room=org_id)
-
-# 4. expose ASGI sub-app at /socket.io
-socket_app = socketio.ASGIApp(sio)
-
-# 5. tiny health helper so old polling stub still returns 200
-router = APIRouter(prefix="/socket.io")
-
-@router.get("/health")
-async def health():
-    return PlainTextResponse("ok")
+    print(f"[socket] {sid} disconnected")
