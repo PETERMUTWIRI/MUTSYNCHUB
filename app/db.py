@@ -12,13 +12,36 @@ def get_conn(org_id: str):
     return duckdb.connect(str(db_file), read_only=False)
 
 
+# ------------------------------------------------------------
+# 🔹 Backward-compatible table for raw JSON ingestion
+# ------------------------------------------------------------
+def ensure_raw_table(conn):
+    """
+    Maintains legacy compatibility for ingestion from webhooks / file uploads.
+    """
+    conn.execute("CREATE SCHEMA IF NOT EXISTS main")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS main.raw_rows(
+            ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            row_data    JSON
+        )
+    """)
+
+
+# ------------------------------------------------------------
+# 🔹 Flexible dynamic schema table creation
+# ------------------------------------------------------------
 def ensure_table(conn, table_name: str, sample_record: Dict[str, Any]):
     """
     Ensures a DuckDB table exists with columns inferred from sample_record.
     If new columns appear later, adds them automatically.
     """
     conn.execute("CREATE SCHEMA IF NOT EXISTS main")
-    conn.execute(f"CREATE TABLE IF NOT EXISTS main.{table_name} (id UUID DEFAULT uuid(), _ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS main.{table_name} ("
+        "id UUID DEFAULT uuid(), "
+        "_ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+    )
 
     if not sample_record:
         return
@@ -28,7 +51,6 @@ def ensure_table(conn, table_name: str, sample_record: Dict[str, Any]):
     for col, val in sample_record.items():
         if col in existing_cols:
             continue
-
         dtype = infer_duckdb_type(val)
         print(f"[db] ➕ Adding new column '{col}:{dtype}' to main.{table_name}")
         conn.execute(f"ALTER TABLE main.{table_name} ADD COLUMN {col} {dtype}")
@@ -38,15 +60,20 @@ def infer_duckdb_type(value: Any) -> str:
     """Infer a DuckDB-compatible column type from a Python value."""
     if isinstance(value, bool):
         return "BOOLEAN"
-    if isinstance(value, (int, float)):
+    if isinstance(value, int):
+        return "BIGINT"
+    if isinstance(value, float):
         return "DOUBLE"
     if isinstance(value, datetime):
         return "TIMESTAMP"
-    if isinstance(value, dict) or isinstance(value, list):
+    if isinstance(value, (dict, list)):
         return "JSON"
     return "VARCHAR"
 
 
+# ------------------------------------------------------------
+# 🔹 Insert records with auto-schema
+# ------------------------------------------------------------
 def insert_records(conn, table_name: str, records: List[Dict[str, Any]]):
     """
     Insert records into the specified table.
@@ -65,15 +92,23 @@ def insert_records(conn, table_name: str, records: List[Dict[str, Any]]):
     print(f"[db] ✅ Inserted {len(records)} rows into {table_name}")
 
 
+# ------------------------------------------------------------
+# 🔹 Unified bootstrap entrypoint
+# ------------------------------------------------------------
 def bootstrap(org_id: str, payload: Dict[str, Any]):
     """
     Main entrypoint for ingestion.
     Detects whether the payload contains:
       - A single table (list of dicts)
       - Multiple named tables (dict of lists)
+    Also logs the raw payload in main.raw_rows for lineage tracking.
     """
     conn = get_conn(org_id)
     conn.execute("CREATE SCHEMA IF NOT EXISTS main")
+    ensure_raw_table(conn)
+
+    # Log raw payload for debugging / lineage
+    conn.execute("INSERT INTO main.raw_rows (row_data) VALUES (?)", (json.dumps(payload),))
 
     if isinstance(payload, dict) and "tables" in payload:
         # multi-table mode
