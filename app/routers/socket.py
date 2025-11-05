@@ -1,10 +1,10 @@
 # app/routers/socket.py
 import socketio
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Path, Request
 from fastapi.responses import PlainTextResponse
-from app.deps import verify_key   # your API-key guard
+from app.deps import verify_key  # your API-key guard
 
-# 1. long-lived Socket.IO server
+# 1️⃣ Socket.IO server
 sio = socketio.AsyncServer(
     async_mode="asgi",
     cors_allowed_origins=[
@@ -13,35 +13,42 @@ sio = socketio.AsyncServer(
     ],
 )
 
-# 2. ASGI sub-app mounted at /socket.io
+# 2️⃣ ASGI sub-app (mounted separately in main.py)
 socket_app = socketio.ASGIApp(sio)
 
-# 3. FastAPI router for extra REST routes
-router = APIRouter(prefix="/socket.io")
+# 3️⃣ FastAPI router for REST routes (no prefix → /socket-push)
+router = APIRouter(tags=["socket"])
 
-# ----------  new broadcast route (called by n8n workflow) ----------
+# ----------  POST /socket-push/{org_id} ----------
 @router.post("/socket-push/{org_id}")
-async def socket_push(org_id: str, payload: dict, _: str = Depends(verify_key)):
+async def socket_push(
+    org_id: str = Path(...),
+    request: Request = None,
+    _: str = Depends(verify_key),
+):
     """
-    Receive top-N rows from n8n and broadcast them to every browser
-    connected to this org room.
+    Receive top-N rows from n8n workflow and broadcast them
+    live to all connected clients in the given org room.
     """
-    await sio.emit("datasource:new-rows", payload, room=org_id)
-    return {"broadcast": "ok"}
+    payload = await request.json()
+    rows = payload.get("rows", [])
+    await sio.emit("datasource:new-rows", {"rows": rows}, room=org_id)
+    print(f"[socket] 🔄 broadcasted {len(rows)} rows → room={org_id}")
+    return {"status": "ok", "emitted": len(rows)}
 
-# ----------  old health stub ----------
+# ----------  Health Check ----------
 @router.get("/health")
 async def health():
-    return PlainTextContent("ok")
+    return PlainTextResponse("ok")
 
-# ----------  socket events (keep what you already had) ----------
+# ----------  Socket.IO Events ----------
 @sio.event
 async def connect(sid, environ, auth):
-    org_id = auth.get("orgId") if auth else "demo"
+    org_id = (auth or {}).get("orgId", "demo")
     await sio.save_session(sid, {"orgId": org_id})
-    await sio.enter_room(sid, org_id)          # join org room
-    print(f"[socket] {sid} connected → room {org_id}")
+    await sio.enter_room(sid, org_id)
+    print(f"[socket] ✅ {sid} connected → room={org_id}")
 
 @sio.event
 async def disconnect(sid):
-    print(f"[socket] {sid} disconnected")
+    print(f"[socket] ❌ {sid} disconnected")
