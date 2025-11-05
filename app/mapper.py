@@ -105,20 +105,34 @@ def canonify_df(org_id: str, hours_window: int = 24) -> pd.DataFrame:
     conn = get_conn(org_id)
     ensure_raw_table(conn)
 
-    # ⏱ Load recent rows (or fallback to all if none recent)
-    rows = conn.execute(
-        "SELECT row_data FROM raw_rows WHERE datetime(json_extract(row_data, '$.timestamp')) >= datetime('now', ?)",
-        (f"-{hours_window} hours",)
-    ).fetchall() or conn.execute("SELECT row_data FROM raw_rows").fetchall()
+    # --------------------------
+    # ⏱  Safe timestamp filtering
+    # --------------------------
+    try:
+        rows = conn.execute(
+            """
+            SELECT row_data
+            FROM raw_rows
+            WHERE strptime(json_extract(row_data, '$.timestamp'), '%Y-%m-%d %H:%M:%S')
+                  >= now() - INTERVAL ? HOUR
+            """,
+            (hours_window,)
+        ).fetchall()
+    except Exception as e:
+        print(f"[canonify] ⚠️ fallback to all rows due to timestamp parse error: {e}")
+        rows = conn.execute("SELECT row_data FROM raw_rows").fetchall()
 
     if not rows:
         print("[canonify] no rows to process")
         return pd.DataFrame()
 
+    # --------------------------
+    # 🧩 DataFrame normalization
+    # --------------------------
     raw = pd.DataFrame([json.loads(r[0]) for r in rows])
     raw.columns = raw.columns.str.lower().str.strip()
 
-    # 🧩 Flexible alias mapping
+    # Flexible alias mapping
     mapping = {}
     for canon, aliases in CANONICAL.items():
         for col in raw.columns:
@@ -134,9 +148,10 @@ def canonify_df(org_id: str, hours_window: int = 24) -> pd.DataFrame:
                     CANONICAL[canon].append(col)
     save_dynamic_aliases()
 
+    # Apply canonical renaming
     renamed = raw.rename(columns=mapping)
     cols = [c for c in CANONICAL.keys() if c in renamed.columns]
-    df = renamed[cols].copy()
+    df = renamed[cols].copy() if cols else renamed.copy()
 
     # 🔢 Normalize datatypes
     if "timestamp" in df:
@@ -149,7 +164,9 @@ def canonify_df(org_id: str, hours_window: int = 24) -> pd.DataFrame:
         if col in df:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
+    # --------------------------
     # 🪣 Schema versioning + storage
+    # --------------------------
     os.makedirs("./db", exist_ok=True)
     duck = duckdb.connect(f"./db/{org_id}.duckdb")
 
@@ -161,4 +178,5 @@ def canonify_df(org_id: str, hours_window: int = 24) -> pd.DataFrame:
     reconcile_latest_schema(duck)
     duck.close()
 
+    print(f"[canonify] ✅ canonical snapshot updated for {org_id}")
     return df
