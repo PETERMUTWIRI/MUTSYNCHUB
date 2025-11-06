@@ -18,7 +18,11 @@ CANONICAL = {
 
 ALIAS_FILE = "./db/alias_memory.json"
 
-
+def safe_str_transform(series: pd.Series) -> pd.Series:
+    """Apply .str.lower() & .str.strip() only if dtype is object/string."""
+    if pd.api.types.is_string_dtype(series):
+        return series.str.lower().str.strip()
+    return series
 # ----------------------  Alias memory helpers  ---------------------- #
 def load_dynamic_aliases() -> None:
     """Load learned aliases and merge into CANONICAL."""
@@ -130,7 +134,7 @@ def canonify_df(org_id: str, hours_window: int = 24) -> pd.DataFrame:
     # 🧩 DataFrame normalization
     # --------------------------
     raw = pd.DataFrame([json.loads(r[0]) for r in rows])
-    raw.columns = raw.columns.str.lower().str.strip()
+    raw.columns = safe_str_transform(raw.columns)
 
     # Flexible alias mapping
     mapping = {}
