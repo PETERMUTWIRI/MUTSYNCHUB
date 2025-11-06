@@ -136,7 +136,7 @@ def canonify_df(org_id: str, hours_window: int = 24) -> pd.DataFrame:
     raw = pd.DataFrame([json.loads(r[0]) for r in rows])
     raw.columns = safe_str_transform(raw.columns)
 
-    # Flexible alias mapping
+    # Flexible alias mapping 
     mapping = {}
     for canon, aliases in CANONICAL.items():
         for col in raw.columns:
