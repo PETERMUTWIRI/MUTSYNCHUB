@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from app.routers import ingress, reports, flags, datasources, scheduler, run, health, socket
+from app.routers import ingress, reports, flags, datasources, scheduler, run, health, socket, analytics
 from app.tasks.scheduler import start_scheduler
 from app.deps import verify_key
 from contextlib import asynccontextmanager
@@ -54,6 +54,7 @@ app.include_router(flags.router, dependencies=[Depends(verify_key)])
 app.include_router(scheduler.router, dependencies=[Depends(verify_key)])
 app.include_router(run.router, dependencies=[Depends(verify_key)])
 app.include_router(socket.router)
+app.include_router(analytics.router, dependencies=[Depends(verify_key)])
 
 # ----------  Public Health Endpoint ----------
 @app.get("/health")
