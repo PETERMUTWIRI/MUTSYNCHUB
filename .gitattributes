@@ -1,0 +1,5 @@
+# Do not LFS large runtime DBs; keep templates if needed
+*.duckdb -filter -merge -diff -text
+
+# If you want templates/fixtures to remain tracked, add an override
+# templates/*.duckdb filter=lfs diff=lfs merge=lfs -text

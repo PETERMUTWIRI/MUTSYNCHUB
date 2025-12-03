@@ -1,0 +1,8 @@
+node_modules
+client-nextjs/googlecalendar.json
+.env.local
+analytics-service/.env.analytics
+analytics-data/duckdb/*.duckdb
+analytics-data/duckdb/*.wal
+analytics-data/duckdb/*
+analytics-data/
